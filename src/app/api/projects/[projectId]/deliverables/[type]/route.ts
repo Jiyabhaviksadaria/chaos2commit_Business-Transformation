@@ -37,7 +37,7 @@ export async function PATCH(
 ) {
   try {
     const access = await requireProjectAccess(params.projectId, "project:edit")
-    
+
     const delivType = params.type.toUpperCase() as DeliverableType
     const config = getDeliverableConfig(delivType)
     if (!config) return NextResponse.json({ error: "Module not registered" }, { status: 400 })
@@ -79,7 +79,7 @@ export async function PATCH(
         where: { id: deliverable.id },
         data: { currentVersionId: version.id }
       })
-      
+
       await tx.activityLog.create({
         data: {
           organizationId: access.project.workspace.organizationId,

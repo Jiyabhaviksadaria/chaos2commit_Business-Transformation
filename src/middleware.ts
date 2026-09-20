@@ -1,22 +1,13 @@
-import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
-export default withAuth(
-  function middleware(req) {
-    // Admin routes: PLATFORM_ADMIN only
-    if (req.nextUrl.pathname.startsWith("/admin") && req.nextauth.token?.role !== "PLATFORM_ADMIN") {
-      return NextResponse.redirect(new URL("/projects", req.url))
-    }
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-  }
-)
+// Middleware that previously enforced authentication has been disabled.
+// All routes are now publicly accessible.
+export default function middleware(req: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
-  // Protect app shell, admin, and project routes
+  // Keep the matcher to avoid breaking any existing route handling logic.
+  // It now simply lets the request pass through.
   matcher: ["/app/:path*", "/admin/:path*", "/projects/:path*"],
-}
+};

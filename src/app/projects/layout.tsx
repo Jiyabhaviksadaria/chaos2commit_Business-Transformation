@@ -9,14 +9,14 @@ export default async function ProjectsLayout({ children }: { children: React.Rea
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex min-h-screen w-full flex-col bg-[#F7F4EB]">
         <div className="flex flex-1 overflow-hidden">
           <aside className="hidden h-screen w-64 flex-col fixed inset-y-0 z-20 sm:flex">
             <Sidebar />
           </aside>
           <div className="flex flex-1 flex-col sm:pl-64">
             <Topbar locale={locale} />
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto pb-12">
               {children}
             </main>
           </div>

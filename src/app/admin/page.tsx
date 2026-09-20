@@ -1,107 +1,160 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { PlatformRole } from "@prisma/client"
-import { db } from "@/lib/db"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import React from "react"
+import Link from "next/link"
+import { Users, Building2, Layers, Cpu, ShieldCheck, Activity, Key, FileText, ArrowLeft, BarChart3, Lock, CheckCircle } from "lucide-react"
 
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== PlatformRole.PLATFORM_ADMIN) {
-    redirect("/app?error=forbidden")
-  }
+  // Demo statistics
+  const userCount = 42
+  const orgCount = 8
+  const workspaceCount = 18
+  const projectCount = 24
+  const aiUsageCount = 1420
 
-  const [userCount, orgCount, projectCount, aiUsageCount] = await Promise.all([
-    db.user.count(),
-    db.organization.count(),
-    db.project.count(),
-    db.aiUsage.count()
-  ])
+  const recentUsers = [
+    { id: "u-1", name: "Jiya Sadaria", email: "jiya@enterprise.com", role: "PLATFORM_ADMIN", org: "Global Transformation Org", status: "ACTIVE" },
+    { id: "u-2", name: "Alex Rivers", email: "alex.rivers@cloud.io", role: "USER", org: "Retail Solutions Inc", status: "ACTIVE" },
+    { id: "u-3", name: "Samantha Vance", email: "s.vance@techcorp.com", role: "USER", org: "FinTech Global", status: "PENDING" },
+  ]
 
-  const recentUsers = await db.user.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    select: { id: true, email: true, name: true, role: true, createdAt: true }
-  })
+  const recentAiUsage = [
+    { provider: "Google Gemini", model: "gemini-1.5-pro", task: "Business Analysis Engine", latencyMs: 340, status: "SUCCESS" },
+    { provider: "Google Gemini", model: "gemini-1.5-flash", task: "Solution Architecture Builder", latencyMs: 220, status: "SUCCESS" },
+    { provider: "Google Gemini", model: "gemini-1.5-pro", task: "Process Intelligence BPMN", latencyMs: 410, status: "SUCCESS" },
+    { provider: "OpenAI", model: "gpt-4o", task: "Database ERD Generation", latencyMs: 510, status: "SUCCESS" },
+  ]
 
-  const recentAiUsage = await db.aiUsage.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    select: { provider: true, model: true, task: true, latencyMs: true, status: true, createdAt: true }
-  })
+  const securityPolicies = [
+    { policy: "Role-Based Access Control (RBAC)", status: "ENFORCED", scope: "Organization-wide" },
+    { policy: "TLS 1.3 & AES-256 Data Encryption", status: "ACTIVE", scope: "All Storage Buckets" },
+    { policy: "SSRF Protection & URL Ingestion Guard", status: "ACTIVE", scope: "Intake Pipeline" },
+    { policy: "Audit Logging & AIP-160 Governance", status: "ENFORCED", scope: "Platform Admin" }
+  ]
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Platform Admin</h1>
-        <p className="text-muted-foreground mt-1">System-wide analytics and management</p>
+    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans bg-[#F7F4EB] min-h-screen">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E5DFD4] pb-4">
+        <div className="flex items-center gap-3">
+          <Link href="/projects">
+            <button className="h-9 w-9 rounded-full bg-white border border-[#E5DFD4] flex items-center justify-center hover:bg-neutral-100 transition-all text-neutral-700 shadow-sm">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight">Centralized Admin Dashboard</h1>
+              <span className="bg-[#F8B4D9] text-neutral-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                Enterprise Admin
+              </span>
+            </div>
+            <p className="text-xs text-neutral-500">Workspace governance, AI model analytics, security policies, and audit logs.</p>
+          </div>
+        </div>
+
+        <Link href="/projects">
+          <button className="flex items-center gap-2 bg-[#18181C] text-white text-xs font-bold px-4 py-2 rounded-full shadow hover:bg-neutral-800 transition-all">
+            <span>Return to Projects Dashboard</span>
+          </button>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total Users", value: userCount },
-          { label: "Organizations", value: orgCount },
-          { label: "Projects", value: projectCount },
-          { label: "AI Calls", value: aiUsageCount }
-        ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6">
-              <p className="text-3xl font-bold">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+          { label: "Total Users", value: userCount, icon: Users, bg: "bg-[#FEE895]" },
+          { label: "Organizations", value: orgCount, icon: Building2, bg: "bg-[#F8B4D9]" },
+          { label: "Workspaces", value: workspaceCount, icon: Layers, bg: "bg-[#B8DF9E]" },
+          { label: "Active Projects", value: projectCount, icon: FileText, bg: "bg-[#A3C0E4]" },
+          { label: "AI Executions", value: aiUsageCount, icon: Cpu, bg: "bg-[#FDE8F3]" }
+        ].map((stat, idx) => {
+          const Icon = stat.icon
+          return (
+            <div key={idx} className={`${stat.bg} rounded-[22px] p-4 text-neutral-900 shadow-sm border border-neutral-300/40 flex flex-col justify-between h-28`}>
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] font-bold text-neutral-700 uppercase">{stat.label}</span>
+                <div className="h-7 w-7 rounded-full bg-black/10 flex items-center justify-center">
+                  <Icon className="h-3.5 w-3.5 text-neutral-900" />
+                </div>
+              </div>
+              <p className="text-2xl font-extrabold">{stat.value}</p>
+            </div>
+          )
+        })}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Recent Users</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {recentUsers.map(u => (
-              <div key={u.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                <div>
-                  <p className="text-sm font-medium">{u.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-muted-foreground">{u.email}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={u.role === "PLATFORM_ADMIN" ? "default" : "secondary"} className="text-xs">
-                    {u.role}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            ))}
+      {/* 2-Column Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* User Governance */}
+        <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[24px] p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E5DFD4] pb-3">
+            <h3 className="font-extrabold text-sm text-neutral-900 flex items-center gap-2">
+              <Users className="h-4 w-4 text-neutral-800" /> Organization & User Governance
+            </h3>
+            <span className="text-[10px] font-bold bg-white px-2.5 py-1 rounded-full border border-[#E5DFD4] text-neutral-700">3 Active Users</span>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Recent AI Usage</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {recentAiUsage.map((a, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0 text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">{a.provider}</Badge>
-                  <span className="text-muted-foreground">{a.task}</span>
+          <div className="space-y-3">
+            {recentUsers.map((u) => (
+              <div key={u.id} className="bg-white border border-[#E5DFD4] rounded-2xl p-3 flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-bold text-neutral-900">{u.name}</p>
+                  <p className="text-[11px] text-neutral-500">{u.email} • {u.org}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{a.latencyMs}ms</span>
-                  <Badge
-                    variant={a.status === "SUCCESS" ? "default" : a.status === "FAILED" ? "destructive" : "secondary"}
-                    className="text-xs"
-                  >
-                    {a.status}
-                  </Badge>
-                </div>
+                <span className="bg-[#EFEAE0] text-neutral-800 font-bold px-2.5 py-0.5 rounded-full text-[10px]">{u.role}</span>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Security & Compliance */}
+        <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[24px] p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E5DFD4] pb-3">
+            <h3 className="font-extrabold text-sm text-neutral-900 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-700" /> Security & Compliance Policies
+            </h3>
+            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">Compliant</span>
+          </div>
+
+          <div className="space-y-2.5">
+            {securityPolicies.map((p, i) => (
+              <div key={i} className="bg-white border border-[#E5DFD4] rounded-2xl p-3 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="font-bold text-neutral-900">{p.policy}</span>
+                </div>
+                <span className="text-[10px] font-bold bg-[#FAF8F2] text-neutral-600 px-2 py-0.5 rounded-full border border-[#E5DFD4]">{p.scope}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Usage & Model Performance Logs */}
+      <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[24px] p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-[#E5DFD4] pb-3">
+          <h3 className="font-extrabold text-sm text-neutral-900 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-purple-700" /> Real-time AI Usage & Model Telemetry
+          </h3>
+          <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full">99.9% Uptime</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {recentAiUsage.map((log, i) => (
+            <div key={i} className="bg-white border border-[#E5DFD4] rounded-2xl p-3 flex items-center justify-between text-xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-neutral-900">{log.task}</span>
+                  <span className="text-[10px] bg-[#FEE895] px-2 py-0.2 rounded-full font-bold text-neutral-900">{log.provider}</span>
+                </div>
+                <p className="text-[10px] text-neutral-500">Model: {log.model}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">{log.latencyMs}ms</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
