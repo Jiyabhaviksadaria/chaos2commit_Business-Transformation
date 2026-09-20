@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 
 export default withAuth(
   function middleware(req) {
+    // Admin routes: PLATFORM_ADMIN only
     if (req.nextUrl.pathname.startsWith("/admin") && req.nextauth.token?.role !== "PLATFORM_ADMIN") {
-      return NextResponse.rewrite(new URL("/not-found", req.url))
+      return NextResponse.redirect(new URL("/projects", req.url))
     }
     return NextResponse.next()
   },
@@ -16,5 +17,6 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: ["/app/:path*", "/admin/:path*"],
+  // Protect app shell, admin, and project routes
+  matcher: ["/app/:path*", "/admin/:path*", "/projects/:path*"],
 }
