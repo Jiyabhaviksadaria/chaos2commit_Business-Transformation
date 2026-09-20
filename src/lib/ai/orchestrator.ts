@@ -1,0 +1,142 @@
+import { ZodType } from "zod"
+import { Result, fail, ok } from "@/lib/result"
+import { parseAndValidate } from "./json"
+import { logAiUsage } from "./usage"
+import { checkRateLimit } from "./ratelimit"
+import { generateGroqContent, groqChatStream } from "./providers/groq"
+import { generateGeminiContent, geminiChatStream } from "./providers/gemini"
+import { generateMockContent, mockChatStream } from "./providers/mock"
+import { env } from "@/env"
+import { AiTaskStatus } from "@prisma/client"
+
+export type GenerateOpts<T> = {
+  task: string
+  system: string
+  user: string
+  schema: ZodType<T>
+  language: string
+  userId?: string
+  organizationId?: string
+}
+
+const PROVIDERS = ["groq", "gemini", "mock"]
+
+export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Result<{ data: T; provider: string; model: string }, { code: string; message: string }>> {
+  if (opts.userId) {
+    const rl = checkRateLimit(opts.userId)
+    if (!rl.ok) return dlFail("RATE_LIMITED", rl.error.message)
+  }
+
+  const enhancedSystem = `${opts.system}\n\nWrite all string values in ${opts.language}. Keep JSON keys and enum values exactly as specified, in English. Output JSON only.`
+
+  for (const provider of PROVIDERS) {
+    if (provider === "mock" && env.AI_MOCK !== "true") continue
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 45000)
+    const startTime = Date.now()
+    
+    let rawResult = ""
+    const currentModel = getModelNameFor(provider)
+    let providerSuccess = false
+
+    try {
+      rawResult = await fetchFromProvider(provider, enhancedSystem, opts.user, controller.signal)
+      let parsed = parseAndValidate(rawResult, opts.schema)
+
+      if (!parsed.ok) {
+        // Retry ONCE with repair prompt
+        const repairUser = `${opts.user}\n\nYour previous JSON output failed validation:\n${parsed.error.message}\n\nPlease fix the JSON and return only valid JSON.`
+        rawResult = await fetchFromProvider(provider, enhancedSystem, repairUser, controller.signal)
+        parsed = parseAndValidate(rawResult, opts.schema)
+      }
+
+      if (parsed.ok) {
+        providerSuccess = true
+        clearTimeout(timeout)
+        
+        await logAiUsage({
+          userId: opts.userId,
+          organizationId: opts.organizationId,
+          provider,
+          model: currentModel,
+          task: opts.task,
+          latencyMs: Date.now() - startTime,
+          status: AiTaskStatus.SUCCESS,
+        })
+        
+        return ok({ data: parsed.data, provider, model: currentModel })
+      }
+    } catch {
+      // Catch fetch errors, aborts or missing API keys gracefully
+    } finally {
+      clearTimeout(timeout)
+      if (!providerSuccess) {
+        await logAiUsage({
+          userId: opts.userId,
+          organizationId: opts.organizationId,
+          provider,
+          model: currentModel,
+          task: opts.task,
+          latencyMs: Date.now() - startTime,
+          status: AiTaskStatus.FALLBACK,
+          error: "Failed or Aborted"
+        })
+      }
+    }
+  }
+
+  return dlFail("AI_UNAVAILABLE", "All AI providers failed to generate valid content.")
+}
+
+export async function* chatStream(opts: { messages: {role: string, content: string}[], userId?: string }): AsyncIterable<string> {
+  if (opts.userId) {
+    const rl = checkRateLimit(opts.userId)
+    if (!rl.ok) {
+      yield "Rate limit exceeded."
+      return
+    }
+  }
+
+  for (const provider of PROVIDERS) {
+    if (provider === "mock" && env.AI_MOCK !== "true") continue
+
+    const controller = new AbortController()
+    // Streaming timeout can be handled differently, but omitting for initial simplicity per request bounds
+
+    try {
+      if (provider === "mock") {
+        yield* mockChatStream()
+        return
+      } else if (provider === "groq") {
+        yield* groqChatStream(opts.messages, controller.signal)
+        return
+      } else if (provider === "gemini") {
+        yield* geminiChatStream(opts.messages, controller.signal)
+        return
+      }
+    } catch {
+      // failover to next provider
+    }
+  }
+
+  yield "AI providers unavailable."
+}
+
+async function fetchFromProvider(provider: string, system: string, user: string, signal: AbortSignal): Promise<string> {
+  if (provider === "mock") return generateMockContent("default") // task context normally passed, mocked default here
+  if (provider === "groq") return generateGroqContent(system, user, signal)
+  if (provider === "gemini") return generateGeminiContent(system, user, signal)
+  throw new Error("Unknown provider")
+}
+
+function getModelNameFor(provider: string): string {
+  if (provider === "mock") return "mock-model"
+  if (provider === "groq") return env.GROQ_MODEL || "llama3-70b-8192"
+  if (provider === "gemini") return env.GEMINI_MODEL || "gemini-1.5-flash"
+  return "unknown"
+}
+
+function dlFail(code: string, message: string): Result<never, { code: string; message: string }> {
+  return fail({ code, message })
+}

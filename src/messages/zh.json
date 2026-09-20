@@ -1,0 +1,13 @@
+{
+  "Shell": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "ai_companion": "AI Companion",
+    "documents": "Documents",
+    "admin": "Admin Settings",
+    "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
+    "workspace": "Workspace",
+    "language": "Language",
+    "theme": "Theme"
+  }
+}
