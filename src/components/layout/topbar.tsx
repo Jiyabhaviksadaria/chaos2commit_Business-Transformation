@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Menu, Bell, Building2 } from "lucide-react"
+import { Menu, Bell, Building2, Zap } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useTranslations } from "next-intl"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -24,6 +25,14 @@ export function Topbar({ locale }: { locale: string }) {
   const { data: session } = useSession()
   const t = useTranslations("Shell")
   const [open, setOpen] = React.useState(false)
+  const [credits, setCredits] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    fetch("/api/billing/info")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.org?.creditBalance !== undefined) setCredits(d.org.creditBalance) })
+      .catch(() => {})
+  }, [])
 
   const userInitials = session?.user?.name
     ? session.user.name.slice(0, 2).toUpperCase()
@@ -52,14 +61,22 @@ export function Topbar({ locale }: { locale: string }) {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          {/* Advisory banner for large screens */}
-          <div className="hidden lg:flex items-center mr-4 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
+          <div className="hidden lg:flex items-center mr-2 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
             {t("disclaimer")}
           </div>
 
+          {credits !== null && (
+            <Link href="/app/billing">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 rounded-full cursor-pointer transition-colors">
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary">{credits} credits</span>
+              </div>
+            </Link>
+          )}
+
           <ThemeToggle />
           <LanguageSwitcher currentLocale={locale} />
-          
+
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600"></span>
@@ -73,13 +90,13 @@ export function Topbar({ locale }: { locale: string }) {
                   <AvatarImage src={session?.user?.image || ""} alt="User Avatar" />
                   <AvatarFallback>{userInitials}</AvatarFallback>
                 </Avatar>
-                <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{session?.user?.name || "My Account"}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>{t("admin")}</DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/admin">{t("admin")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/app/billing">Credits & Billing</Link></DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
             </DropdownMenuContent>
