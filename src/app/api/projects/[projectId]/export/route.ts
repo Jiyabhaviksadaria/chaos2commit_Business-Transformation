@@ -1,0 +1,159 @@
+import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { requireProjectAccess } from "@/lib/access"
+import { DeliverableType } from "@prisma/client"
+import { buildDocModel } from "@/lib/export/build-doc"
+import { toDocx } from "@/lib/export/to-docx"
+import { toXlsx } from "@/lib/export/to-xlsx"
+import { toHtml } from "@/lib/export/to-html"
+import type { SystemSpecData } from "@/modules/deliverables/system-spec"
+
+export const runtime = "nodejs"
+
+const CONTENT_TYPES: Record<string, string> = {
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  html: "text/html; charset=utf-8",
+  json: "application/json",
+  csv: "text/csv; charset=utf-8"
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
+  try {
+    await requireProjectAccess(params.projectId)
+    const { searchParams } = new URL(req.url)
+    const format = searchParams.get("format") ?? "json"
+    const type = searchParams.get("type") ?? "ALL"
+
+    if (!CONTENT_TYPES[format]) {
+      return NextResponse.json({ error: "Unsupported format" }, { status: 400 })
+    }
+
+    const project = await db.project.findUnique({ where: { id: params.projectId } })
+    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 })
+
+    // Handle CSV for records data
+    if (format === "csv") {
+      const moduleKey = searchParams.get("module")
+      if (!moduleKey) return NextResponse.json({ error: "module param required for CSV" }, { status: 400 })
+      const records = await db.generatedRecord.findMany({ where: { projectId: params.projectId, moduleKey } })
+      if (records.length === 0) {
+        return new NextResponse("No records", { headers: { "Content-Type": "text/csv" } })
+      }
+      const keys = Object.keys(records[0].data as object)
+      const header = keys.join(",")
+      const rows = records.map(r =>
+        keys.map(k => `"${String((r.data as Record<string, unknown>)[k] ?? "").replace(/"/g, '""')}"`).join(",")
+      )
+      const csv = [header, ...rows].join("\n")
+      return new NextResponse(csv, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${moduleKey}.csv"`
+        }
+      })
+    }
+
+    // Collect deliverable content
+    let content: unknown
+    let title = project.name
+
+    if (type !== "ALL") {
+      const delivType = type as DeliverableType
+      const deliverable = await db.deliverable.findFirst({
+        where: { projectId: params.projectId, type: delivType },
+        include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } }
+      })
+      content = deliverable?.versions[0]?.content
+      title = `${project.name} — ${delivType.replace(/_/g, " ")}`
+    } else {
+      // All deliverables
+      const deliverables = await db.deliverable.findMany({
+        where: { projectId: params.projectId },
+        include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } }
+      })
+      const combined: Record<string, unknown> = { projectName: project.name, generatedAt: new Date().toISOString() }
+      deliverables.forEach(d => {
+        if (d.versions[0]) combined[d.type] = d.versions[0].content
+      })
+      content = combined
+    }
+
+    if (format === "json") {
+      const body = JSON.stringify(content, null, 2)
+      return new NextResponse(body, {
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Disposition": `attachment; filename="${type.toLowerCase()}.json"`
+        }
+      })
+    }
+
+    const docModel = buildDocModel({ title, language: project.language, content })
+
+    if (format === "html") {
+      const html = toHtml(docModel)
+      return new NextResponse(html, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${type.toLowerCase()}.html"`
+        }
+      })
+    }
+
+    if (format === "xlsx") {
+      // For xlsx with records, build sheets per module
+      const deliverable = await db.deliverable.findFirst({
+        where: { projectId: params.projectId, type: DeliverableType.SYSTEM_SPEC },
+        include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } }
+      })
+      const spec = deliverable?.versions[0]?.content as unknown as SystemSpecData | undefined
+      if (spec?.modules && type === "SYSTEM_SPEC") {
+        // Build xlsx with one sheet per module
+        const ExcelJS = (await import("exceljs")).default
+        const wb = new ExcelJS.Workbook()
+        for (const mod of spec.modules) {
+          const records = await db.generatedRecord.findMany({ where: { projectId: params.projectId, moduleKey: mod.key } })
+          const sheet = wb.addWorksheet(mod.name.slice(0, 31))
+          if (records.length === 0) { sheet.addRow(["No records"]); continue }
+          const keys = mod.fields.map(f => f.key)
+          const labels = mod.fields.map(f => f.label)
+          const headerRow = sheet.addRow(labels)
+          headerRow.eachCell(cell => { cell.font = { bold: true }; cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } } })
+          records.forEach(r => sheet.addRow(keys.map(k => String((r.data as Record<string, unknown>)[k] ?? ""))))
+        }
+        const buf = await wb.xlsx.writeBuffer()
+        return new NextResponse(Buffer.from(buf) as unknown as BodyInit, {
+          headers: {
+            "Content-Type": CONTENT_TYPES.xlsx,
+            "Content-Disposition": `attachment; filename="${project.name}-data.xlsx"`
+          }
+        })
+      }
+      const buf = await toXlsx(docModel)
+      return new NextResponse(buf as unknown as BodyInit, {
+        headers: {
+          "Content-Type": CONTENT_TYPES.xlsx,
+          "Content-Disposition": `attachment; filename="${type.toLowerCase()}.xlsx"`
+        }
+      })
+    }
+
+    if (format === "docx") {
+      const buf = await toDocx(docModel)
+      return new NextResponse(buf as unknown as BodyInit, {
+        headers: {
+          "Content-Type": CONTENT_TYPES.docx,
+          "Content-Disposition": `attachment; filename="${type.toLowerCase()}.docx"`
+        }
+      })
+    }
+
+    return NextResponse.json({ error: "Unhandled format" }, { status: 400 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Export failed" }, { status: 500 })
+  }
+}

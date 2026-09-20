@@ -24,36 +24,17 @@ export default function SystemHomePage() {
   const fetchSpec = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC`)
-      if (!res.ok) throw new Error("No spec")
+      if (!res.ok) { setLoading(false); return }
       const d = await res.json()
-      const content = d?.versions?.[0]
-        ? await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC/versions/${d.currentVersionId}`).then(r => r.json())
-        : null
-      // fallback: get content from version list
-      if (d?.versions?.[0]) {
-        const vRes = await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC/versions/${d.currentVersionId ?? d.versions[0].id}`)
-        if (vRes.ok) {
-          const vData = await vRes.json()
-          setSpec(vData.content as SystemSpecData)
-        }
+      const versionId = d?.currentVersionId ?? d?.versions?.[0]?.id
+      if (!versionId) { setLoading(false); return }
+      const vRes = await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC/versions/${versionId}`)
+      if (vRes.ok) {
+        const v = await vRes.json()
+        setSpec(v.content as SystemSpecData)
       }
-      void content // suppress unused
-    } catch {
-      // fallback: try getting spec directly
-    }
-    // Try alternate approach: get from generate endpoint
-    const alt = await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC`)
-    if (alt.ok) {
-      const d = await alt.json()
-      if (d?.currentVersionId) {
-        const vRes = await fetch(`/api/projects/${projectId}/deliverables/SYSTEM_SPEC/versions/${d.currentVersionId}`)
-        if (vRes.ok) {
-          const v = await vRes.json()
-          setSpec(v.content as SystemSpecData)
-        }
-      }
-    }
-    setLoading(false)
+    } catch { /* no spec */ }
+    finally { setLoading(false) }
   }, [projectId])
 
   const fetchCounts = useCallback(async (modules: SystemSpecData["modules"]) => {

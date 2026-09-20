@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Globe, Cpu } from "lucide-react"
 import { toast } from "sonner"
 import type { Project } from "@prisma/client"
 import { DocumentsView } from "@/components/projects/documents-view"
@@ -82,11 +82,13 @@ export default function ProjectWorkspace() {
           <TabsList className="min-w-fit">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="discovery">Discovery</TabsTrigger>
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
-            <TabsTrigger value="solutions">Solutions</TabsTrigger>
-            <TabsTrigger value="design">Design</TabsTrigger>
-            <TabsTrigger value="planning">Planning</TabsTrigger>
+            <TabsTrigger value="discovery">Discovery & Build</TabsTrigger>
+            <TabsTrigger value="system" onClick={() => router.push(`/projects/${projectId}/system`)}>
+              <Cpu className="h-3.5 w-3.5 mr-1.5" />System
+            </TabsTrigger>
+            <TabsTrigger value="website" onClick={() => router.push(`/projects/${projectId}/website`)}>
+              <Globe className="h-3.5 w-3.5 mr-1.5" />Website
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -138,16 +140,21 @@ export default function ProjectWorkspace() {
           <DiscoveryView projectId={projectId} />
         </TabsContent>
 
-        {["analysis", "solutions", "design", "planning"].map((tab) => (
-          <TabsContent key={tab} value={tab} className="mt-0">
-            <Card className="h-[400px] flex flex-col items-center justify-center text-center opacity-70 border-dashed">
-              <CardHeader>
-                <CardTitle className="capitalize">{tab} Module</CardTitle>
-                <CardDescription>This workspace capability is currently being constructed.</CardDescription>
-              </CardHeader>
-            </Card>
-          </TabsContent>
-        ))}
+        <TabsContent value="system" className="mt-0">
+          <Card className="text-center p-8 border-dashed">
+            <CardTitle className="mb-2">Workable System</CardTitle>
+            <CardDescription className="mb-4">Navigate to the full system runtime</CardDescription>
+            <Button onClick={() => router.push(`/projects/${projectId}/system`)}>Open System</Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="website" className="mt-0">
+          <Card className="text-center p-8 border-dashed">
+            <CardTitle className="mb-2">Website Preview</CardTitle>
+            <CardDescription className="mb-4">View and publish your generated website</CardDescription>
+            <Button onClick={() => router.push(`/projects/${projectId}/website`)}>Open Website</Button>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   )
