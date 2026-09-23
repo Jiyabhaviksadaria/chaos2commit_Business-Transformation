@@ -22,7 +22,7 @@ services:
       - key: NEXTAUTH_URL
         sync: false
       - key: NODE_VERSION
-        value: 20.19.4
+        value: 24.15.0
       - key: GROQ_API_KEY
         sync: false
       - key: GEMINI_API_KEY

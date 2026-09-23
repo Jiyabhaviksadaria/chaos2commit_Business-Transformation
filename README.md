@@ -3,7 +3,7 @@
 This is the foundational setup for Business Transformation AI — an AI consulting platform built with Next.js 14, Tailwind CSS, shadcn/ui, Prisma, next-auth, and Vitest.
 
 ## Prerequisites
-- Node.js (v18+)
+- Node.js 24 (`.nvmrc` is included)
 - Docker (for PostgreSQL)
 
 ## Setup
