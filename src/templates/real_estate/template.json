@@ -1,0 +1,13 @@
+{
+  "id": "real_estate",
+  "name": "Luxury Real Estate & Property Advisory",
+  "description": "High-end residential, commercial real estate listings, and property valuation portal.",
+  "pages": ["home", "about", "properties", "agents", "valuation", "contact"],
+  "components": ["hero", "about", "services", "process", "testimonials", "contact", "footer"],
+  "features": ["property_listings", "valuation_calculator", "agent_contact"],
+  "optionalFeatures": ["3d_virtual_tour", "mortgage_calculator", "client_portal"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#064E3B", "secondary": "#059669", "style": "MODERN" },
+  "aiCapableFeatures": ["ai_property_matching", "automated_home_valuation"],
+  "requiredBackendServices": ["listings_api", "valuation_api"]
+}

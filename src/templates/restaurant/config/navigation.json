@@ -1,0 +1,10 @@
+{
+  "logoText": "Bella Vista",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "Story", "target": "#about" },
+    { "label": "Menu", "target": "#services" },
+    { "label": "Reviews", "target": "#testimonials" },
+    { "label": "Reservations", "target": "#contact" }
+  ]
+}

@@ -1,6 +1,6 @@
 import React from "react"
 import Link from "next/link"
-import { Users, Building2, Layers, Cpu, ShieldCheck, Activity, Key, FileText, ArrowLeft, BarChart3, Lock, CheckCircle } from "lucide-react"
+import { Users, Building2, Layers, Cpu, ShieldCheck, Activity, FileText, ArrowLeft, CheckCircle } from "lucide-react"
 
 export default async function AdminPage() {
   // Demo statistics
@@ -51,11 +51,31 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <Link href="/projects">
-          <button className="flex items-center gap-2 bg-[#18181C] text-white text-xs font-bold px-4 py-2 rounded-full shadow hover:bg-neutral-800 transition-all">
-            <span>Return to Projects Dashboard</span>
-          </button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/models">
+            <button className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-bold px-3 py-2 rounded-full shadow-xs hover:bg-purple-700 transition-all">
+              <Cpu className="w-3.5 h-3.5" />
+              <span>AI Models</span>
+            </button>
+          </Link>
+          <Link href="/admin/users">
+            <button className="flex items-center gap-1.5 bg-neutral-800 text-white text-xs font-bold px-3 py-2 rounded-full shadow-xs hover:bg-neutral-900 transition-all">
+              <Users className="w-3.5 h-3.5" />
+              <span>Users</span>
+            </button>
+          </Link>
+          <Link href="/admin/audit">
+            <button className="flex items-center gap-1.5 bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-full shadow-xs hover:bg-emerald-800 transition-all">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Audit Logs</span>
+            </button>
+          </Link>
+          <Link href="/projects">
+            <button className="flex items-center gap-2 bg-[#18181C] text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs hover:bg-neutral-800 transition-all">
+              <span>Return to Projects</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* KPI Cards */}

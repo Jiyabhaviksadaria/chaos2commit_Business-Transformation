@@ -8,6 +8,49 @@
     "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
     "workspace": "Workspace",
     "language": "Language",
-    "theme": "Theme"
+    "theme": "Theme",
+    "exports": "Export Center",
+    "versions": "Versions & Approvals",
+    "collaboration": "Team Collaboration",
+    "system": "System Runtime"
+  },
+  "Workspace": {
+    "overview": "Overview",
+    "discovery": "Discovery",
+    "analysis": "Business Analysis",
+    "requirements": "Requirements",
+    "solutions": "Solutions",
+    "architecture": "Architecture Canvas",
+    "processes": "BPMN Processes",
+    "ux": "UX Wireframes",
+    "database": "Database ERD",
+    "apis": "API Specifications",
+    "planning": "Planning & Costs",
+    "roadmap": "Transformation Roadmap",
+    "build": "Build & Runtime"
+  },
+  "Deliverables": {
+    "WEBSITE_SPEC": "Website Specification",
+    "SYSTEM_SPEC": "System Specification",
+    "BPMN_PROCESS": "BPMN Process Diagram",
+    "UX_WIREFRAMES": "UX Wireframe Suite",
+    "ERD_SCHEMA": "Database ERD Schema",
+    "API_SPEC": "REST API Specification",
+    "ROADMAP": "Transformation Roadmap",
+    "BUSINESS_ANALYSIS": "Business Analysis Report",
+    "DISCOVERY": "Discovery & Ingestion Package",
+    "RECOMMENDATIONS": "System Recommendations"
+  },
+  "Actions": {
+    "save": "Save Changes",
+    "edit": "Edit",
+    "delete": "Delete",
+    "export": "Export Package",
+    "generate": "Generate AI Blueprint",
+    "approve": "Approve",
+    "reject": "Reject",
+    "restore": "Restore Version",
+    "challenge": "Challenge This",
+    "retry": "Retry Generation"
   }
 }

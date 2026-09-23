@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "headline": "A Taste of Authentic Italian Craftsmanship",
+    "subheadline": "Handcrafted pasta, wood-fired Neapolitan pizzas, imported truffles, and sommelier-curated vintage wines.",
+    "ctaLabel": "Reserve A Table"
+  },
+  "about": {
+    "title": "Passionate Culinary Tradition",
+    "body": "Founded by Chef Marco Rossi, Bella Vista honors recipes passed down through three generations of Tuscan cooks, using organic farm-to-table ingredients."
+  },
+  "services": [
+    { "title": "Handcrafted Fresh Pasta", "description": "Tagliatelle al Tartufo, Pappardelle al Cinghiale, and homemade Ricotta Ravioli." },
+    { "title": "Wood-Fired Neapolitan Pizza", "description": "Baked in a 900°F volcanic stone oven with San Marzano tomatoes and Buffalo Mozzarella." },
+    { "title": "Private Dining & Events", "description": "Exclusive wine room for private celebrations, corporate dinners, and tasting menus." }
+  ],
+  "testimonials": [
+    { "name": "Gourmet Magazine", "quote": "Bella Vista serves the single best Osso Buco outside of Milan. Unforgettable dining experience!" }
+  ],
+  "faq": [
+    { "q": "Do you accommodate gluten-free and vegan diets?", "a": "Yes, we offer gluten-free pasta and dairy-free mozzarella choices upon request." }
+  ]
+}

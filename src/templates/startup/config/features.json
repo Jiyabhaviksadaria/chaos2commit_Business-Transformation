@@ -1,0 +1,8 @@
+{
+  "feature_showcase": true,
+  "pricing_table": true,
+  "waitlist_form": true,
+  "user_auth": false,
+  "stripe_subscription": false,
+  "api_docs": false
+}

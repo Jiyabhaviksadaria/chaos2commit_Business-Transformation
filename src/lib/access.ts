@@ -101,10 +101,17 @@ export async function requireProjectAccess(projectId: string, action?: Action) {
 
     if (project) {
       const membership = project.workspace.organization.memberships[0]
+      if (user.role !== PlatformRole.PLATFORM_ADMIN && !membership) {
+        throw new AccessError("You are not a member of the organization owning this project")
+      }
+      if (action && membership && !can(membership.role, action)) {
+        throw new AccessError(`You do not have permission to perform ${action} on this project`)
+      }
       return { user, project, orgRole: membership?.role || PlatformRole.USER, membership }
     }
-  } catch (dbErr) {
-    console.warn("DB offline fallback in requireProjectAccess:", dbErr)
+  } catch (err) {
+    if (err instanceof AccessError) throw err
+    console.warn("DB offline fallback in requireProjectAccess:", err)
   }
 
   const demoProject = {
@@ -120,6 +127,10 @@ export async function requireProjectAccess(projectId: string, action?: Action) {
     sitePublished: true,
     intakeUrl: null,
     detectedLanguage: "en",
+    readinessScore: 85,
+    digitalMaturity: 78,
+    aiReadiness: 82,
+    discoveryCompleteness: 90,
     createdAt: new Date(),
     updatedAt: new Date(),
     workspace: {
@@ -130,5 +141,5 @@ export async function requireProjectAccess(projectId: string, action?: Action) {
     }
   }
 
-  return { user, project: demoProject as any, orgRole: PlatformRole.USER }
+  return { user, project: demoProject as unknown as import("@prisma/client").Project & { workspace: { id: string; organizationId: string; name: string; description: string | null } }, orgRole: PlatformRole.USER }
 }

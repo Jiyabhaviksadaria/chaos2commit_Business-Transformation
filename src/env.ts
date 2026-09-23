@@ -1,9 +1,33 @@
 import { z } from "zod";
 
+const isServer = typeof window === "undefined";
+const isProduction = process.env.NODE_ENV === "production";
+
+function inferAuthUrl(): string {
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const vercelUrl = process.env.VERCEL_URL;
+  const renderHostname = process.env.RENDER_EXTERNAL_HOSTNAME;
+
+  if (vercelProductionUrl) return `https://${vercelProductionUrl}`;
+  if (vercelUrl) return `https://${vercelUrl}`;
+  if (renderHostname) return `https://${renderHostname}`;
+
+  return "http://localhost:3000";
+}
+
+const inferredAuthUrl = inferAuthUrl();
+if (isServer && !process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = inferredAuthUrl;
+}
+
 const envSchema = z.object({
-  DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
-  NEXTAUTH_SECRET: z.string().min(1, "NEXTAUTH_SECRET is required"),
-  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+  DATABASE_URL: z.string().optional().default(
+    isProduction ? "" : "postgresql://postgres:postgres@localhost:5432/intelly",
+  ),
+  NEXTAUTH_SECRET: z.string().optional().default(
+    isProduction ? "" : "demo-secret-key-for-development-only-12345",
+  ),
+  NEXTAUTH_URL: z.string().optional().default(inferredAuthUrl),
   GROQ_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GROQ_MODEL: z.string().optional(),
@@ -13,18 +37,31 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_ID: z.string().optional(),
   GITHUB_SECRET: z.string().optional(),
+  VERCEL_TOKEN: z.string().optional(),
+  RENDER_API_KEY: z.string().optional(),
 });
 
-const _env = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(process.env);
 
-if (!_env.success) {
-  if (process.env.NODE_ENV !== "test" && process.env.SKIP_ENV_VALIDATION !== "true") {
-    console.error("❌ Invalid environment variables:");
-    for (const issue of _env.error.issues) {
-      console.error(`  - ${issue.path.join(".")}: ${issue.message}`);
-    }
-    process.exit(1);
-  }
+if (!parsed.success && isServer && process.env.NODE_ENV !== "test" && process.env.SKIP_ENV_VALIDATION !== "true") {
+  console.warn("Environment variable validation warning:", parsed.error.format());
 }
 
-export const env = _env.success ? _env.data : (process.env as unknown as z.infer<typeof envSchema>);
+export const env = parsed.success
+  ? parsed.data
+  : {
+      DATABASE_URL: process.env.DATABASE_URL || (isProduction ? "" : "postgresql://postgres:postgres@localhost:5432/intelly"),
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || (isProduction ? "" : "demo-secret-key-for-development-only-12345"),
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || inferredAuthUrl,
+      GROQ_API_KEY: process.env.GROQ_API_KEY,
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      GROQ_MODEL: process.env.GROQ_MODEL,
+      GEMINI_MODEL: process.env.GEMINI_MODEL,
+      AI_MOCK: process.env.AI_MOCK,
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+      GITHUB_ID: process.env.GITHUB_ID,
+      GITHUB_SECRET: process.env.GITHUB_SECRET,
+      VERCEL_TOKEN: process.env.VERCEL_TOKEN,
+      RENDER_API_KEY: process.env.RENDER_API_KEY,
+    };

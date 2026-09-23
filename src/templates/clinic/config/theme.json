@@ -1,0 +1,9 @@
+{
+  "primary": "#0D9488",
+  "secondary": "#0284C7",
+  "backgroundColor": "#FFFFFF",
+  "textColor": "#0F172A",
+  "accentColor": "#F59E0B",
+  "style": "MODERN",
+  "font": "Inter"
+}

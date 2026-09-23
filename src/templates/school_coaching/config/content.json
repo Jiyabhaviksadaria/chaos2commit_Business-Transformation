@@ -1,0 +1,27 @@
+{
+  "hero": {
+    "headline": "Unlock Your Academic & Career Potential",
+    "subheadline": "Top-ranked coaching programs for SAT, AP Courses, Robotics, Coding, and Competitive Entrance Examinations.",
+    "ctaLabel": "Apply for Admission"
+  },
+  "about": {
+    "title": "Excellence in Education",
+    "body": "Horizon Academy provides rigorous interactive learning environments, small class sizes, and personalized mentorship from Ivy-League educators."
+  },
+  "services": [
+    { "title": "Competitive Exam Prep (SAT/ACT)", "description": "Structured practice tests, test-taking strategies, and subject mastery." },
+    { "title": "Full-Stack Coding & AI Bootcamp", "description": "Hands-on software development, Python algorithms, and web development for teens." },
+    { "title": "AP Mathematics & Physics", "description": "Advanced placement tutoring with guaranteed score improvements." }
+  ],
+  "process": {
+    "title": "Admissions Steps",
+    "steps": [
+      { "title": "Skill Diagnostic Test", "description": "Evaluate student baseline strengths and learning style." },
+      { "title": "Custom Curriculum", "description": "Tailored study path matching targets and schedules." },
+      { "title": "Mentorship & Exams", "description": "Weekly mock exams, score feedback, and college counseling." }
+    ]
+  },
+  "testimonials": [
+    { "name": "Marcus Sterling (Parent)", "quote": "My daughter improved her SAT score by 230 points thanks to Horizon's mentors!" }
+  ]
+}

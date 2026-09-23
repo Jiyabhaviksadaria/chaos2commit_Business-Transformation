@@ -1,0 +1,8 @@
+{
+  "shipment_tracking": true,
+  "rate_calculator": true,
+  "quote_form": true,
+  "realtime_gps": false,
+  "customs_brokerage_portal": false,
+  "warehouse_wms": false
+}

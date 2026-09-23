@@ -1,0 +1,7 @@
+{
+  "consultation_booking": true,
+  "service_catalog": true,
+  "contact_form": true,
+  "resume_upload": false,
+  "client_portal": false
+}

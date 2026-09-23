@@ -1,0 +1,13 @@
+{
+  "id": "logistics",
+  "name": "Global Logistics & Freight Forwarding",
+  "description": "Supply chain, ocean freight, air cargo, and warehousing solutions platform.",
+  "pages": ["home", "about", "services", "tracking", "quote", "contact"],
+  "components": ["hero", "about", "services", "process", "testimonials", "contact", "footer"],
+  "features": ["shipment_tracking", "rate_calculator", "quote_form"],
+  "optionalFeatures": ["realtime_gps", "customs_brokerage_portal", "warehouse_wms"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#0F172A", "secondary": "#2563EB", "style": "BOLD" },
+  "aiCapableFeatures": ["ai_route_optimizer", "automated_customs_doc"],
+  "requiredBackendServices": ["tracking_api", "quote_api"]
+}

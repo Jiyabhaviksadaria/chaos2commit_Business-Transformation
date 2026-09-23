@@ -1,0 +1,13 @@
+{
+  "id": "hr_consultancy",
+  "name": "HR Consultancy & Executive Search",
+  "description": "Strategic talent acquisition, HR compliance, and organizational advisory platform.",
+  "pages": ["home", "about", "services", "case-studies", "contact"],
+  "components": ["hero", "about", "services", "process", "testimonials", "contact", "footer"],
+  "features": ["consultation_booking", "service_catalog", "contact_form"],
+  "optionalFeatures": ["resume_upload", "client_portal"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#1E3A8A", "secondary": "#3B82F6", "style": "CLASSIC" },
+  "aiCapableFeatures": ["ai_candidate_screening", "policy_generator"],
+  "requiredBackendServices": ["contact_api"]
+}

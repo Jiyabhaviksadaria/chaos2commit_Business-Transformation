@@ -1,0 +1,17 @@
+{
+  "id": "clinic",
+  "name": "Medical & Dental Clinic",
+  "description": "Comprehensive healthcare, dental, and medical practice starter template with online appointment booking.",
+  "pages": ["home", "about", "doctors", "services", "appointment", "contact"],
+  "components": ["hero", "about", "services", "doctors", "testimonials", "faq", "appointment_form", "contact", "footer"],
+  "features": ["doctor_profiles", "services", "contact_form", "appointment_form"],
+  "optionalFeatures": ["patient_login", "online_consultation", "payments"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": {
+    "primary": "#0D9488",
+    "secondary": "#0284C7",
+    "style": "MODERN"
+  },
+  "aiCapableFeatures": ["symptom_checker", "ai_receptionist"],
+  "requiredBackendServices": ["appointment_api", "contact_api"]
+}

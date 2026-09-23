@@ -1,0 +1,13 @@
+{
+  "id": "startup",
+  "name": "SaaS Startup & AI Product",
+  "description": "High-conversion landing page and product showcase for AI & B2B SaaS startups.",
+  "pages": ["home", "about", "features", "pricing", "blog", "contact"],
+  "components": ["hero", "about", "services", "process", "testimonials", "faq", "contact", "footer"],
+  "features": ["feature_showcase", "pricing_table", "waitlist_form"],
+  "optionalFeatures": ["user_auth", "stripe_subscription", "api_docs"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#6366F1", "secondary": "#8B5CF6", "style": "MODERN" },
+  "aiCapableFeatures": ["copilot_assistant", "analytics_prediction"],
+  "requiredBackendServices": ["auth_api", "waitlist_api"]
+}

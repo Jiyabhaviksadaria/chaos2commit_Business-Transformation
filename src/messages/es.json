@@ -1,13 +1,56 @@
 {
   "Shell": {
-    "dashboard": "Dashboard",
-    "projects": "Projects",
-    "ai_companion": "AI Companion",
-    "documents": "Documents",
-    "admin": "Admin Settings",
-    "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
-    "workspace": "Workspace",
-    "language": "Language",
-    "theme": "Theme"
+    "dashboard": "Panel de Control",
+    "projects": "Proyectos",
+    "ai_companion": "Asistente IA",
+    "documents": "Documentos",
+    "admin": "Configuración de Administración",
+    "disclaimer": "Las recomendaciones generadas por IA son consultivas y deben ser validadas antes de su implementación.",
+    "workspace": "Espacio de Trabajo",
+    "language": "Idioma",
+    "theme": "Tema",
+    "exports": "Centro de Exportación",
+    "versions": "Versiones y Aprobaciones",
+    "collaboration": "Colaboración de Equipo",
+    "system": "Entorno de Ejecución"
+  },
+  "Workspace": {
+    "overview": "Resumen",
+    "discovery": "Descubrimiento",
+    "analysis": "Análisis de Negocios",
+    "requirements": "Requisitos",
+    "solutions": "Soluciones",
+    "architecture": "Lienzo de Arquitectura",
+    "processes": "Procesos BPMN",
+    "ux": "Wireframes UX",
+    "database": "Esquema ERD",
+    "apis": "Especificaciones API",
+    "planning": "Planificación y Costos",
+    "roadmap": "Hoja de Ruta",
+    "build": "Construcción y Ejecución"
+  },
+  "Deliverables": {
+    "WEBSITE_SPEC": "Especificación de Sitio Web",
+    "SYSTEM_SPEC": "Especificación de Sistema",
+    "BPMN_PROCESS": "Diagrama de Proceso BPMN",
+    "UX_WIREFRAMES": "Suite de Wireframes UX",
+    "ERD_SCHEMA": "Esquema de Base de Datos ERD",
+    "API_SPEC": "Especificación REST API",
+    "ROADMAP": "Hoja de Ruta de Transformación",
+    "BUSINESS_ANALYSIS": "Informe de Análisis de Negocios",
+    "DISCOVERY": "Paquete de Descubrimiento",
+    "RECOMMENDATIONS": "Recomendaciones de Sistema"
+  },
+  "Actions": {
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "export": "Exportar Paquete",
+    "generate": "Generar Plano IA",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "restore": "Restaurar Versión",
+    "challenge": "Desafiar",
+    "retry": "Reintentar"
   }
 }

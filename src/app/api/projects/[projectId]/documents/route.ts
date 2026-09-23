@@ -10,9 +10,15 @@ import { z } from "zod"
 // We must use Node.js runtime for parsing buffers locally
 export const runtime = "nodejs"
 
-// Optional summary schema
-const SummarySchema = z.object({
-  summary: z.string()
+// Document Analysis Schema
+const DocumentAnalysisSchema = z.object({
+  summary: z.string().describe("A 3-5 sentence executive summary of the document's main business purpose."),
+  entities: z.array(z.string()).describe("Extracted key entities, companies, metrics, software tools, or domain terms."),
+  metadata: z.object({
+    topic: z.string().optional(),
+    documentType: z.string().optional(),
+    estimatedReadingTimeMinutes: z.number().optional()
+  }).optional()
 })
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -49,46 +55,60 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
     let extractedText = ""
 
     try {
-      if (file.name.endsWith(".pdf") || file.type === "application/pdf") {
+      const filenameLower = file.name.toLowerCase()
+      if (filenameLower.endsWith(".pdf") || file.type === "application/pdf") {
         const pdfBytes = new Uint8Array(arrayBuffer)
         const pdfRes = await extractText(pdfBytes)
         extractedText = Array.isArray(pdfRes.text) ? pdfRes.text.join("\n") : pdfRes.text
-      } else if (file.name.endsWith(".docx") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      } else if (filenameLower.endsWith(".docx") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
         const result = await mammoth.extractRawText({ buffer })
         extractedText = result.value
-      } else if (file.name.endsWith(".pptx") || file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
+      } else if (filenameLower.endsWith(".pptx") || file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
         const ast = await parseOffice(buffer)
         extractedText = (await ast.to("text"))?.value || ""
-      } else if (file.name.endsWith(".txt") || file.name.endsWith(".md") || file.type.startsWith("text/")) {
+      } else if (filenameLower.endsWith(".csv") || file.type === "text/csv") {
+        extractedText = buffer.toString("utf-8")
+      } else if (filenameLower.endsWith(".xlsx") || filenameLower.endsWith(".xls") || file.type.includes("spreadsheetml")) {
+        // Officeparser parses xlsx spreadsheets as text
+        const ast = await parseOffice(buffer)
+        extractedText = (await ast.to("text"))?.value || buffer.toString("utf-8")
+      } else if (filenameLower.endsWith(".txt") || filenameLower.endsWith(".md") || file.type.startsWith("text/")) {
         extractedText = buffer.toString("utf-8")
       } else {
-        throw new Error("Unsupported file format")
+        // Fallback plain text read
+        extractedText = buffer.toString("utf-8")
       }
       
       let summaryStr = ""
+      let extractedEntities: string[] = []
+      let extractedMeta: Record<string, unknown> = {}
+
       if (extractedText.trim()) {
         try {
-          const summaryRes = await generateStructured({
+          const aiRes = await generateStructured({
             task: "doc_summary",
-            system: "You are a professional analyst summarizer. Analyze the text and return exactly a massive 5-line summary.",
-            user: `TEXT TO SUMMARIZE:\n\n${extractedText.substring(0, 15000)}`,
-            schema: SummarySchema,
+            system: "You are an expert document intelligence assistant. Extract an executive summary, key entities, and document metadata.",
+            user: `FILENAME: ${file.name}\n\nTEXT CONTENT:\n${extractedText.substring(0, 15000)}`,
+            schema: DocumentAnalysisSchema,
             language: "en"
           })
-          if (summaryRes.ok) {
-            summaryStr = summaryRes.data.data.summary
+          if (aiRes.ok) {
+            summaryStr = aiRes.data.data.summary
+            extractedEntities = aiRes.data.data.entities || []
+            extractedMeta = aiRes.data.data.metadata || {}
           }
         } catch (ignored) {
-           // AI failure shouldn't fail file upload
-           console.warn(ignored)
+          console.warn("AI analysis fallback on doc upload:", ignored)
         }
       }
 
       await db.document.update({
         where: { id: doc.id },
         data: {
-          extractedText: extractedText || "No text extracted",
+          extractedText: extractedText || "No readable text extracted",
           summary: summaryStr || null,
+          entities: JSON.stringify(extractedEntities),
+          metadata: JSON.stringify(extractedMeta),
           status: "READY"
         }
       })
@@ -112,12 +132,12 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
 
 export async function GET(req: Request, { params }: { params: { projectId: string } }) {
   try {
-     await requireProjectAccess(params.projectId)
-     const documents = await db.document.findMany({
-       where: { projectId: params.projectId },
-       orderBy: { createdAt: "desc" }
-     })
-     return NextResponse.json(documents)
+    await requireProjectAccess(params.projectId)
+    const documents = await db.document.findMany({
+      where: { projectId: params.projectId },
+      orderBy: { createdAt: "desc" }
+    })
+    return NextResponse.json(documents)
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
   }

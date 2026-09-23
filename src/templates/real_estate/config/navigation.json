@@ -1,0 +1,10 @@
+{
+  "logoText": "Prestige Realty",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "About", "target": "#about" },
+    { "label": "Properties", "target": "#services" },
+    { "label": "Process", "target": "#process" },
+    { "label": "Contact", "target": "#contact" }
+  ]
+}

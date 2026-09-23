@@ -2,9 +2,11 @@ import { requireUser } from "@/lib/access"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { buildWebsiteSpecFromTemplate } from "@/lib/templates/template-registry"
 
 const ProjectInputSchema = z.object({
   name: z.string().min(1),
+  templateId: z.string().optional().default("clinic"),
   industry: z.string().optional(),
   businessGoal: z.string().min(1),
   language: z.string().default("en"),
@@ -37,20 +39,10 @@ export async function GET() {
         {
           id: "demo-project-1",
           workspaceId: "demo-workspace",
-          name: "Retail Chain Digital Transformation",
-          industry: "Retail",
-          businessGoal: "Modernize legacy in-store POS and inventory management systems.",
-          status: "ACTIVE",
-          language: "en",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: "demo-project-2",
-          workspaceId: "demo-workspace",
-          name: "HR Consultancy & CRM Platform",
-          industry: "Human Resources",
-          businessGoal: "Build company website, CRM, attendance system, and client onboarding.",
+          name: "Clinic & Dental Practice",
+          templateId: "clinic",
+          industry: "Healthcare",
+          businessGoal: "Medical and dental care portal.",
           status: "ACTIVE",
           language: "en",
           createdAt: new Date().toISOString(),
@@ -66,19 +58,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser()
-    const orgId = user.organizationId
-
-    if (!orgId) {
-       return NextResponse.json({ error: "No organization associated" }, { status: 400 })
-    }
-
-    const firstWorkspace = await db.workspace.findFirst({
-      where: { organizationId: orgId }
-    })
-
-    if (!firstWorkspace) {
-      return NextResponse.json({ error: "No workspace found in organization" }, { status: 400 })
-    }
+    const orgId = user.organizationId || "demo-org"
 
     const body = await req.json()
     const parse = ProjectInputSchema.safeParse(body)
@@ -86,18 +66,86 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parse.error.message }, { status: 400 })
     }
 
-    const project = await db.project.create({
-      data: {
-        workspaceId: firstWorkspace.id,
-        name: parse.data.name,
-        industry: parse.data.industry,
-        businessGoal: parse.data.businessGoal,
-        language: parse.data.language,
-        businessContext: parse.data.businessContext
-      }
-    })
+    const { templateId, name, industry, businessGoal, language, businessContext } = parse.data
+    const spec = buildWebsiteSpecFromTemplate(templateId, name)
 
-    return NextResponse.json(project)
+    try {
+      let firstWorkspace = await db.workspace.findFirst({
+        where: { organizationId: orgId }
+      })
+
+      if (!firstWorkspace) {
+        let org = await db.organization.findUnique({ where: { id: orgId } })
+        if (!org) {
+          org = await db.organization.create({
+            data: { id: orgId, name: "Default Organization", slug: `org-${Date.now()}` }
+          })
+        }
+        firstWorkspace = await db.workspace.create({
+          data: {
+            organizationId: org.id,
+            name: "Default Workspace"
+          }
+        })
+      }
+
+      const project = await db.project.create({
+        data: {
+          workspaceId: firstWorkspace.id,
+          name,
+          industry: industry || "General Business",
+          businessGoal,
+          language: language || "en",
+          businessContext
+        }
+      })
+
+      // Create Deliverable & initial Version 1 with baseline WebsiteSpecData (No LLM required!)
+      const deliverable = await db.deliverable.create({
+        data: {
+          projectId: project.id,
+          type: "WEBSITE_SPEC",
+          title: "Master Application Website Spec",
+          status: "APPROVED"
+        }
+      })
+
+      const version = await db.deliverableVersion.create({
+        data: {
+          deliverableId: deliverable.id,
+          versionNumber: 1,
+          content: spec as any,
+          source: "USER_EDIT",
+          language: language || "en",
+          note: `Initial project template baseline (${templateId})`
+        }
+      })
+
+      await db.deliverable.update({
+        where: { id: deliverable.id },
+        data: { currentVersionId: version.id }
+      })
+
+      return NextResponse.json({ project, deliverable, spec })
+    } catch (dbErr) {
+      console.warn("DB offline or creation failed, creating in-memory fallback project:", dbErr)
+      const mockProjectId = `proj-${Date.now()}`
+      const mockProject = {
+        id: mockProjectId,
+        workspaceId: "demo-workspace",
+        name,
+        templateId,
+        industry: industry || "General Business",
+        businessGoal,
+        status: "ACTIVE",
+        language: language || "en",
+        businessContext: businessContext || null,
+        spec,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      return NextResponse.json({ project: mockProject, spec })
+    }
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
   }

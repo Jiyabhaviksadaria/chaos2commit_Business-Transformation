@@ -33,6 +33,13 @@ export async function POST(req: Request) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     
     const body = await req.json()
+    if (body && typeof body.url === "string") {
+      let rawUrl = body.url.trim()
+      if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
+        rawUrl = "https://" + rawUrl
+      }
+      body.url = rawUrl
+    }
     const { projectId, url } = Schema.parse(body)
 
     // Project access check

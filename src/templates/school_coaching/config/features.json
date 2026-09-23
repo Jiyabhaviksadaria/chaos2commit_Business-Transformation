@@ -1,0 +1,8 @@
+{
+  "course_catalog": true,
+  "faculty_directory": true,
+  "inquiry_form": true,
+  "lms_integration": false,
+  "online_fee_payment": false,
+  "student_portal": false
+}

@@ -1,0 +1,10 @@
+{
+  "logoText": "NexusAI",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "Features", "target": "#services" },
+    { "label": "Workflow", "target": "#process" },
+    { "label": "Reviews", "target": "#testimonials" },
+    { "label": "Contact", "target": "#contact" }
+  ]
+}

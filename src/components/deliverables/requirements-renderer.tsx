@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export function RequirementsRenderer(content: unknown) {
-  const req = content as Partial<RequirementsOutput>
+  const req = (content || {}) as Partial<RequirementsOutput>
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
@@ -16,6 +16,9 @@ export function RequirementsRenderer(content: unknown) {
       default: return "bg-muted text-muted-foreground"
     }
   }
+
+  const businessRequirements = req?.businessRequirements || []
+  const userStories = req?.userStories || []
 
   return (
     <div className="space-y-6">
@@ -30,21 +33,21 @@ export function RequirementsRenderer(content: unknown) {
 
       <div className="space-y-4">
         <h3 className="text-xl font-semibold">Business Requirements</h3>
-        {(!req?.businessRequirements || req.businessRequirements.length === 0) ? (
+        {businessRequirements.length === 0 ? (
           <p className="text-muted-foreground italic">No business requirements listed.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {req.businessRequirements.map(br => (
-              <Card key={br.id} className="flex flex-col h-full">
+            {businessRequirements.map((br) => (
+              <Card key={br?.id || Math.random().toString()} className="flex flex-col h-full">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <span className="text-sm font-mono text-muted-foreground">{br.id}</span>
-                    <Badge variant="outline" className={getPriorityColor(br.priority)}>{br.priority}</Badge>
+                    <span className="text-sm font-mono text-muted-foreground">{br?.id || "BR-00"}</span>
+                    <Badge variant="outline" className={getPriorityColor(br?.priority)}>{br?.priority || "MEDIUM"}</Badge>
                   </div>
-                  <CardTitle className="text-lg leading-tight mt-2">{br.title}</CardTitle>
+                  <CardTitle className="text-lg leading-tight mt-2">{br?.title || "Untitled Requirement"}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 text-sm text-muted-foreground">
-                  {br.description}
+                  {br?.description || "No description."}
                 </CardContent>
               </Card>
             ))}
@@ -54,20 +57,20 @@ export function RequirementsRenderer(content: unknown) {
 
       <div className="space-y-4">
         <h3 className="text-xl font-semibold">User Stories</h3>
-        {(!req?.userStories || req.userStories.length === 0) ? (
+        {userStories.length === 0 ? (
           <p className="text-muted-foreground italic">No user stories created yet.</p>
         ) : (
           <div className="space-y-3">
-            {req.userStories.map(story => (
-              <Card key={story.id}>
+            {userStories.map((story) => (
+              <Card key={story?.id || Math.random().toString()}>
                 <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="w-16 font-mono text-sm text-muted-foreground font-semibold">{story.id}</div>
+                  <div className="w-16 font-mono text-sm text-muted-foreground font-semibold">{story?.id || "US-00"}</div>
                   <div className="flex-1 text-sm">
-                    <strong>As a</strong> <span className="text-primary">{story.asA}</span>,{" "}
-                    <strong>I want to</strong> <span className="text-primary">{story.iWantTo}</span>{" "}
-                    <strong>so that</strong> <span className="text-primary">{story.soThat}</span>.
+                    <strong>As a</strong> <span className="text-primary">{story?.asA || "User"}</span>,{" "}
+                    <strong>I want to</strong> <span className="text-primary">{story?.iWantTo || "perform action"}</span>{" "}
+                    <strong>so that</strong> <span className="text-primary">{story?.soThat || "achieve goal"}</span>.
                   </div>
-                  {story.acceptanceCriteria && story.acceptanceCriteria.length > 0 && (
+                  {story?.acceptanceCriteria && story.acceptanceCriteria.length > 0 && (
                     <div className="md:w-[350px] text-xs space-y-1">
                       <div className="font-semibold text-muted-foreground mb-1">Acceptance:</div>
                       <ul className="list-disc pl-4 space-y-0.5">

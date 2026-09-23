@@ -1,0 +1,8 @@
+{
+  "digital_menu": true,
+  "table_reservation": true,
+  "contact_form": true,
+  "online_ordering": false,
+  "doorstep_delivery": false,
+  "loyalty_rewards": false
+}

@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { UploadCloud, File, Trash2, Loader2, Eye, FileText } from "lucide-react"
+import { UploadCloud, File, Trash2, Loader2, Eye, FileText, ArrowRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,7 @@ import { toast } from "sonner"
 import type { Document } from "@prisma/client"
 
 export function DocumentsView({ projectId }: { projectId: string }) {
+  const router = useRouter()
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -69,7 +71,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
       fetchDocuments()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Error uploading file")
-      fetchDocuments() // fetch anyway to show failed state
+      fetchDocuments()
     } finally {
       setUploading(false)
       setUploadProgress(0)
@@ -95,69 +97,75 @@ export function DocumentsView({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-          <UploadCloud className="h-10 w-10 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-1">Upload Project Documentation</h3>
-          <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-            Drag and drop or select files (PDF, DOCX, PPTX, TXT, MD) up to 10MB. Text will be extracted for AI contextual analysis.
+    <div className="space-y-6 font-sans">
+      <Card className="border-dashed border-[#E5DFD4] bg-white rounded-[26px]">
+        <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+          <UploadCloud className="h-10 w-10 text-neutral-400 mb-3" />
+          <h3 className="text-base font-extrabold text-neutral-900 mb-1">Upload Business Documentation</h3>
+          <p className="text-xs text-neutral-500 mb-6 max-w-md">
+            Drag and drop or select files (PDF, DOCX, PPTX, CSV, XLSX, TXT, MD) up to 10MB. Content will be parsed for contextual AI analysis.
           </p>
           <input 
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileUpload}
             className="hidden" 
-            accept=".pdf,.docx,.pptx,.txt,.md,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            accept=".pdf,.docx,.pptx,.csv,.xlsx,.xls,.txt,.md,text/plain,text/markdown,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full px-6 py-2">
             {uploading ? "Extracting Data..." : "Select File"}
           </Button>
 
           {uploading && (
             <div className="w-full max-w-xs mt-6 space-y-2">
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-xs font-bold text-neutral-700">
                 <span>Uploading & Parsing...</span>
                 <span>{uploadProgress}%</span>
               </div>
-              <Progress value={uploadProgress} className="h-2" />
+              <Progress value={uploadProgress} className="h-2 bg-neutral-100" />
             </div>
           )}
         </CardContent>
       </Card>
 
       {loading ? (
-        <div className="flex justify-center p-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
+        <div className="flex justify-center p-8"><Loader2 className="animate-spin h-6 w-6 text-neutral-500" /></div>
       ) : documents.length > 0 ? (
         <div className="space-y-3">
-          <h4 className="font-semibold text-lg">Project Files ({documents.length})</h4>
-          <div className="border rounded-md divide-y">
+          <h4 className="font-extrabold text-base text-neutral-900">Project Documents ({documents.length})</h4>
+          <div className="border border-[#E5DFD4] rounded-2xl divide-y divide-[#E5DFD4] bg-white overflow-hidden">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+              <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-[#FAF8F2] transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="h-10 w-10 rounded-2xl bg-[#FAF8F2] border border-[#E5DFD4] flex items-center justify-center text-neutral-800 shrink-0">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <h5 className="font-medium text-sm">{doc.filename}</h5>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <h5 className="font-extrabold text-xs text-neutral-900">{doc.filename}</h5>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-500">
                       <span>{formatSize(doc.sizeBytes)}</span>
                       <span>•</span>
-                      {doc.status === "READY" && <Badge variant="secondary" className="text-[10px] h-4 bg-green-500/10 text-green-600 hover:bg-green-500/20">READY</Badge>}
-                      {doc.status === "PENDING" && <Badge variant="secondary" className="text-[10px] h-4">PROCESSING</Badge>}
-                      {doc.status === "FAILED" && <Badge variant="destructive" className="text-[10px] h-4">FAILED</Badge>}
-                      {doc.error && <span className="text-red-500 truncate max-w-[200px]" title={doc.error}>- {doc.error}</span>}
+                      {doc.status === "READY" && <Badge className="text-[10px] bg-emerald-100 text-emerald-900 border-none font-bold">READY</Badge>}
+                      {doc.status === "PENDING" && <Badge variant="secondary" className="text-[10px] font-bold">PROCESSING</Badge>}
+                      {doc.status === "FAILED" && <Badge className="text-[10px] bg-red-100 text-red-900 border-none font-bold">FAILED</Badge>}
+                      {doc.error && <span className="text-red-600 truncate max-w-[200px]" title={doc.error}>- {doc.error}</span>}
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   {(doc.status === "READY" && !!doc.extractedText) && (
-                    <Button variant="ghost" size="icon" onClick={() => setPreviewDoc(doc)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => setPreviewDoc(doc)} className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1">
+                        <Eye className="h-3.5 w-3.5" /> Quick Preview
+                      </Button>
+                      <Button variant="default" size="sm" onClick={() => router.push(`/projects/${projectId}/documents/${doc.id}`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-1">
+                        <span>Inspect & AI Q&A</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
-                  <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(doc.id)}>
+                  <Button variant="ghost" size="icon" className="text-neutral-400 hover:text-red-600 rounded-full" onClick={() => handleDelete(doc.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -168,26 +176,26 @@ export function DocumentsView({ projectId }: { projectId: string }) {
       ) : null}
 
       <Dialog open={!!previewDoc} onOpenChange={(o) => !o && setPreviewDoc(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col font-sans">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <File className="h-4 w-4 text-primary" /> {previewDoc?.filename}
+            <DialogTitle className="flex items-center gap-2 font-extrabold text-[#18181C]">
+              <File className="h-4 w-4 text-neutral-800" /> {previewDoc?.filename}
             </DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto flex-1 text-sm bg-muted/30 p-4 rounded-md space-y-6">
+          <div className="overflow-y-auto flex-1 text-xs bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl space-y-6">
             {previewDoc?.summary && (
               <div className="mb-4">
-                <h4 className="font-semibold mb-2 flex items-center text-primary">
-                  AI Summary
-                </h4>
-                <p className="italic bg-primary/5 p-3 rounded border border-primary/20">
+                <h4 className="font-extrabold text-neutral-900 mb-2">AI Summary</h4>
+                <p className="bg-white p-3 rounded-xl border border-[#E5DFD4] text-neutral-800 leading-relaxed font-medium">
                   {previewDoc.summary}
                 </p>
               </div>
             )}
             <div>
-               <h4 className="font-semibold mb-2">Raw Extracted Text</h4>
-               <p className="whitespace-pre-wrap font-mono text-xs">{previewDoc?.extractedText}</p>
+              <h4 className="font-extrabold text-neutral-900 mb-2">Raw Extracted Text</h4>
+              <div className="whitespace-pre-wrap font-mono text-[11px] bg-[#18181C] text-neutral-200 p-4 rounded-xl max-h-[300px] overflow-y-auto">
+                {previewDoc?.extractedText}
+              </div>
             </div>
           </div>
         </DialogContent>

@@ -1,13 +1,56 @@
 {
   "Shell": {
-    "dashboard": "Dashboard",
-    "projects": "Projects",
-    "ai_companion": "AI Companion",
-    "documents": "Documents",
-    "admin": "Admin Settings",
-    "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
-    "workspace": "Workspace",
-    "language": "Language",
-    "theme": "Theme"
+    "dashboard": "ડેશબોર્ડ",
+    "projects": "પ્રોજેક્ટ્સ",
+    "ai_companion": "AI સહાયક",
+    "documents": "દસ્તાવેજો",
+    "admin": "એડમિન સેટિંગ્સ",
+    "disclaimer": "AI-જનરેટેડ ભલામણો સલાહકારી છે અને અમલીકરણ પહેલાં ચકાસવી જોઈએ.",
+    "workspace": "કાર્યક્ષેત્ર",
+    "language": "ભાષા",
+    "theme": "થીમ",
+    "exports": "નિકાસ કેન્દ્ર",
+    "versions": "આવૃત્તિઓ અને મંજૂરીઓ",
+    "collaboration": "ટીમ સહયોગ",
+    "system": "સિસ્ટમ રનટાઇમ"
+  },
+  "Workspace": {
+    "overview": "ઝાંખી",
+    "discovery": "શોધ",
+    "analysis": "વ્યવસાયિક વિશ્લેષણ",
+    "requirements": "જરૂરિયાતો",
+    "solutions": "ઉકેલો",
+    "architecture": "આર્કિટેક્ચર કેનવાસ",
+    "processes": "BPMN પ્રક્રિયાઓ",
+    "ux": "UX વાયરફ્રેમ્સ",
+    "database": "ડેટાબેઝ ERD",
+    "apis": "API વિશિષ્ટતાઓ",
+    "planning": "આયોજન અને ખર્ચ",
+    "roadmap": "રૂપાંતરણ રોડમેપ",
+    "build": "બિલ્ડ અને રનટાઇમ"
+  },
+  "Deliverables": {
+    "WEBSITE_SPEC": "વેબસાઇટ વિશિષ્ટતા",
+    "SYSTEM_SPEC": "સિસ્ટમ વિશિષ્ટતા",
+    "BPMN_PROCESS": "BPMN પ્રક્રિયા આકૃતિ",
+    "UX_WIREFRAMES": "UX વાયરફ્રેમ સ્યુટ",
+    "ERD_SCHEMA": "ડેટાબેઝ ERD સ્કીમા",
+    "API_SPEC": "REST API વિશિષ્ટતા",
+    "ROADMAP": "રૂપાંતરણ રોડમેપ",
+    "BUSINESS_ANALYSIS": "વ્યવસાયિક વિશ્લેષણ અહેવાલ",
+    "DISCOVERY": "શોધ પેકેજ",
+    "RECOMMENDATIONS": "સિસ્ટમ ભલામણો"
+  },
+  "Actions": {
+    "save": "સાચવો",
+    "edit": "સંપાદિત કરો",
+    "delete": "કાઢી નાખો",
+    "export": "નિકાસ પેકેજ",
+    "generate": "AI બ્લૂપ્રિન્ટ બનાવો",
+    "approve": "મંજૂર કરો",
+    "reject": "અસ્વીકાર કરો",
+    "restore": "આવૃત્તિ પુનઃસ્થાપિત કરો",
+    "challenge": "પડકાર આપો",
+    "retry": "ફરી પ્રયાસ કરો"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "hero": {
+    "headline": "Find Your Dream Waterfront Estate",
+    "subheadline": "Exclusive luxury villas, architectural masterpieces, and high-yield commercial property portfolios.",
+    "ctaLabel": "Explore Listings"
+  },
+  "about": {
+    "title": "Bespoke Real Estate Advisory",
+    "body": "With over $2 Billion in successful luxury transactions, Prestige Premier Realty provides confidential, high-touch advisory services to private wealth clients globally."
+  },
+  "services": [
+    { "title": "Luxury Residential Sales", "description": "Oceanfront estates, private islands, and city penthouses." },
+    { "title": "Commercial & Investment Advisory", "description": "Office towers, boutique hotels, and multi-family residential developments." },
+    { "title": "Property Valuation & Portfolio Management", "description": "Data-driven comparative market analysis and asset optimization." }
+  ],
+  "process": {
+    "title": "Buying & Selling Experience",
+    "steps": [
+      { "title": "Private Consultation", "description": "Defining your architectural preferences and investment objectives." },
+      { "title": "Curated VIP Showings", "description": "Off-market previews and private helicopter tour viewings." },
+      { "title": "Seamless Legal Closing", "description": "End-to-end escrow, legal structuring, and concierge relocation." }
+    ]
+  },
+  "testimonials": [
+    { "name": "Arthur Sterling, Investor", "quote": "Prestige secured an off-market penthouse for us within 72 hours. Outstanding service!" }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "hero": {
+    "headline": "Turn Product Ideas Into Live Production Apps in Minutes",
+    "subheadline": "Starter templates, deterministic configuration engine, schema-driven visual customization, and instant Vercel/Render deployments.",
+    "ctaLabel": "Start Free Trial"
+  },
+  "about": {
+    "title": "Built For Modern Product Teams",
+    "body": "NexusAI empowers non-technical founders and product architects to build, customize, and deploy robust web applications with complete version control."
+  },
+  "services": [
+    { "title": "Schema Engine & Configuration", "description": "Separate code from content and styling. Update themes, nav, and copy without code rewrites." },
+    { "title": "AI Request Router", "description": "Level 0 config updates bypass LLMs entirely. Use AI only for complex new functionality." },
+    { "title": "Automated QA & Repair", "description": "Continuous linting, typechecking, route testing, and self-healing repair agents." }
+  ],
+  "process": {
+    "title": "Ship Fast Workflow",
+    "steps": [
+      { "title": "Choose Template", "description": "Select from 8 business starter blueprints." },
+      { "title": "Customize & Preview", "description": "Instant visual editor and cloud preview environments." },
+      { "title": "Deploy Production", "description": "One-click deployment to Vercel and Render." }
+    ]
+  },
+  "testimonials": [
+    { "name": "Samantha Wu, CTO at LaunchPad", "quote": "NexusAI saved our engineering team 3 months of frontend development." }
+  ]
+}

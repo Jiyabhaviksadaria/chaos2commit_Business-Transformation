@@ -1,4 +1,4 @@
-import { diffWords } from "diff"
+import { diffWords, diffLines } from "diff"
 
 export type DiffChangeType = "added" | "removed" | "changed" | "unchanged"
 
@@ -14,6 +14,17 @@ export type DiffResult = {
   oldValue?: unknown
   newValue?: unknown
   diffBlocks?: DiffBlock[]
+}
+
+export type LineDiffItem = {
+  value: string
+  type: "added" | "removed" | "unchanged"
+}
+
+export type TextDiffSummary = {
+  additions: number
+  deletions: number
+  lines: LineDiffItem[]
 }
 
 function isObject(val: unknown): val is Record<string, unknown> {
@@ -103,4 +114,28 @@ export function diffDeliverable(oldContent: unknown, newContent: unknown): DiffR
   }
 
   return results
+}
+
+export function computeDiff(textA: string, textB: string): TextDiffSummary {
+  const changes = diffLines(textA, textB)
+  let additions = 0
+  let deletions = 0
+  const lines: LineDiffItem[] = []
+
+  for (const change of changes) {
+    const splitLines = change.value.replace(/\n$/, "").split("\n")
+    for (const line of splitLines) {
+      if (change.added) {
+        additions++
+        lines.push({ value: line, type: "added" })
+      } else if (change.removed) {
+        deletions++
+        lines.push({ value: line, type: "removed" })
+      } else {
+        lines.push({ value: line, type: "unchanged" })
+      }
+    }
+  }
+
+  return { additions, deletions, lines }
 }

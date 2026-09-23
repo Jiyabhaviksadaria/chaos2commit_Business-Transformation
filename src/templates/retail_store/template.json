@@ -1,0 +1,13 @@
+{
+  "id": "retail_store",
+  "name": "Retail Store & Modern Boutique",
+  "description": "E-commerce and retail storefront showcase with product catalog and store locations.",
+  "pages": ["home", "about", "products", "stores", "contact"],
+  "components": ["hero", "about", "services", "testimonials", "contact", "footer"],
+  "features": ["product_catalog", "store_locator", "contact_form"],
+  "optionalFeatures": ["online_cart", "stripe_payments", "inventory_sync"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#BE185D", "secondary": "#F43F5E", "style": "BOLD" },
+  "aiCapableFeatures": ["ai_product_recommender", "virtual_tryon"],
+  "requiredBackendServices": ["catalog_api", "contact_api"]
+}

@@ -1,0 +1,8 @@
+{
+  "product_catalog": true,
+  "store_locator": true,
+  "contact_form": true,
+  "online_cart": false,
+  "stripe_payments": false,
+  "inventory_sync": false
+}

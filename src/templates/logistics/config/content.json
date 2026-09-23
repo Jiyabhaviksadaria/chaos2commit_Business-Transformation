@@ -1,0 +1,27 @@
+{
+  "hero": {
+    "headline": "Reliable Freight & Supply Chain Management",
+    "subheadline": "Full-container sea freight, express air cargo, cold storage, and end-to-end customs clearance.",
+    "ctaLabel": "Request Instant Quote"
+  },
+  "about": {
+    "title": "Global Reach, Local Precision",
+    "body": "Apex Logistics operates across 140 countries with over 500 distribution hubs, providing real-time telemetry and guaranteed transit times."
+  },
+  "services": [
+    { "title": "Ocean Freight Forwarding", "description": "FCL & LCL container shipments across transatlantic and transpacific trade lanes." },
+    { "title": "Express Air Cargo", "description": "Time-critical air freight chartering with guaranteed same-day customs clearance." },
+    { "title": "Warehousing & Fulfillment", "description": "Climate-controlled storage, pick & pack, and last-mile retail distribution." }
+  ],
+  "process": {
+    "title": "Cargo Journey",
+    "steps": [
+      { "title": "Freight Booking", "description": "Instant rate calculation and cargo manifest creation." },
+      { "title": "Transit & GPS Tracking", "description": "24/7 container temperature and location telemetry." },
+      { "title": "Customs & Delivery", "description": "Automated customs duty clearance and last-mile dropoff." }
+    ]
+  },
+  "testimonials": [
+    { "name": "Global Trade Corp", "quote": "Apex reduced our supply chain lead time by 5 days across Asia-Pacific routes." }
+  ]
+}

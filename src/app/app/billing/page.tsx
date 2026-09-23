@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,6 @@ export default function BillingPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([
     { id: "tx-1", amount: 30, reason: "Welcome Initial Credits", balanceAfter: 30, createdAt: new Date().toISOString() }
   ])
-  const [loading, setLoading] = useState(false)
   const [topping, setTopping] = useState(false)
 
   const topUp = async () => {
@@ -38,8 +37,6 @@ export default function BillingPage() {
     { name: "PRO", credits: 500, maxSystems: 8, price: "$49/mo", bg: "bg-[#FEE895]", border: "border-amber-300" },
     { name: "ENTERPRISE", credits: 5000, maxSystems: "Unlimited", price: "$199/mo", bg: "bg-[#F8B4D9]", border: "border-pink-300" }
   ]
-
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-neutral-800" /></div>
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6 font-sans bg-[#F7F4EB] min-h-screen">

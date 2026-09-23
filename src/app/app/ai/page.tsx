@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { Send, Bot, Sparkles, User, ArrowLeft, RefreshCw, Zap, Copy, Check } from "lucide-react"
+import { Send, Bot, Sparkles, User, ArrowLeft, RefreshCw, Copy, Check } from "lucide-react"
 
 interface Message {
   id: string

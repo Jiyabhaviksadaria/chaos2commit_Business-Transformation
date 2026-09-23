@@ -22,8 +22,7 @@ export function DiscoveryView({ projectId }: { projectId: string }) {
   const [analysis, setAnalysis] = useState<IntakeAnalysisData | null>(null)
   const [selected, setSelected] = useState<SystemSelection>({})
   const [answers, setAnswers] = useState<QAAnswers>({})
-  const [challengeId, setChallengeId] = useState<string | null>(null)
-  const [generatedDeliverables, setGeneratedDeliverables] = useState<Record<string, any>>({})
+  const [generatedDeliverables, setGeneratedDeliverables] = useState<Record<string, unknown>>({})
 
   const fetchAnalysis = useCallback(async () => {
     try {

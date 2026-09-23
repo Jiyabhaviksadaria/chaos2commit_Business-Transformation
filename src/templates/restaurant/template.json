@@ -1,0 +1,13 @@
+{
+  "id": "restaurant",
+  "name": "Artisan Restaurant & Bistro",
+  "description": "Fine dining, gourmet menu showcase, table reservation, and food takeaway platform.",
+  "pages": ["home", "about", "menu", "reservations", "location", "contact"],
+  "components": ["hero", "about", "services", "testimonials", "faq", "contact", "footer"],
+  "features": ["digital_menu", "table_reservation", "contact_form"],
+  "optionalFeatures": ["online_ordering", "doorstep_delivery", "loyalty_rewards"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#991B1B", "secondary": "#D97706", "style": "CLASSIC" },
+  "aiCapableFeatures": ["ai_dish_pairing", "voice_order_taking"],
+  "requiredBackendServices": ["reservation_api", "contact_api"]
+}

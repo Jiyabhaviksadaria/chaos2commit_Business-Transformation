@@ -1,0 +1,28 @@
+{
+  "hero": {
+    "headline": "Transforming Talent Strategy & Corporate Culture",
+    "subheadline": "Full-service human resource advisory, leadership recruiting, and labor compliance solutions for scaling enterprises.",
+    "ctaLabel": "Schedule Consultation"
+  },
+  "about": {
+    "title": "Strategic HR Leadership",
+    "body": "Vanguard HR Advisors helps high-growth startups and established corporations build high-performing teams, optimize payroll structures, and mitigate compliance risks."
+  },
+  "services": [
+    { "title": "Executive Search & Placement", "description": "Targeted C-suite recruitment and leadership headhunting." },
+    { "title": "HR Compliance & Audits", "description": "Comprehensive audits of employment policies, safety protocols, and payroll compliance." },
+    { "title": "Performance Management", "description": "Designing KPI frameworks, 360-degree reviews, and employee retention programs." },
+    { "title": "Compensation & Benefits Architecture", "description": "Competitive benchmark analysis, equity structures, and healthcare benefits design." }
+  ],
+  "process": {
+    "title": "Our Advisory Workflow",
+    "steps": [
+      { "title": "Discovery & Audit", "description": "Analyzing your current workforce structure and compliance risks." },
+      { "title": "Strategy Design", "description": "Drafting customized talent acquisition and organizational roadmaps." },
+      { "title": "Implementation", "description": "Deploying ATS tools, policy guidelines, and leadership coaching." }
+    ]
+  },
+  "testimonials": [
+    { "name": "Elena Rostova, CEO at TechCorp", "quote": "Vanguard restructured our engineering hiring process, reducing time-to-hire by 40%." }
+  ]
+}

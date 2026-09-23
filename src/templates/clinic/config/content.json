@@ -1,0 +1,25 @@
+{
+  "hero": {
+    "headline": "Modern Healthcare & Smile Care Excellence",
+    "subheadline": "State-of-the-art medical diagnostics, painless dental treatments, and dedicated family healthcare professionals.",
+    "ctaLabel": "Book Appointment"
+  },
+  "about": {
+    "title": "About Apex Clinic",
+    "body": "Apex Clinic brings over 15 years of medical excellence. Our board-certified specialists utilize painless laser technologies, digital X-rays, and personalized care plans."
+  },
+  "services": [
+    { "title": "General Dentistry & Cleaning", "description": "Routine checkups, scaling, fluoride treatments, and preventative oral hygiene." },
+    { "title": "Orthodontics & Clear Aligners", "description": "Invisible aligners, traditional braces, and bite correction for teens and adults." },
+    { "title": "Cosmetic Smile Makeover", "description": "Teeth whitening, porcelain veneers, and bonding for a radiant, confident smile." },
+    { "title": "Preventative Health Screening", "description": "Comprehensive blood panels, cardiac health checks, and routine wellness exams." }
+  ],
+  "testimonials": [
+    { "name": "Sarah Jenkins", "quote": "The cleanest clinic and kindest staff! My dental anxiety vanished completely." },
+    { "name": "David Ross", "quote": "Booking an appointment was instant, and Dr. Apex took time to explain every step." }
+  ],
+  "faq": [
+    { "q": "Do you accept major health insurance?", "a": "Yes, we partner with PPO, HMO, and national dental/medical coverage plans." },
+    { "q": "Are emergency appointments available?", "a": "Same-day emergency appointments are available for severe tooth pain or injury." }
+  ]
+}

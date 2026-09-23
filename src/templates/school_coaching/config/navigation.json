@@ -1,0 +1,10 @@
+{
+  "logoText": "Horizon Academy",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "About", "target": "#about" },
+    { "label": "Courses", "target": "#services" },
+    { "label": "Admissions", "target": "#process" },
+    { "label": "Contact", "target": "#contact" }
+  ]
+}

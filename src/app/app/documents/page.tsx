@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { FileText, ArrowLeft, Download, Plus, Search, Folder } from "lucide-react"
+import { FileText, ArrowLeft, Download } from "lucide-react"
 
 export default function DocumentsPage() {
   const documents = [

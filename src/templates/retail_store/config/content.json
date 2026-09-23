@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "headline": "Elevate Your Style With Modern Luxury",
+    "subheadline": "Discover sustainable fabrics, bespoke fashion, and hand-crafted lifestyle accessories designed for timeless elegance.",
+    "ctaLabel": "Explore Collection"
+  },
+  "about": {
+    "title": "Crafted With Intention",
+    "body": "Velvet & Vine partners directly with independent artisans across Europe and Asia to bring ethically crafted, luxury fashion pieces to your wardrobe."
+  },
+  "services": [
+    { "title": "Artisan Women Fashion", "description": "Silk dresses, tailored blazers, and sustainable knitwear." },
+    { "title": "Bespoke Accessories", "description": "Handcrafted leather handbags, fine jewelry, and cashmere scarves." },
+    { "title": "Home & Fragrance", "description": "Organic soy candles, botanical diffusers, and linen textiles." }
+  ],
+  "testimonials": [
+    { "name": "Chloe Vance", "quote": "The quality of the silk blouse is unmatched! Shipping was remarkably fast." }
+  ]
+}

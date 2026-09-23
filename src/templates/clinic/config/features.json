@@ -1,0 +1,9 @@
+{
+  "doctor_profiles": true,
+  "services": true,
+  "contact_form": true,
+  "appointment_form": true,
+  "patient_login": false,
+  "online_consultation": false,
+  "payments": false
+}

@@ -1,0 +1,10 @@
+{
+  "logoText": "Vanguard HR Advisors",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "About", "target": "#about" },
+    { "label": "Services", "target": "#services" },
+    { "label": "Process", "target": "#process" },
+    { "label": "Contact", "target": "#contact" }
+  ]
+}

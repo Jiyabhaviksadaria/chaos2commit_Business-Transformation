@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { BarChart3, ArrowLeft, TrendingUp, Zap, Clock, Users } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 export default function AnalyticsPage() {
   return (

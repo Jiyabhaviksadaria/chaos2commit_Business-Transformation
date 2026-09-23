@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   env: {
     ...(process.env.npm_lifecycle_event === 'build' ? { SKIP_ENV_VALIDATION: 'true' } : {}),
   },

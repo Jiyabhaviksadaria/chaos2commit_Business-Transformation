@@ -3,8 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession, signOut } from "next-auth/react"
-import { useTranslations } from "next-intl"
+import { signOut } from "next-auth/react"
 import {
   LayoutDashboard,
   FolderKanban,
@@ -22,8 +21,6 @@ import { cn } from "@/lib/utils"
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
-  const t = useTranslations("Shell")
 
   const generalItems = [
     { title: "Dashboard", href: "/app", icon: LayoutDashboard },

@@ -1,0 +1,13 @@
+{
+  "id": "school_coaching",
+  "name": "Academy & Coaching Institute",
+  "description": "Educational platform for schools, entrance exam coaching, and skill academies.",
+  "pages": ["home", "about", "courses", "faculty", "admissions", "contact"],
+  "components": ["hero", "about", "services", "process", "testimonials", "faq", "contact", "footer"],
+  "features": ["course_catalog", "faculty_directory", "inquiry_form"],
+  "optionalFeatures": ["lms_integration", "online_fee_payment", "student_portal"],
+  "configurableFields": ["businessName", "phone", "email", "address", "primaryColor"],
+  "theme": { "primary": "#4F46E5", "secondary": "#6366F1", "style": "MODERN" },
+  "aiCapableFeatures": ["ai_tutor", "study_planner"],
+  "requiredBackendServices": ["inquiry_api"]
+}

@@ -1,0 +1,8 @@
+{
+  "property_listings": true,
+  "valuation_calculator": true,
+  "agent_contact": true,
+  "3d_virtual_tour": false,
+  "mortgage_calculator": false,
+  "client_portal": false
+}

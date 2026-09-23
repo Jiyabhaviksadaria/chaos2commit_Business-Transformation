@@ -159,6 +159,24 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum ProjectLifecycle {
+  IDEA
+  UNDERSTANDING
+  DISCOVERY
+  REQUIREMENTS
+  BLUEPRINT
+  DESIGNING
+  AWAITING_APPROVAL
+  BUILDING
+  TESTING
+  READY_TO_DEPLOY
+  DEPLOYING
+  LIVE
+  UPDATING
+  OPTIMIZING
+  FAILED
+}
+
 model Project {
   id           String   @id @default(cuid())
   workspaceId  String
@@ -167,23 +185,58 @@ model Project {
   businessGoal    String   @db.Text
   businessContext String?  @db.Text
   status          ProjectStatus @default(DRAFT)
+  lifecycle       ProjectLifecycle @default(IDEA)
+  blueprintData   Json?
   language        String   @default("en")
   siteSlug        String?  @unique
   sitePublished   Boolean  @default(false)
   intakeUrl       String?
   detectedLanguage String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  readinessScore  Int      @default(0)
+  digitalMaturity Int      @default(0)
+  aiReadiness     Int      @default(0)
+  discoveryCompleteness Int @default(0)
+  vercelProjectId       String?
+  vercelProductionUrl   String?
+  vercelPreviewUrl      String?
+  renderServiceId       String?
+  renderUrl             String?
+  gitRepository         String?
+  gitBranch             String?
+  backendMode           String   @default("NONE")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  documents    Document[]
-  intakeSources IntakeSource[]
-  chatSessions ChatSession[]
-  deliverables Deliverable[]
-  logs         ActivityLog[]
-  records      GeneratedRecord[]
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documents       Document[]
+  intakeSources   IntakeSource[]
+  chatSessions    ChatSession[]
+  deliverables    Deliverable[]
+  logs            ActivityLog[]
+  records         GeneratedRecord[]
+  recommendations Recommendation[]
+  blueprintChanges BlueprintChange[]
+  deployments     Deployment[]
 
   @@index([workspaceId])
+}
+
+model Deployment {
+  id                   String   @id @default(cuid())
+  projectId            String
+  provider             String
+  environment          String
+  providerDeploymentId String?
+  url                  String?
+  status               String
+  commitId             String?
+  errorMessage         String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 enum DocumentStatus {
@@ -200,6 +253,8 @@ model Document {
   sizeBytes     Int
   extractedText String?  @db.Text
   summary       String?  @db.Text
+  entities      Json?
+  metadata      Json?
   status        DocumentStatus @default(PENDING)
   error         String?
   createdAt     DateTime @default(now())
@@ -310,7 +365,9 @@ model GeneratedRecord {
 enum DeliverableStatus {
   DRAFT
   IN_REVIEW
+  CHANGES_REQUESTED
   APPROVED
+  IMPLEMENTATION_READY
 }
 
 model Deliverable {
@@ -459,4 +516,70 @@ model AiUsage {
 
   @@index([userId])
   @@index([organizationId])
+}
+
+enum RecommendationStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+model Recommendation {
+  id            String               @id @default(cuid())
+  projectId     String
+  title         String
+  description   String               @db.Text
+  category      String               // e.g. PROCESS, ARCHITECTURE, SECURITY, AUTOMATION
+  impact        String               // HIGH, MEDIUM, LOW
+  actionType    String               // APPLY_CHANGE, AUTOMATE_WORKFLOW, REGENERATE_SPEC
+  actionPayload Json?
+  status        RecommendationStatus @default(PENDING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model AiModelConfig {
+  id            String   @id @default(cuid())
+  provider      String   // groq, gemini, mock
+  modelName     String   // e.g. llama3-70b-8192, gemini-1.5-flash
+  enabled       Boolean  @default(true)
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(4096)
+  creditCost    Int      @default(5)
+  priorityOrder Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([provider, modelName])
+}
+
+enum BlueprintChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  APPLIED
+  FAILED
+}
+
+model BlueprintChange {
+  id          String                @id @default(cuid())
+  projectId   String
+  prompt      String                @db.Text
+  summary     String                @db.Text
+  delta       Json
+  impact      Json
+  riskLevel   String                @default("LOW")
+  status      BlueprintChangeStatus @default(PENDING)
+  createdById String?
+  createdAt   DateTime              @default(now())
+  appliedAt   DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
 }

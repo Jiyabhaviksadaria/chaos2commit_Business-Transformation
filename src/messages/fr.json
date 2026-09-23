@@ -1,13 +1,56 @@
 {
   "Shell": {
-    "dashboard": "Dashboard",
-    "projects": "Projects",
-    "ai_companion": "AI Companion",
+    "dashboard": "Tableau de Bord",
+    "projects": "Projets",
+    "ai_companion": "Assistant IA",
     "documents": "Documents",
-    "admin": "Admin Settings",
-    "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
-    "workspace": "Workspace",
-    "language": "Language",
-    "theme": "Theme"
+    "admin": "Paramètres d'Administration",
+    "disclaimer": "Les recommandations générées par IA sont consultatives et doivent être validées avant la mise en œuvre.",
+    "workspace": "Espace de Travail",
+    "language": "Langue",
+    "theme": "Thème",
+    "exports": "Centre d'Exportation",
+    "versions": "Versions et Approbations",
+    "collaboration": "Collaboration d'Équipe",
+    "system": "Exécution du Système"
+  },
+  "Workspace": {
+    "overview": "Aperçu",
+    "discovery": "Découverte",
+    "analysis": "Analyse Métier",
+    "requirements": "Exigences",
+    "solutions": "Solutions",
+    "architecture": "Canvas d'Architecture",
+    "processes": "Processus BPMN",
+    "ux": "Wireframes UX",
+    "database": "Schéma ERD",
+    "apis": "Spécifications API",
+    "planning": "Planification et Coûts",
+    "roadmap": "Feuille de Route",
+    "build": "Construction & Exécution"
+  },
+  "Deliverables": {
+    "WEBSITE_SPEC": "Spécification de Site Web",
+    "SYSTEM_SPEC": "Spécification de Système",
+    "BPMN_PROCESS": "Diagramme de Processus BPMN",
+    "UX_WIREFRAMES": "Suite de Wireframes UX",
+    "ERD_SCHEMA": "Schéma de Base de Données ERD",
+    "API_SPEC": "Spécification REST API",
+    "ROADMAP": "Feuille de Route de Transformation",
+    "BUSINESS_ANALYSIS": "Rapport d'Analyse Métier",
+    "DISCOVERY": "Package de Découverte",
+    "RECOMMENDATIONS": "Recommandations Système"
+  },
+  "Actions": {
+    "save": "Enregistrer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "export": "Exporter le Package",
+    "generate": "Générer le Plan IA",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "restore": "Restaurer la Version",
+    "challenge": "Contester",
+    "retry": "Réessayer"
   }
 }

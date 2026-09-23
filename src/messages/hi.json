@@ -1,13 +1,56 @@
 {
   "Shell": {
-    "dashboard": "Dashboard",
-    "projects": "Projects",
-    "ai_companion": "AI Companion",
-    "documents": "Documents",
-    "admin": "Admin Settings",
-    "disclaimer": "AI-generated recommendations are advisory and should be validated before implementation.",
-    "workspace": "Workspace",
-    "language": "Language",
-    "theme": "Theme"
+    "dashboard": "डैशबोर्ड",
+    "projects": "प्रोजेक्ट्स",
+    "ai_companion": "एआई सहायक",
+    "documents": "दस्तावेज़",
+    "admin": "एडमिन सेटिंग्स",
+    "disclaimer": "एआई-जनरेट की गई सिफारिशें सलाहकारी हैं और कार्यान्वयन से पहले सत्यापित की जानी चाहिए।",
+    "workspace": "कार्यक्षेत्र",
+    "language": "भाषा",
+    "theme": "थीम",
+    "exports": "निर्यात केंद्र",
+    "versions": "संस्करण और अनुमोदन",
+    "collaboration": "टीम सहयोग",
+    "system": "सिस्टम रनटाइम"
+  },
+  "Workspace": {
+    "overview": "अवलोकन",
+    "discovery": "खोज",
+    "analysis": "व्यावसायिक विश्लेषण",
+    "requirements": "आवश्यकताएं",
+    "solutions": "समाधान",
+    "architecture": "आर्किटेक्चर कैनवास",
+    "processes": "BPMN प्रक्रियाएं",
+    "ux": "UX वायरफ्रेम",
+    "database": "डेटाबेस ERD",
+    "apis": "API विनिर्देश",
+    "planning": "योजना और लागत",
+    "roadmap": "परिवर्तन रोडमैप",
+    "build": "निर्माण और रनटाइम"
+  },
+  "Deliverables": {
+    "WEBSITE_SPEC": "वेबसाइट विनिर्देश",
+    "SYSTEM_SPEC": "सिस्टम विनिर्देश",
+    "BPMN_PROCESS": "BPMN प्रक्रिया आरेख",
+    "UX_WIREFRAMES": "UX वायरफ्रेम सुइट",
+    "ERD_SCHEMA": "डेटाबेस ERD स्कीमा",
+    "API_SPEC": "REST API विनिर्देश",
+    "ROADMAP": "परिवर्तन रोडमैप",
+    "BUSINESS_ANALYSIS": "व्यावसायिक विश्लेषण रिपोर्ट",
+    "DISCOVERY": "खोज पैकेज",
+    "RECOMMENDATIONS": "सिस्टम सिफारिशें"
+  },
+  "Actions": {
+    "save": "सहेजें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "export": "निर्यात पैकेज",
+    "generate": "एआई ब्लूप्रिंट उत्पन्न करें",
+    "approve": "स्वीकृत करें",
+    "reject": "अस्वीकार करें",
+    "restore": "संस्करण पुनर्स्थापित करें",
+    "challenge": "चुनौती दें",
+    "retry": "पुनः प्रयास करें"
   }
 }

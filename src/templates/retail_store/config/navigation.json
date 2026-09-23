@@ -1,0 +1,10 @@
+{
+  "logoText": "Velvet & Vine",
+  "items": [
+    { "label": "Home", "target": "#home" },
+    { "label": "About Us", "target": "#about" },
+    { "label": "Collections", "target": "#services" },
+    { "label": "Testimonials", "target": "#testimonials" },
+    { "label": "Contact", "target": "#contact" }
+  ]
+}

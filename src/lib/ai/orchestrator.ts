@@ -1,4 +1,4 @@
-import { ZodType } from "zod"
+import { ZodType, z } from "zod"
 import { Result, fail, ok } from "@/lib/result"
 import { parseAndValidate } from "./json"
 import { logAiUsage } from "./usage"
@@ -20,6 +20,34 @@ export type GenerateOpts<T> = {
 }
 
 const PROVIDERS = ["groq", "gemini", "mock"]
+
+const TextResultSchema = z.object({
+  text: z.string()
+})
+
+export async function generateText(opts: {
+  task: string
+  system: string
+  user: string
+  language: string
+  userId?: string
+  organizationId?: string
+}): Promise<Result<{ text: string; provider: string; model: string }, string>> {
+  const res = await generateStructured({
+    task: opts.task,
+    system: `${opts.system}\n\nRespond with a JSON object containing key 'text' with your response string.`,
+    user: opts.user,
+    schema: TextResultSchema,
+    language: opts.language,
+    userId: opts.userId,
+    organizationId: opts.organizationId
+  })
+
+  if (!res.ok) {
+    return fail(res.error.message)
+  }
+  return ok({ text: res.data.data.text, provider: res.data.provider, model: res.data.model })
+}
 
 export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Result<{ data: T; provider: string; model: string }, { code: string; message: string }>> {
   if (opts.userId) {
@@ -102,7 +130,6 @@ export async function* chatStream(opts: { messages: {role: string, content: stri
     if (provider === "mock" && env.AI_MOCK !== "true") continue
 
     const controller = new AbortController()
-    // Streaming timeout can be handled differently, but omitting for initial simplicity per request bounds
 
     try {
       if (provider === "mock") {
@@ -124,7 +151,7 @@ export async function* chatStream(opts: { messages: {role: string, content: stri
 }
 
 async function fetchFromProvider(provider: string, system: string, user: string, signal: AbortSignal): Promise<string> {
-  if (provider === "mock") return generateMockContent("default") // task context normally passed, mocked default here
+  if (provider === "mock") return generateMockContent("default")
   if (provider === "groq") return generateGroqContent(system, user, signal)
   if (provider === "gemini") return generateGeminiContent(system, user, signal)
   throw new Error("Unknown provider")

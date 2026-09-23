@@ -1,8 +1,8 @@
-import { NextResponse, NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 
 // Middleware that previously enforced authentication has been disabled.
 // All routes are now publicly accessible.
-export default function middleware(req: NextRequest) {
+export default function middleware() {
   return NextResponse.next();
 }
 
