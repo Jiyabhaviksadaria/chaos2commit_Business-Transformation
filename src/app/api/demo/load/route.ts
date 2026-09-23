@@ -5,15 +5,60 @@ import { DeliverableType, VersionSource, ProjectStatus } from "@prisma/client"
 import { HR_INTAKE_FIXTURE, HR_SYSTEM_FIXTURE, HR_WEBSITE_FIXTURE } from "@/modules/fixtures/hr-fixtures"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 export async function POST() {
   try {
     const user = await requireUser()
-    const orgId = user.organizationId
-    if (!orgId) return NextResponse.json({ ok: false, error: "No org" }, { status: 400 })
+    const orgId = user.organizationId || "demo-org"
 
-    const workspace = await db.workspace.findFirst({ where: { organizationId: orgId } })
-    if (!workspace) return NextResponse.json({ ok: false, error: "No workspace" }, { status: 400 })
+    const organization = await db.organization.upsert({
+      where: { id: orgId },
+      update: {},
+      create: {
+        id: orgId,
+        name: "Default Organization",
+        slug: `org-${orgId.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+      },
+    })
+
+    let workspace = await db.workspace.findFirst({ where: { organizationId: organization.id } })
+    if (!workspace) {
+      workspace = await db.workspace.create({
+        data: {
+          organizationId: organization.id,
+          name: "Default Workspace",
+        },
+      })
+    }
+
+    // Public demo mode has no authenticated database user. Persist the fallback
+    // identity so foreign keys remain valid for deliverable versions and records.
+    const demoUser = await db.user.upsert({
+      where: { id: user.id },
+      update: {},
+      create: {
+        id: user.id,
+        email: user.email || "demo@demo.com",
+        name: user.name || "Demo User",
+        role: user.role,
+      },
+    })
+
+    await db.membership.upsert({
+      where: {
+        userId_organizationId: {
+          userId: demoUser.id,
+          organizationId: organization.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: demoUser.id,
+        organizationId: organization.id,
+        role: "OWNER",
+      },
+    })
 
     // Create the demo project
     const project = await db.project.create({
