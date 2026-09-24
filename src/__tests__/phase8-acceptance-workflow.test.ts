@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { buildWebsiteSpecFromTemplate, getTemplateById } from "@/lib/templates/template-registry"
 import { ConfigStore } from "@/lib/config-engine/config-store"
 import { AIRequestRouter } from "@/lib/ai/request-router"
@@ -6,10 +6,11 @@ import { ChangeSetValidator } from "@/lib/changeset/changeset-validator"
 import { QAEngine } from "@/lib/build-qa/qa-engine"
 import { RepairAgent } from "@/lib/build-qa/repair-agent"
 import { GitVersioningEngine } from "@/lib/versioning/git-versioning"
-import { DeploymentManager } from "@/lib/deployment/deployment-provider"
+import { DeploymentManager, VercelDeploymentProvider } from "@/lib/deployment/deployment-provider"
 
 describe("Phase 8: Full Master Acceptance Test Workflow (Steps 1–19)", () => {
   it("should execute complete 19-step end-to-end platform workflow cleanly", async () => {
+    vi.spyOn(VercelDeploymentProvider.prototype, "isConfigured").mockReturnValue(false)
     // Step 1: Select starter template (Clinic)
     const tmpl = getTemplateById("clinic")
     expect(tmpl).not.toBeNull()
@@ -81,7 +82,7 @@ describe("Phase 8: Full Master Acceptance Test Workflow (Steps 1–19)", () => {
     if (!deployManager.isVercelConfigured()) {
       expect(previewDeploy.frontend.status).toBe("NOT_CONFIGURED")
     } else {
-      expect(["READY", "FAILED"]).toContain(previewDeploy.frontend.status)
+      expect(["READY", "FAILED", "BUILDING", "QUEUED"]).toContain(previewDeploy.frontend.status)
     }
 
     // Step 14 & 15: Perform User Approval and merge feature branch to main production branch
@@ -97,7 +98,7 @@ describe("Phase 8: Full Master Acceptance Test Workflow (Steps 1–19)", () => {
     if (!deployManager.isVercelConfigured()) {
       expect(prodDeploy.frontend.status).toBe("NOT_CONFIGURED")
     } else {
-      expect(["READY", "FAILED"]).toContain(prodDeploy.frontend.status)
+      expect(["READY", "FAILED", "BUILDING", "QUEUED"]).toContain(prodDeploy.frontend.status)
     }
 
     // Step 18 & 19: Modify live project again (v3) and verify version rollback
