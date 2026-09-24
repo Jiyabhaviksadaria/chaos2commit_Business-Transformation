@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { registerSchema } from "@/app/api/auth/register/route"
+import { registerSchema } from "@/lib/auth-registration"
 
 const base = {
   name: "Jiya Sadaria",
