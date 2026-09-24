@@ -44,6 +44,20 @@ export function DocumentsView({ projectId }: { projectId: string }) {
     }
   }
 
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const file = event.dataTransfer.files?.[0]
+    if (file) {
+      const input = fileInputRef.current
+      if (input) {
+        const transfer = new DataTransfer()
+        transfer.items.add(file)
+        input.files = transfer.files
+        input.dispatchEvent(new Event("change", { bubbles: true }))
+      }
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -98,7 +112,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6 font-sans">
-      <Card className="border-dashed border-[#E5DFD4] bg-white rounded-[26px]">
+      <Card className="border-dashed border-[#E5DFD4] bg-white rounded-[26px]" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
         <CardContent className="flex flex-col items-center justify-center p-10 text-center">
           <UploadCloud className="h-10 w-10 text-neutral-400 mb-3" />
           <h3 className="text-base font-extrabold text-neutral-900 mb-1">Upload Business Documentation</h3>

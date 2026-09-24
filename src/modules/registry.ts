@@ -12,6 +12,8 @@ import { initUxDesignModule } from "./deliverables/ux-design"
 import { initDatabaseApiDesignModule } from "./deliverables/database-api-design"
 import { initEffortEstimationModule } from "./deliverables/effort-estimation"
 import { initGapAnalysisModule } from "./deliverables/gap-analysis"
+import { initSolutionRecommendationModule } from "./deliverables/solution-recommendations"
+import { initApiDesignModule } from "./deliverables/api-design"
 
 initRequirementsModule()
 initIntakeAnalysisModule()
@@ -24,3 +26,5 @@ initUxDesignModule()
 initDatabaseApiDesignModule()
 initEffortEstimationModule()
 initGapAnalysisModule()
+initSolutionRecommendationModule()
+initApiDesignModule()

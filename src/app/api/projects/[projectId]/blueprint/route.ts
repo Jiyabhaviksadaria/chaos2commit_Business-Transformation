@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { generateStructured } from "@/lib/ai/orchestrator"
@@ -7,30 +7,30 @@ import { buildProjectContext } from "@/lib/ai/context"
 import { z } from "zod"
 
 const BlueprintSchema = z.object({
-  productOverview: z.string().default(""),
-  businessObjective: z.string().default(""),
-  productObjective: z.string().default(""),
-  targetUsers: z.array(z.string()).default([]),
+  productOverview: z.string().min(1),
+  businessObjective: z.string().min(1),
+  productObjective: z.string().min(1),
+  targetUsers: z.array(z.string()),
   userRoles: z.array(z.object({
     role: z.string(),
     description: z.string(),
     permissions: z.array(z.string())
-  })).default([]),
+  })),
   userJourneys: z.array(z.object({
     title: z.string(),
     steps: z.array(z.string())
-  })).default([]),
+  })),
   modules: z.array(z.object({
     key: z.string(),
     name: z.string(),
     description: z.string()
-  })).default([]),
+  })),
   features: z.array(z.object({
     key: z.string(),
     title: z.string(),
     moduleKey: z.string(),
     priority: z.string()
-  })).default([]),
+  })),
   requirements: z.array(z.object({
     id: z.string(),
     title: z.string(),
@@ -44,153 +44,141 @@ const BlueprintSchema = z.object({
       evidence: z.string(),
       assumptions: z.string(),
       alternatives: z.string(),
-      confidence: z.number()
+      confidence: z.number().min(0).max(1)
     }).optional()
-  })).default([]),
+  })),
   nonFunctionalRequirements: z.array(z.object({
     category: z.string(),
     description: z.string()
-  })).default([]),
+  })),
   businessRules: z.array(z.object({
     ruleId: z.string(),
     title: z.string(),
     rule: z.string()
-  })).default([]),
+  })),
   workflows: z.array(z.object({
     name: z.string(),
     trigger: z.string(),
     steps: z.array(z.string())
-  })).default([]),
+  })),
   integrations: z.array(z.object({
     name: z.string(),
     type: z.string(),
     details: z.string()
-  })).default([]),
+  })),
   aiFeatures: z.array(z.object({
     name: z.string(),
     description: z.string(),
     model: z.string()
-  })).default([]),
+  })),
   dataEntities: z.array(z.object({
     name: z.string(),
     fields: z.array(z.string())
-  })).default([]),
+  })),
   security: z.object({
-    auth: z.string().default("NextAuth OAuth2 + JWT"),
-    rbac: z.boolean().default(true),
-    compliance: z.array(z.string()).default([])
-  }).default({ auth: "NextAuth OAuth2 + JWT", rbac: true, compliance: [] }),
+    auth: z.string(),
+    rbac: z.boolean(),
+    compliance: z.array(z.string())
+  }),
   architecture: z.object({
-    type: z.string().default("Next.js 14 App Router"),
-    stack: z.array(z.string()).default(["TypeScript", "Tailwind CSS", "Prisma", "PostgreSQL"])
-  }).default({ type: "Next.js 14 App Router", stack: ["TypeScript", "Tailwind CSS", "Prisma", "PostgreSQL"] }),
+    type: z.string(),
+    stack: z.array(z.string())
+  }),
   ux: z.object({
-    theme: z.string().default("Intelly Modern Pastel"),
-    layout: z.string().default("Dark Sidebar Dashboard")
-  }).default({ theme: "Intelly Modern Pastel", layout: "Dark Sidebar Dashboard" }),
+    theme: z.string(),
+    layout: z.string()
+  }),
   apis: z.array(z.object({
     endpoint: z.string(),
     method: z.string(),
     description: z.string()
-  })).default([]),
+  })),
   database: z.object({
-    dialect: z.string().default("PostgreSQL"),
-    ORM: z.string().default("Prisma")
-  }).default({ dialect: "PostgreSQL", ORM: "Prisma" }),
+    dialect: z.string(),
+    ORM: z.string()
+  }),
   deployment: z.object({
-    provider: z.string().default("Vercel"),
-    environment: z.string().default("Production")
-  }).default({ provider: "Vercel", environment: "Production" }),
+    provider: z.string(),
+    environment: z.string()
+  }),
   recommendations: z.array(z.object({
     recommendation: z.string(),
     why: z.string(),
     impact: z.string()
-  })).default([]),
-  assumptions: z.array(z.string()).default([]),
-  openQuestions: z.array(z.string()).default([]),
-  estimatedComplexity: z.string().default("MEDIUM"),
-  buildStatus: z.string().default("READY_FOR_BUILD")
+  })),
+  assumptions: z.array(z.string()),
+  openQuestions: z.array(z.string()),
+  estimatedComplexity: z.enum(["LOW", "MEDIUM", "HIGH"]),
+  buildStatus: z.string()
 })
 
+function statusForError(error: unknown, fallback: number): number {
+  if (error instanceof Error && error.name === "AuthError") return 401
+  if (error instanceof Error && error.name === "AccessError") return 403
+  return fallback
+}
+
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
   try {
     const access = await requireProjectAccess(params.projectId)
-    let project: any = null
-    try {
-      project = await (db.project as any).findUnique({
-        where: { id: params.projectId }
-      })
-    } catch {}
-
-    const blueprintData = project?.blueprintData || (access.project as any)?.blueprintData || null
-
-    return NextResponse.json({
-      lifecycle: project?.lifecycle || (access.project as any)?.lifecycle || "BLUEPRINT",
-      blueprint: blueprintData
+    const project = await db.project.findUnique({
+      where: { id: params.projectId },
+      select: { blueprintData: true, lifecycle: true },
     })
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    return NextResponse.json({
+      lifecycle: project?.lifecycle || access.project.lifecycle || "IDEA",
+      blueprint: project?.blueprintData || access.project.blueprintData || null,
+    })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load the blueprint." }, { status: statusForError(error, 503) })
   }
 }
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
   try {
     const access = await requireProjectAccess(params.projectId, "project:edit")
     const context = await buildProjectContext(params.projectId)
-
-    const systemPrompt = `You are the Lead Solutions Architect. Generate a Master Architectural Blueprint for the user's business transformation project.`
-    const userPrompt = `Based on the following project context, generate a complete 26-section Master Blueprint:\n\n${context}`
+    const systemPrompt = `You are the Lead Solutions Architect. Generate a complete, evidence-backed Master Architectural Blueprint for the user's business transformation project. Return every field in the supplied JSON schema. Use only facts in the canonical Project Context; label assumptions and open questions instead of inventing evidence. Express explainability confidence as a number from 0 to 1.`
+    const userPrompt = `Based on the following canonical Project Context, generate a complete Master Blueprint:\n\n${context}`
 
     const aiResult = await generateStructured({
       task: "MASTER_BLUEPRINT",
       system: systemPrompt,
       user: userPrompt,
       schema: BlueprintSchema,
-      language: access.project.language,
+      language: access.project.language || "en",
       userId: access.user.id,
-      organizationId: access.project.workspace.organizationId
+      organizationId: access.project.workspace.organizationId,
     })
 
-    if (!aiResult.ok) {
-      return NextResponse.json({ error: aiResult.error.message }, { status: 500 })
-    }
+    if (!aiResult.ok) return NextResponse.json({ error: aiResult.error.message }, { status: 502 })
 
     const blueprint = aiResult.data.data
-
-    try {
-      await (db.project as any).update({
-        where: { id: params.projectId },
-        data: {
-          lifecycle: "BLUEPRINT",
-          blueprintData: blueprint
-        }
-      })
-      await db.activityLog.create({
-        data: {
-          organizationId: access.project.workspace.organizationId,
-          projectId: params.projectId,
-          actorId: access.user.id,
-          action: "GENERATE_BLUEPRINT",
-          entity: "Project",
-          entityId: params.projectId
-        }
-      })
-    } catch (dbErr) {
-      console.warn("DB update skipped for demo or in-memory project:", dbErr)
-    }
-
-    return NextResponse.json({
-      lifecycle: "BLUEPRINT",
-      blueprint
+    const persisted = await db.project.update({
+      where: { id: params.projectId },
+      data: { lifecycle: "BLUEPRINT", blueprintData: blueprint as Prisma.InputJsonValue },
     })
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    await db.activityLog.create({
+      data: {
+        organizationId: access.project.workspace.organizationId,
+        projectId: params.projectId,
+        actorId: access.user.id,
+        action: "GENERATE_BLUEPRINT",
+        entity: "Project",
+        entityId: params.projectId,
+      },
+    })
+
+    return NextResponse.json({ lifecycle: persisted.lifecycle, blueprint })
+  } catch (error) {
+    console.error("Blueprint generation failed:", error)
+    return NextResponse.json({ error: "Unable to generate and persist the blueprint." }, { status: statusForError(error, 503) })
   }
 }
 
@@ -199,42 +187,39 @@ export async function PUT(
   { params }: { params: { projectId: string } }
 ) {
   try {
-    await requireProjectAccess(params.projectId, "project:edit")
-    const body = await req.json()
+    const access = await requireProjectAccess(params.projectId, "project:edit")
+    const body = await req.json().catch(() => ({}))
+    const parsed = BlueprintSchema.safeParse(body.blueprint)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 })
 
-    const parse = BlueprintSchema.safeParse(body.blueprint)
-    if (!parse.success) {
-      return NextResponse.json({ error: parse.error.format() }, { status: 400 })
-    }
-
-    try {
-      await (db.project as any).update({
-        where: { id: params.projectId },
-        data: {
-          blueprintData: parse.data
-        }
-      })
-    } catch (dbErr) {
-      console.warn("DB update skipped for demo or in-memory project:", dbErr)
-    }
-
+    const updated = await db.project.update({
+      where: { id: params.projectId },
+      data: { blueprintData: parsed.data as Prisma.InputJsonValue },
+    })
     const affectedDeliverables = [
       "REQUIREMENTS",
-      "SYSTEM_SPEC",
       "SOLUTION_RECOMMENDATION",
+      "ARCHITECTURE_HLD",
+      "PROCESS_MAP",
+      "WIREFRAMES",
       "DATABASE_DESIGN",
       "API_DESIGN",
-      "TRANSFORMATION_ROADMAP",
-      "PROCESS_ANALYSIS"
+      "ESTIMATION",
+      "ROADMAP",
     ]
-
-    return NextResponse.json({
-      lifecycle: "BLUEPRINT",
-      blueprint: parse.data,
-      affectedDeliverablesCount: affectedDeliverables.length,
-      affectedDeliverables
+    await db.activityLog.create({
+      data: {
+        organizationId: access.project.workspace.organizationId,
+        projectId: params.projectId,
+        actorId: access.user.id,
+        action: "UPDATE_BLUEPRINT",
+        entity: "Project",
+        entityId: params.projectId,
+        metadata: { affectedDeliverables },
+      },
     })
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    return NextResponse.json({ lifecycle: updated.lifecycle, blueprint: updated.blueprintData, affectedDeliverablesCount: affectedDeliverables.length, affectedDeliverables })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to save the blueprint." }, { status: statusForError(error, 503) })
   }
 }

@@ -16,7 +16,7 @@ export default function AIAssistantPage() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I am your Business Transformation AI Assistant. How can I help you analyze, design, or generate specifications for your enterprise projects today?",
+      content: "Hello! I am your Intelly AI Assistant. How can I help you analyze, design, or generate specifications for your enterprise projects today?",
       timestamp: "Just now"
     }
   ])

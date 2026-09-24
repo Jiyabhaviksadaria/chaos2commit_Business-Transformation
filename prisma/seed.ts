@@ -10,22 +10,26 @@ async function main() {
   console.log('Seeding users...')
   const admin = await prisma.user.upsert({
     where: { email: 'admin@demo.com' },
-    update: {},
+    update: { emailVerified: new Date(), companyRole: 'CTO / CIO' },
     create: {
       email: 'admin@demo.com',
       name: 'Platform Admin',
       passwordHash: adminPassword,
+      emailVerified: new Date(),
+      companyRole: 'CTO / CIO',
       role: PlatformRole.PLATFORM_ADMIN,
     },
   })
 
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@demo.com' },
-    update: {},
+    update: { emailVerified: new Date(), companyRole: 'Founder / Co-Founder' },
     create: {
       email: 'demo@demo.com',
       name: 'Demo User',
       passwordHash: demoPassword,
+      emailVerified: new Date(),
+      companyRole: 'Founder / Co-Founder',
       role: PlatformRole.USER,
     },
   })

@@ -17,7 +17,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Business Transformation AI",
+  title: "Intelly AI",
   description: "AI-powered workspace for enterprise architecture and business process engineering.",
   manifest: "/manifest.json",
 };

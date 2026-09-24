@@ -17,6 +17,8 @@ export type GenerateOpts<T> = {
   language: string
   userId?: string
   organizationId?: string
+  /** Optional deterministic fixture used only when AI_MOCK=true. */
+  mockFixture?: T
 }
 
 const PROVIDERS = ["groq", "gemini", "mock"]
@@ -69,13 +71,13 @@ export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Resu
     let providerSuccess = false
 
     try {
-      rawResult = await fetchFromProvider(provider, enhancedSystem, opts.user, controller.signal)
+      rawResult = await fetchFromProvider(provider, enhancedSystem, opts.user, controller.signal, opts.task, opts.mockFixture)
       let parsed = parseAndValidate(rawResult, opts.schema)
 
       if (!parsed.ok) {
         // Retry ONCE with repair prompt
         const repairUser = `${opts.user}\n\nYour previous JSON output failed validation:\n${parsed.error.message}\n\nPlease fix the JSON and return only valid JSON.`
-        rawResult = await fetchFromProvider(provider, enhancedSystem, repairUser, controller.signal)
+        rawResult = await fetchFromProvider(provider, enhancedSystem, repairUser, controller.signal, opts.task, opts.mockFixture)
         parsed = parseAndValidate(rawResult, opts.schema)
       }
 
@@ -150,8 +152,10 @@ export async function* chatStream(opts: { messages: {role: string, content: stri
   yield "AI providers unavailable."
 }
 
-async function fetchFromProvider(provider: string, system: string, user: string, signal: AbortSignal): Promise<string> {
-  if (provider === "mock") return generateMockContent("default")
+async function fetchFromProvider<T>(provider: string, system: string, user: string, signal: AbortSignal, task: string, mockFixture?: T): Promise<string> {
+  if (provider === "mock") {
+    return mockFixture === undefined ? generateMockContent(task) : JSON.stringify(mockFixture)
+  }
   if (provider === "groq") return generateGroqContent(system, user, signal)
   if (provider === "gemini") return generateGeminiContent(system, user, signal)
   throw new Error("Unknown provider")

@@ -24,8 +24,12 @@ export async function GET(
       console.warn("DB offline in version GET, returning fallback content:", dbErr)
     }
 
-    // Fallback if version not found in DB or DB offline
+    // Website Builder keeps its existing compatibility fallback. Transformation
+    // stages must never manufacture a version when persistence is unavailable.
     const delivType = params.type.toUpperCase() as DeliverableType
+    if (delivType !== DeliverableType.WEBSITE_SPEC) {
+      return NextResponse.json({ error: "Persisted deliverable version not found." }, { status: 404 })
+    }
     const config = getDeliverableConfig(delivType)
     const context = await buildProjectContext(params.projectId)
     const userPrompt = config?.buildUserPrompt(context) || context
@@ -38,9 +42,9 @@ export async function GET(
       language: "en",
       userId: access.user.id,
       organizationId: access.project.workspace.organizationId
-    }) : { ok: false, error: { message: "No config" } }
+    }) : { ok: false as const, error: { message: "No config" } }
 
-    const content = aiResult.ok && "data" in aiResult ? (aiResult as any).data.data : { title: "Demo Deliverable", description: "Offline Fallback Content" }
+    const content = aiResult.ok ? aiResult.data.data : { title: "Demo Deliverable", description: "Offline Fallback Content" }
 
     return NextResponse.json({
       id: params.versionId,

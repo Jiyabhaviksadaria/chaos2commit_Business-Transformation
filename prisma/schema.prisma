@@ -20,6 +20,9 @@ model User {
   image         String?
   locale        String    @default("en")
   role          PlatformRole @default(USER)
+  /// Optional user-selected role in the user's company. Kept separate from
+  /// the platform authorization role above for backward compatibility.
+  companyRole   String?
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -35,6 +38,8 @@ model User {
   notifications      Notification[]
   activityLogs       ActivityLog[]
   aiUsages           AiUsage[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
   
   @@index([email])
 }
@@ -75,6 +80,36 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+/// Hashed email verification tokens for the custom signup flow.
+/// Raw token is sent by email; only the hash is stored. Single-use via usedAt.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Hashed password reset tokens. Raw token is sent by email; only the hash is stored.
+/// Single-use via usedAt, expires after a limited window.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 enum OrgPlan {
@@ -210,6 +245,7 @@ model Project {
   workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   documents       Document[]
   intakeSources   IntakeSource[]
+  projectContext  ProjectContext?
   chatSessions    ChatSession[]
   deliverables    Deliverable[]
   logs            ActivityLog[]
@@ -251,6 +287,7 @@ model Document {
   filename      String
   mimeType      String
   sizeBytes     Int
+  checksum      String?
   extractedText String?  @db.Text
   summary       String?  @db.Text
   entities      Json?
@@ -263,6 +300,7 @@ model Document {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([projectId, checksum])
 }
 
 enum ChatSessionKind {
@@ -338,10 +376,38 @@ model IntakeSource {
   projectId     String
   kind          IntakeSourceKind
   label         String
-  extractedText String?
+  url           String?
+  mimeType      String?
+  sizeBytes     Int?
+  checksum      String?
+  extractedText String?  @db.Text
+  metadata      Json?
   status        DocumentStatus @default(PENDING) // reuse DocumentStatus enum
   error         String?
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, kind])
+  @@index([checksum])
+}
+
+/// A single persisted context assembled from every successful intake source.
+/// All transformation stages read this same snapshot instead of re-ingesting
+/// a URL or document independently.
+model ProjectContext {
+  id              String   @id @default(cuid())
+  projectId       String   @unique
+  sources         Json     @default("[]")
+  extractedText   String   @db.Text
+  businessContent String   @db.Text
+  metadata        Json     @default("{}")
+  sourceTypes     Json     @default("[]")
+  answers         Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 

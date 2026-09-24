@@ -41,6 +41,7 @@ export async function POST() {
         id: user.id,
         email: user.email || "demo@demo.com",
         name: user.name || "Demo User",
+        companyRole: user.companyRole,
         role: user.role,
       },
     })

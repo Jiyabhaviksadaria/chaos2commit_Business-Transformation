@@ -39,6 +39,14 @@ const envSchema = z.object({
   GITHUB_SECRET: z.string().optional(),
   VERCEL_TOKEN: z.string().optional(),
   RENDER_API_KEY: z.string().optional(),
+  DEMO_MODE: z.enum(["true", "false"]).optional(),
+  // Email / SMTP — server-side only, never NEXT_PUBLIC_
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional().default("587"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.string().optional(),
+  APP_URL: z.string().optional().default("http://localhost:3000"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -64,4 +72,11 @@ export const env = parsed.success
       GITHUB_SECRET: process.env.GITHUB_SECRET,
       VERCEL_TOKEN: process.env.VERCEL_TOKEN,
       RENDER_API_KEY: process.env.RENDER_API_KEY,
+      DEMO_MODE: process.env.DEMO_MODE,
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT || "587",
+      SMTP_USER: process.env.SMTP_USER,
+      SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+      MAIL_FROM: process.env.MAIL_FROM,
+      APP_URL: process.env.APP_URL || "http://localhost:3000",
     };

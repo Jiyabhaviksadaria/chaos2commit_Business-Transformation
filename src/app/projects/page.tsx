@@ -54,7 +54,7 @@ export default function ProjectsDashboard() {
             Good morning, Lead Architect
           </h1>
           <p className="text-xs text-neutral-500 mt-1 max-w-xl">
-            BT AI wishes you a productive day. You have {projects.length} active transformation projects and pending AI deliverable reviews today.
+            Intelly AI wishes you a productive day. You have {projects.length} active transformation projects and pending AI deliverable reviews today.
           </p>
         </div>
         <div className="flex items-center gap-3">

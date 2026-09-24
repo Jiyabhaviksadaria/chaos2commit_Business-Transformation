@@ -3,12 +3,15 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { DeploymentManager } from "@/lib/deployment/deployment-provider"
 import { buildWebsiteSpecFromTemplate } from "@/lib/templates/template-registry"
+import { sendDeploymentFailureEmail } from "@/lib/mail/templates/deployment-failure"
+import { sendDeploymentSuccessEmail } from "@/lib/mail/templates/deployment-success"
 
 export async function POST(req: Request, { params }: { params: { projectId: string } }) {
   try {
     const projectId = params.projectId
     const project: any = await db.project.findUnique({
-      where: { id: projectId }
+      where: { id: projectId },
+      include: { workspace: { select: { organizationId: true } } }
     })
 
     if (!project) {
@@ -66,6 +69,24 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
         lifecycle: isSuccess ? "LIVE" : "FAILED"
       } as any
     })
+
+    // Deployment completion must not wait for SMTP. The hook is intentionally
+    // detached and failures are logged without changing the deployment result.
+    const membershipDelegate = (db as any).membership
+    if (project.workspace?.organizationId && membershipDelegate?.findFirst) {
+      void membershipDelegate.findFirst({
+        where: { organizationId: project.workspace.organizationId, role: "OWNER" },
+        include: { user: { select: { name: true, email: true } } },
+      }).then(async (membership: { user?: { name?: string | null; email?: string | null } | null } | null) => {
+        const recipient = membership?.user
+        if (!recipient?.email) return
+        if (isSuccess && deployResult.frontend.url) {
+          await sendDeploymentSuccessEmail(recipient.name || "there", recipient.email, project.name, deployResult.frontend.url)
+        } else if (!isSuccess) {
+          await sendDeploymentFailureEmail(recipient.name || "there", recipient.email, project.name, project.id)
+        }
+      }).catch((error: unknown) => console.error("Deployment email hook failed", { projectId: project.id, error: error instanceof Error ? error.message : "unknown error" }))
+    }
 
     return NextResponse.json({
       success: isSuccess,

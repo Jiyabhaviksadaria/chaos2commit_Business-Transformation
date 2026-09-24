@@ -1,140 +1,99 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { getDeliverableConfig } from "@/modules/registry"
-import { DeliverableType, VersionSource } from "@prisma/client"
 import { generateStructured } from "@/lib/ai/orchestrator"
 import { buildProjectContext } from "@/lib/ai/context"
+import { DeliverableType, VersionSource } from "@prisma/client"
+import { z } from "zod"
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { projectId: string; type: string } }
-) {
+function parseType(value: string): DeliverableType | null {
+  const parsed = z.nativeEnum(DeliverableType).safeParse(value.toUpperCase())
+  return parsed.success ? parsed.data : null
+}
+
+export async function GET(_req: NextRequest, { params }: { params: { projectId: string; type: string } }) {
   try {
     const access = await requireProjectAccess(params.projectId)
-    const delivType = params.type.toUpperCase() as DeliverableType
+    const type = parseType(params.type)
+    if (!type) return NextResponse.json({ error: "Unknown deliverable type." }, { status: 400 })
 
+    let deliverable: Awaited<ReturnType<typeof db.deliverable.findFirst>> = null
     try {
-      const deliverable = await db.deliverable.findFirst({
-        where: { projectId: params.projectId, type: delivType },
-        include: {
-          versions: {
-            orderBy: { versionNumber: "desc" },
-            select: { id: true, versionNumber: true, source: true, createdAt: true, createdById: true, note: true }
-          }
-        }
+      deliverable = await db.deliverable.findFirst({
+        where: { projectId: params.projectId, type },
+        include: { versions: { orderBy: { versionNumber: "desc" }, select: { id: true, versionNumber: true, source: true, createdAt: true, createdById: true, note: true, language: true } } },
       })
-
-      if (deliverable) return NextResponse.json(deliverable)
-    } catch (dbErr) {
-      console.warn("DB offline in deliverable GET, generating fallback draft:", dbErr)
+    } catch (error) {
+      if (type !== DeliverableType.WEBSITE_SPEC) throw error
+      console.warn("Website Builder deliverable lookup failed; using its compatibility fallback:", error)
     }
+    if (deliverable) return NextResponse.json(deliverable)
 
-    // Fallback if DB offline or deliverable not yet created
-    const config = getDeliverableConfig(delivType)
+    // Preserve the existing Website Builder fallback only for its dedicated
+    // website specification. Transformation stages fail closed when no persisted
+    // deliverable exists.
+    if (type !== DeliverableType.WEBSITE_SPEC) return NextResponse.json(null)
+    const config = getDeliverableConfig(type)
     if (!config) return NextResponse.json(null)
-
     const context = await buildProjectContext(params.projectId)
-    const userPrompt = config.buildUserPrompt(context)
     const aiResult = await generateStructured({
-      task: delivType,
+      task: type,
       system: config.systemPrompt,
-      user: userPrompt,
+      user: config.buildUserPrompt(context),
       schema: config.outputSchema,
       language: "en",
       userId: access.user.id,
-      organizationId: access.project.workspace.organizationId
+      organizationId: access.project.workspace.organizationId,
     })
-
-    const content = aiResult.ok && "data" in aiResult ? (aiResult as any).data.data : {}
-
-    const mockDeliverable = {
-      id: `deliv-${delivType}-fallback`,
+    const content = aiResult.ok ? aiResult.data.data : {}
+    return NextResponse.json({
+      id: `deliv-${type}-fallback`,
       projectId: params.projectId,
-      type: delivType,
+      type,
       title: config.i18nTitleKey,
       status: "DRAFT",
-      versions: [
-        {
-          id: `ver-${delivType}-1`,
-          versionNumber: 1,
-          source: "AI",
-          createdAt: new Date().toISOString(),
-          createdById: access.user.id,
-          note: "Default Generated Specification",
-          content
-        }
-      ]
-    }
-
-    return NextResponse.json(mockDeliverable)
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Error"
-    return NextResponse.json({ error: message }, { status: 500 })
+      versions: [{ id: `ver-${type}-1`, versionNumber: 1, source: "AI", createdAt: new Date().toISOString(), createdById: access.user.id, note: "Default Generated Specification", content }],
+    })
+  } catch (error) {
+    console.error("GET deliverable failed:", error)
+    return NextResponse.json({ error: "Unable to load the deliverable." }, { status: 503 })
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { projectId: string; type: string } }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: { projectId: string; type: string } }) {
   try {
     const access = await requireProjectAccess(params.projectId, "project:edit")
-
-    const delivType = params.type.toUpperCase() as DeliverableType
-    const config = getDeliverableConfig(delivType)
-    if (!config) return NextResponse.json({ error: "Module not registered" }, { status: 400 })
-
-    const body = await req.json()
-    const parse = config.outputSchema.safeParse(body.content)
-    if (!parse.success) return NextResponse.json({ error: parse.error.format() }, { status: 400 })
+    const type = parseType(params.type)
+    if (!type) return NextResponse.json({ error: "Unknown deliverable type." }, { status: 400 })
+    const config = getDeliverableConfig(type)
+    if (!config) return NextResponse.json({ error: "This transformation module is not registered." }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const parsed = config.outputSchema.safeParse(body.content)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 })
 
     try {
-      const updatedDeliverable = await db.$transaction(async (tx) => {
-        let deliverable = await tx.deliverable.findFirst({
-          where: { projectId: params.projectId, type: delivType }
-        })
-
-        if (!deliverable) {
-          deliverable = await tx.deliverable.create({
-            data: { projectId: params.projectId, type: delivType, title: config.i18nTitleKey, status: "DRAFT" }
-          })
-        }
-
-        const prevVersionCount = await tx.deliverableVersion.count({
-          where: { deliverableId: deliverable.id }
-        })
-
-        const version = await tx.deliverableVersion.create({
-          data: {
-            deliverableId: deliverable.id,
-            versionNumber: prevVersionCount + 1,
-            content: parse.data as unknown as import("@prisma/client").Prisma.InputJsonValue,
-            source: VersionSource.USER_EDIT,
-            language: "en",
-            createdById: access.user.id,
-            note: body.note || "Manual User Edit"
-          }
-        })
-
-        deliverable = await tx.deliverable.update({
-          where: { id: deliverable.id },
-          data: { currentVersionId: version.id }
-        })
-
+      const updated = await db.$transaction(async (tx) => {
+        let deliverable = await tx.deliverable.findFirst({ where: { projectId: params.projectId, type } })
+        if (!deliverable) deliverable = await tx.deliverable.create({ data: { projectId: params.projectId, type, title: config.i18nTitleKey, status: "DRAFT" } })
+        const version = await tx.deliverableVersion.create({ data: { deliverableId: deliverable.id, versionNumber: (await tx.deliverableVersion.count({ where: { deliverableId: deliverable.id } })) + 1, content: parsed.data as unknown as Prisma.InputJsonValue, source: VersionSource.USER_EDIT, language: "en", createdById: access.user.id, note: body.note || "Manual user edit" } })
+        deliverable = await tx.deliverable.update({ where: { id: deliverable.id }, data: { currentVersionId: version.id } })
         return { deliverable, version }
       })
-
-      return NextResponse.json(updatedDeliverable)
-    } catch (dbErr) {
-      console.warn("DB offline in deliverable PATCH, returning in-memory response:", dbErr)
+      return NextResponse.json(updated)
+    } catch (error) {
+      if (type !== DeliverableType.WEBSITE_SPEC) throw error
+      // Website Builder's existing editor tolerated a temporary persistence
+      // failure with an in-memory response. Keep that protected behavior.
+      console.warn("Website Builder deliverable edit persistence failed; returning compatibility response:", error)
       return NextResponse.json({
-        deliverable: { id: `deliv-${delivType}-edited`, projectId: params.projectId, type: delivType, title: config.i18nTitleKey, status: "DRAFT" },
-        version: { id: `v-edited-${Date.now()}`, versionNumber: 2, content: parse.data, source: "USER_EDIT", note: body.note || "Manual User Edit" }
+        deliverable: { id: `deliv-${type}-edited`, projectId: params.projectId, type, title: config.i18nTitleKey, status: "DRAFT" },
+        version: { id: `v-edited-${Date.now()}`, versionNumber: 2, content: parsed.data, source: "USER_EDIT", note: body.note || "Manual user edit" },
       })
     }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Error"
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    console.error("PATCH deliverable failed:", error)
+    return NextResponse.json({ error: "Unable to save the deliverable." }, { status: 503 })
   }
 }

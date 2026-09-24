@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { db } from "@/lib/db"
 import { env } from "@/env"
 import * as bcrypt from "bcryptjs"
+import { normalizeEmail } from "@/lib/auth-tokens"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -27,12 +28,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
+        const email = normalizeEmail(credentials.email)
         const user = await db.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         })
 
         if (!user || !user.passwordHash) {
           throw new Error("Invalid credentials")
+        }
+
+        if (!user.emailVerified) {
+          throw new Error("EMAIL_NOT_VERIFIED")
         }
 
         const isCorrectPassword = await bcrypt.compare(
@@ -50,15 +56,22 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          companyRole: user.companyRole,
+          emailVerified: user.emailVerified,
         }
       },
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") return Boolean((user as { emailVerified?: Date | null }).emailVerified)
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.companyRole = user.companyRole
 
         const firstMembership = await db.membership.findFirst({
           where: { userId: user.id },
@@ -75,6 +88,7 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id
         session.user.role = token.role
+        session.user.companyRole = token.companyRole
         session.user.organizationId = token.organizationId
       }
       return session

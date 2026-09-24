@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   ArrowLeft,
   Sparkles,
@@ -45,7 +44,11 @@ export function WorkspaceHeader({
   onExport,
 }: ProjectHeaderProps) {
   const router = useRouter()
-  const readiness = project.readinessScore || 85
+  const availableScores = [project.digitalMaturity, project.aiReadiness, project.discoveryCompleteness].filter((value): value is number => typeof value === "number" && value > 0)
+  const readiness = typeof project.readinessScore === "number" && project.readinessScore > 0
+    ? project.readinessScore
+    : availableScores.length > 0 ? Math.round(availableScores.reduce((sum, value) => sum + value, 0) / availableScores.length) : 0
+  const readinessLabel = availableScores.length > 0 || (typeof project.readinessScore === "number" && project.readinessScore > 0) ? `${readiness}%` : "Not assessed"
 
   return (
     <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[28px] p-5 shadow-sm space-y-4 mb-6">
@@ -140,7 +143,7 @@ export function WorkspaceHeader({
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
               Transformation Readiness
             </span>
-            <span className="text-xs font-extrabold text-neutral-900">{readiness}%</span>
+            <span className="text-xs font-extrabold text-neutral-900">{readinessLabel}</span>
           </div>
           <Progress value={readiness} className="h-2 bg-neutral-100" />
         </div>
@@ -153,11 +156,11 @@ export function WorkspaceHeader({
             </span>
             <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
-              ISO / TOGAF Compliant
+              Not configured
             </span>
           </div>
           <Badge className="bg-[#B8DF9E] text-neutral-900 text-[10px] font-bold border-none">
-            Verified
+            Review
           </Badge>
         </div>
 
@@ -172,7 +175,7 @@ export function WorkspaceHeader({
               className="text-xs font-extrabold text-neutral-900 hover:underline flex items-center gap-1.5"
             >
               <CreditCard className="h-3.5 w-3.5 text-amber-600" />
-              30 Credits Available
+              View billing balance
             </Link>
           </div>
           <Badge variant="outline" className="text-[10px] font-bold border-amber-300 bg-[#FEE895]">
@@ -187,26 +190,10 @@ export function WorkspaceHeader({
               Team Members
             </span>
             <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1">
-              <Users className="h-3.5 w-3.5 text-neutral-600" />3 Collaborators
+              <Users className="h-3.5 w-3.5 text-neutral-600" />Team data unavailable
             </span>
           </div>
-          <div className="flex -space-x-2 overflow-hidden">
-            <Avatar className="h-7 w-7 border-2 border-white">
-              <AvatarFallback className="bg-[#F8B4D9] text-neutral-900 text-[10px] font-extrabold">
-                JS
-              </AvatarFallback>
-            </Avatar>
-            <Avatar className="h-7 w-7 border-2 border-white">
-              <AvatarFallback className="bg-[#FEE895] text-neutral-900 text-[10px] font-extrabold">
-                AR
-              </AvatarFallback>
-            </Avatar>
-            <Avatar className="h-7 w-7 border-2 border-white">
-              <AvatarFallback className="bg-[#B8DF9E] text-neutral-900 text-[10px] font-extrabold">
-                SV
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          <Badge variant="outline" className="text-[10px] text-neutral-600 border-[#E5DFD4]">Not loaded</Badge>
         </div>
       </div>
     </div>

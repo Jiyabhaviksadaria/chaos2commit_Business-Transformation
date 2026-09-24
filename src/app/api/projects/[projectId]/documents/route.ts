@@ -1,144 +1,151 @@
 import { requireProjectAccess } from "@/lib/access"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
-import mammoth from "mammoth"
-import { extractText } from "unpdf"
-import { parseOffice } from "officeparser"
 import { generateStructured } from "@/lib/ai/orchestrator"
 import { z } from "zod"
+import { validateDocumentBytes, parseDocument, MAX_DOCUMENT_SIZE } from "@/lib/intake/documents"
+import { rebuildProjectContext } from "@/lib/ai/context"
 
-// We must use Node.js runtime for parsing buffers locally
 export const runtime = "nodejs"
 
-// Document Analysis Schema
 const DocumentAnalysisSchema = z.object({
-  summary: z.string().describe("A 3-5 sentence executive summary of the document's main business purpose."),
-  entities: z.array(z.string()).describe("Extracted key entities, companies, metrics, software tools, or domain terms."),
+  summary: z.string().describe("A concise executive summary of the document's business purpose."),
+  entities: z.array(z.string()).describe("Key entities, companies, metrics, software tools, or domain terms."),
   metadata: z.object({
     topic: z.string().optional(),
     documentType: z.string().optional(),
-    estimatedReadingTimeMinutes: z.number().optional()
-  }).optional()
+    estimatedReadingTimeMinutes: z.number().optional(),
+  }).optional(),
 })
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
+}
 
 export async function POST(req: Request, { params }: { params: { projectId: string } }) {
+  let documentId: string | undefined
   try {
     const access = await requireProjectAccess(params.projectId, "project:edit")
-    const projectId = access.project.id
-
+    const contentLength = Number(req.headers.get("content-length") || 0)
+    if (contentLength > MAX_DOCUMENT_SIZE + 1_000_000) return NextResponse.json({ error: "The document exceeds the 10MB size limit." }, { status: 413 })
     const formData = await req.formData()
-    const file = formData.get("file") as File | null
+    const file = formData.get("file")
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    if (!(file instanceof File)) return NextResponse.json({ error: "No file provided." }, { status: 400 })
+    if (file.size > MAX_DOCUMENT_SIZE) return NextResponse.json({ error: "The document exceeds the 10MB size limit." }, { status: 413 })
+
+    const validated = await validateDocumentBytes(file)
+    const duplicate = await db.document.findFirst({
+      where: { projectId: params.projectId, checksum: validated.checksum, status: { in: ["PENDING", "READY"] } },
+      select: { id: true, filename: true, status: true },
+    })
+    if (duplicate) {
+      return NextResponse.json({ error: `This document was already uploaded as “${duplicate.filename}”.`, duplicate: true }, { status: 409 })
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File exceeds 10MB limit" }, { status: 400 })
-    }
-
-    const doc = await db.document.create({
+    const document = await db.document.create({
       data: {
-        projectId,
-        filename: file.name,
-        mimeType: file.type || "application/octet-stream",
-        sizeBytes: file.size,
-        status: "PENDING"
+        projectId: params.projectId,
+        filename: validated.filename,
+        mimeType: validated.mimeType,
+        sizeBytes: validated.sizeBytes,
+        checksum: validated.checksum,
+        status: "PENDING",
+      },
+    })
+    documentId = document.id
+
+    let parsed
+    try {
+      parsed = await parseDocument(validated)
+    } catch (error) {
+      const message = errorMessage(error, "The document could not be parsed.")
+      await db.document.update({ where: { id: document.id }, data: { status: "FAILED", error: message } })
+      return NextResponse.json({ error: message }, { status: 422 })
+    }
+
+    let summary: string | null = null
+    let entities: string[] = []
+    let aiMetadata: Record<string, unknown> = {}
+    try {
+      const aiResult = await generateStructured({
+        task: "document_intake",
+        system: "You are a document intelligence analyst. Extract a factual business summary and key entities from the supplied text. Do not invent facts.",
+        user: `FILENAME: ${validated.filename}\n\nEXTRACTED TEXT:\n${parsed.text.slice(0, 20_000)}`,
+        schema: DocumentAnalysisSchema,
+        language: access.project.language || "en",
+        userId: access.user.id,
+        organizationId: access.project.workspace.organizationId,
+      })
+      if (aiResult.ok) {
+        summary = aiResult.data.data.summary
+        entities = aiResult.data.data.entities || []
+        aiMetadata = aiResult.data.data.metadata || {}
       }
+    } catch (error) {
+      // Extraction is the source of truth. An unavailable AI summarizer must
+      // not turn a valid document into a failed upload.
+      console.warn("Document AI summarization unavailable:", error)
+    }
+
+    const metadata = { ...parsed.metadata, ...aiMetadata, extractedAt: new Date().toISOString() }
+    const updated = await db.document.update({
+      where: { id: document.id },
+      data: {
+        extractedText: parsed.text,
+        summary,
+        entities: entities as unknown as import("@prisma/client").Prisma.InputJsonValue,
+        metadata: metadata as unknown as import("@prisma/client").Prisma.InputJsonValue,
+        status: "READY",
+        error: null,
+      },
     })
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const source = await db.intakeSource.create({
+      data: {
+        projectId: params.projectId,
+        kind: "DOCUMENT",
+        label: validated.filename,
+        mimeType: validated.mimeType,
+        sizeBytes: validated.sizeBytes,
+        checksum: validated.checksum,
+        extractedText: parsed.text,
+        metadata: metadata as unknown as import("@prisma/client").Prisma.InputJsonValue,
+        status: "READY",
+      },
+    })
+    const context = await rebuildProjectContext(params.projectId)
 
-    let extractedText = ""
-
-    try {
-      const filenameLower = file.name.toLowerCase()
-      if (filenameLower.endsWith(".pdf") || file.type === "application/pdf") {
-        const pdfBytes = new Uint8Array(arrayBuffer)
-        const pdfRes = await extractText(pdfBytes)
-        extractedText = Array.isArray(pdfRes.text) ? pdfRes.text.join("\n") : pdfRes.text
-      } else if (filenameLower.endsWith(".docx") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-        const result = await mammoth.extractRawText({ buffer })
-        extractedText = result.value
-      } else if (filenameLower.endsWith(".pptx") || file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
-        const ast = await parseOffice(buffer)
-        extractedText = (await ast.to("text"))?.value || ""
-      } else if (filenameLower.endsWith(".csv") || file.type === "text/csv") {
-        extractedText = buffer.toString("utf-8")
-      } else if (filenameLower.endsWith(".xlsx") || filenameLower.endsWith(".xls") || file.type.includes("spreadsheetml")) {
-        // Officeparser parses xlsx spreadsheets as text
-        const ast = await parseOffice(buffer)
-        extractedText = (await ast.to("text"))?.value || buffer.toString("utf-8")
-      } else if (filenameLower.endsWith(".txt") || filenameLower.endsWith(".md") || file.type.startsWith("text/")) {
-        extractedText = buffer.toString("utf-8")
-      } else {
-        // Fallback plain text read
-        extractedText = buffer.toString("utf-8")
-      }
-      
-      let summaryStr = ""
-      let extractedEntities: string[] = []
-      let extractedMeta: Record<string, unknown> = {}
-
-      if (extractedText.trim()) {
-        try {
-          const aiRes = await generateStructured({
-            task: "doc_summary",
-            system: "You are an expert document intelligence assistant. Extract an executive summary, key entities, and document metadata.",
-            user: `FILENAME: ${file.name}\n\nTEXT CONTENT:\n${extractedText.substring(0, 15000)}`,
-            schema: DocumentAnalysisSchema,
-            language: "en"
-          })
-          if (aiRes.ok) {
-            summaryStr = aiRes.data.data.summary
-            extractedEntities = aiRes.data.data.entities || []
-            extractedMeta = aiRes.data.data.metadata || {}
-          }
-        } catch (ignored) {
-          console.warn("AI analysis fallback on doc upload:", ignored)
-        }
-      }
-
-      await db.document.update({
-        where: { id: doc.id },
-        data: {
-          extractedText: extractedText || "No readable text extracted",
-          summary: summaryStr || null,
-          entities: JSON.stringify(extractedEntities),
-          metadata: JSON.stringify(extractedMeta),
-          status: "READY"
-        }
-      })
-
-      return NextResponse.json({ success: true, id: doc.id })
-    } catch (parseError: unknown) {
-      const msg = parseError instanceof Error ? parseError.message : "Failed to parse document"
-      await db.document.update({
-        where: { id: doc.id },
-        data: {
-          status: "FAILED",
-          error: msg
-        }
-      })
-      return NextResponse.json({ error: msg }, { status: 422 })
+    return NextResponse.json({
+      success: true,
+      id: updated.id,
+      document: updated,
+      source,
+      context: { sourceCount: context.sources.length, sourceTypes: context.sourceTypes },
+    })
+  } catch (error: unknown) {
+    console.error("POST document intake failed:", error)
+    const message = errorMessage(error, "Unable to process the document.")
+    if (documentId) {
+      await db.document.update({ where: { id: documentId }, data: { status: "FAILED", error: message } }).catch(() => undefined)
     }
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    const isInputError = /empty|unsupported|mime|filename|corrupt|size|path|signature|readable text|could not extract/i.test(message)
+    const status = error instanceof Error && error.name === "AuthError" ? 401 : error instanceof Error && error.name === "AccessError" ? 403 : isInputError ? 422 : 503
+    return NextResponse.json({ error: message }, { status })
   }
 }
 
-export async function GET(req: Request, { params }: { params: { projectId: string } }) {
+export async function GET(_req: Request, { params }: { params: { projectId: string } }) {
   try {
     await requireProjectAccess(params.projectId)
     const documents = await db.document.findMany({
       where: { projectId: params.projectId },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     })
     return NextResponse.json(documents)
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    console.error("GET documents failed:", err)
+    const status = err instanceof Error && err.name === "AuthError" ? 401 : err instanceof Error && err.name === "AccessError" ? 403 : 503
+    return NextResponse.json({ error: "Unable to load documents right now." }, { status })
   }
 }

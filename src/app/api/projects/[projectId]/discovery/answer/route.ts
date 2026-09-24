@@ -1,51 +1,51 @@
 import { requireProjectAccess } from "@/lib/access"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
+import { appendProjectContextAnswers } from "@/lib/ai/context"
 import { z } from "zod"
 
 export const runtime = "nodejs"
 
-const AnswerBodySchema = z.object({
-  answers: z.array(
-    z.object({
-      category: z.string(),
-      question: z.string(),
-      answer: z.string()
-    })
-  )
+const AnswerSchema = z.object({
+  questionId: z.string().trim().max(120).optional(),
+  category: z.string().trim().min(1).max(120).default("General"),
+  question: z.string().trim().min(1).max(2_000),
+  answer: z.string().trim().min(1).max(10_000),
 })
+const AnswerBodySchema = z.object({ answers: z.array(AnswerSchema).min(1).max(6) })
 
 export async function POST(req: Request, { params }: { params: { projectId: string } }) {
   try {
     const access = await requireProjectAccess(params.projectId, "project:edit")
-    const project = access.project
+    const parsed = AnswerBodySchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) return NextResponse.json({ error: "Provide at least one non-empty answer." }, { status: 400 })
 
-    const body = await req.json()
-    const parsed = AnswerBodySchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid answer payload" }, { status: 400 })
+    const answers = parsed.data.answers
+    const qaFormatted = answers.map((answer) => `[${answer.category.toUpperCase()}] Q: ${answer.question}\nA: ${answer.answer}`).join("\n\n")
+    const currentContext = access.project.businessContext || ""
+    const contextDelegate = (db as unknown as { projectContext?: { update?: unknown } }).projectContext
+    let updatedContext = currentContext
+    // Persist canonical answers when the ProjectContext table is available.
+    // The legacy text field is updated only for older installations that do
+    // not have the unified context delegate.
+    let contextPersisted = false
+    if (typeof contextDelegate?.update === "function") {
+      try {
+        await appendProjectContextAnswers(params.projectId, answers as unknown as Array<Record<string, unknown>>)
+        contextPersisted = true
+      } catch (error) {
+        console.warn("Answer context persistence failed:", error)
+      }
+    }
+    if (!contextPersisted) {
+      updatedContext = `${currentContext}${currentContext ? "\n\n" : ""}--- DISCOVERY ANSWERS (${new Date().toISOString()}) ---\n${qaFormatted}`
     }
 
-    const { answers } = parsed.data
-
-    if (answers.length === 0) {
-      return NextResponse.json({ error: "No answers provided" }, { status: 400 })
-    }
-
-    // Format Q&A as appendable text
-    const qaFormatted = answers
-      .map(a => `[${a.category.toUpperCase()}] Q: ${a.question}\nA: ${a.answer}`)
-      .join("\n\n")
-
-    const updatedContext = project.businessContext
-      ? `${project.businessContext}\n\n--- DISCOVERY ANSWERS (${new Date().toLocaleDateString()}) ---\n${qaFormatted}`
-      : `--- DISCOVERY ANSWERS (${new Date().toLocaleDateString()}) ---\n${qaFormatted}`
-
-    // Calculate score increment based on number of answered questions
-    const currentCompleteness = project.discoveryCompleteness ?? 50
+    const sourceCount = await db.document.count({ where: { projectId: params.projectId, status: "READY" } }).catch(() => 0)
+    const currentCompleteness = access.project.discoveryCompleteness ?? 0
     const newCompleteness = Math.min(100, currentCompleteness + answers.length * 10)
-    const newDigitalMaturity = Math.min(100, (project.digitalMaturity ?? 60) + Math.round(answers.length * 4))
-    const newAiReadiness = Math.min(100, (project.aiReadiness ?? 65) + Math.round(answers.length * 5))
+    const newDigitalMaturity = Math.min(100, (access.project.digitalMaturity ?? 0) + Math.min(5, sourceCount))
+    const newAiReadiness = Math.min(100, (access.project.aiReadiness ?? 0) + Math.min(5, answers.length * 2))
 
     const updatedProject = await db.project.update({
       where: { id: params.projectId },
@@ -53,18 +53,21 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
         businessContext: updatedContext,
         discoveryCompleteness: newCompleteness,
         digitalMaturity: newDigitalMaturity,
-        aiReadiness: newAiReadiness
-      }
+        aiReadiness: newAiReadiness,
+      },
     })
 
     return NextResponse.json({
       success: true,
+      savedAnswers: answers.length,
       discoveryCompleteness: updatedProject.discoveryCompleteness,
       digitalMaturity: updatedProject.digitalMaturity,
       aiReadiness: updatedProject.aiReadiness,
-      businessContext: updatedProject.businessContext
+      businessContext: updatedProject.businessContext,
     })
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+  } catch (error) {
+    console.error("POST discovery answers failed:", error)
+    const status = error instanceof Error && error.name === "AuthError" ? 401 : error instanceof Error && error.name === "AccessError" ? 403 : 503
+    return NextResponse.json({ error: "Unable to save discovery answers." }, { status })
   }
 }

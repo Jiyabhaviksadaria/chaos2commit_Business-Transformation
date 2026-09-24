@@ -42,8 +42,8 @@ const DELIVERABLE_SPECS = [
   { type: "SOLUTION_RECOMMENDATION", title: "Architecture Solution Recommendation", category: "Architecture", icon: Zap },
   { type: "DATABASE_DESIGN", title: "Database Schema & Entity Spec", category: "Data Architecture", icon: Database },
   { type: "API_DESIGN", title: "API Specification & Endpoints", category: "API Design", icon: Code2 },
-  { type: "TRANSFORMATION_ROADMAP", title: "Implementation Roadmap & Phasing", category: "Strategy", icon: Route },
-  { type: "PROCESS_ANALYSIS", title: "Process Intelligence & Workflows", category: "Operations", icon: Sliders },
+  { type: "ROADMAP", title: "Implementation Roadmap & Phasing", category: "Strategy", icon: Route },
+  { type: "PROCESS_MAP", title: "Process Intelligence & Workflows", category: "Operations", icon: Sliders },
   { type: "GAP_ANALYSIS", title: "As-Is vs To-Be Gap Matrix", category: "Analysis", icon: CheckCircle2 },
   { type: "ESTIMATION", title: "Effort & Resource Estimation", category: "Planning", icon: Clock },
   { type: "WEBSITE_SPEC", title: "Landing Page & UX Specification", category: "Frontend", icon: Globe }
@@ -120,13 +120,17 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
     toast.info("Generating full deliverable suite sequentially...")
     try {
       for (const spec of DELIVERABLE_SPECS) {
-        await fetch(`/api/projects/${projectId}/deliverables/generate`, {
+        const response = await fetch(`/api/projects/${projectId}/deliverables/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: spec.type })
         })
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}))
+          throw new Error(payload.error || `Could not generate ${spec.title}.`)
+        }
       }
-      toast.success("All 10 core deliverables successfully generated!")
+      toast.success("Transformation deliverables generated successfully.")
       await fetchStatus()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Error generating suite")

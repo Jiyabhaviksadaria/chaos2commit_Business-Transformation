@@ -83,7 +83,7 @@ export function Topbar({ locale }: { locale: string }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-[#FAF8F2] shadow-xl border border-[#E5DFD4]">
-            <DropdownMenuLabel className="font-semibold text-xs">{session?.user?.name || "Demo User"}</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-semibold text-xs">{session?.user?.name || "Demo User"}{session?.user?.companyRole ? <span className="mt-1 block text-[10px] font-normal text-muted-foreground">Role in company: {session.user.companyRole}</span> : null}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Link href="/admin" className="text-xs">Platform Settings</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/app/billing" className="text-xs">Credits & Billing Plan</Link></DropdownMenuItem>

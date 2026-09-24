@@ -3,7 +3,7 @@ import type { DocModel } from "./model"
 
 export async function toXlsx(doc: DocModel): Promise<Buffer> {
   const wb = new ExcelJS.Workbook()
-  wb.creator = "Business Transformation AI"
+  wb.creator = "Intelly AI"
   wb.created = new Date()
 
   // Summary sheet

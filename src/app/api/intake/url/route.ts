@@ -1,131 +1,100 @@
+import { createHash } from "node:crypto"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import dns from "dns/promises"
-import * as cheerio from "cheerio"
+import { requireProjectAccess } from "@/lib/access"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { fetchAndExtractWebsite } from "@/lib/intake/url"
+import { canonicalizeUrl, SsrfError, validateExternalUrl } from "@/lib/ssrf"
+import { rebuildProjectContext } from "@/lib/ai/context"
 
 export const runtime = "nodejs"
-
-import { isPrivateIP } from "@/lib/ssrf"
-
-async function resolveHostAndCheck(hostname: string): Promise<boolean> {
-  try {
-    const addresses = await dns.lookup(hostname, { all: true })
-    for (const record of addresses) {
-      if (isPrivateIP(record.address)) return false // Blocked
-    }
-    return true
-  } catch {
-    return false // If we can't resolve it, block it
-  }
-}
+export const dynamic = "force-dynamic"
 
 const Schema = z.object({
   projectId: z.string().min(1),
-  url: z.string().url()
+  url: z.string().trim().min(1).max(2_048),
 })
 
-export async function POST(req: Request) {
+function statusForError(error: unknown): number {
+  if (error instanceof SsrfError) {
+    if (error.code === "INVALID_URL" || error.code === "INVALID_PROTOCOL" || error.code === "INVALID_PORT") return 400
+    if (error.code === "DNS_FAILURE") return 422
+    return 403
+  }
+  if (error instanceof Error && error.name === "AuthError") return 401
+  if (error instanceof Error && error.name === "AccessError") return 403
+  if (error instanceof Error && /too long|timed out/i.test(error.message)) return 504
+  if (error instanceof Error && /larger than|size limit/i.test(error.message)) return 413
+  return 503
+}
+
+export async function POST(req: Request, { params }: { params: { projectId: string } }) {
+  const projectId = params.projectId
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    
-    const body = await req.json()
-    if (body && typeof body.url === "string") {
-      let rawUrl = body.url.trim()
-      if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
-        rawUrl = "https://" + rawUrl
-      }
-      body.url = rawUrl
-    }
-    const { projectId, url } = Schema.parse(body)
+    const access = await requireProjectAccess(projectId, "project:edit")
+    const parsed = Schema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) return NextResponse.json({ error: "A valid website URL is required." }, { status: 400 })
 
-    // Project access check
-    const project = await db.project.findFirst({
-      where: {
-        id: projectId,
-        workspace: { organization: { memberships: { some: { userId: session.user.id } } } }
-      }
+    const requestedUrl = await validateExternalUrl(parsed.data.url)
+    const canonicalUrl = canonicalizeUrl(requestedUrl)
+
+    const canonicalChecksum = createHash("sha256").update(canonicalUrl).digest("hex")
+    const duplicate = await db.intakeSource.findFirst({ where: { projectId, kind: "URL", OR: [{ label: canonicalUrl }, { checksum: canonicalChecksum }] } })
+    if (duplicate) {
+      await rebuildProjectContext(projectId).catch((error) => console.warn("Context refresh after duplicate URL failed:", error))
+      return NextResponse.json({ ok: true, duplicate: true, data: duplicate, message: "This website is already part of the project context." })
+    }
+
+    let extracted
+    try {
+      extracted = await fetchAndExtractWebsite(canonicalUrl)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to extract content from this website. Try uploading a document instead."
+      return NextResponse.json({ error: message }, { status: statusForError(error) })
+    }
+
+    const duplicateFinalUrl = await db.intakeSource.findFirst({
+      where: { projectId, kind: "URL", OR: [{ label: canonicalUrl }, { url: extracted.responseUrl }] },
     })
-    
-    if (!project) return NextResponse.json({ error: "Project not found or access denied" }, { status: 403 })
-
-    let currentUrl = url
-    let redirectsCount = 0
-    let html = ""
-
-    while (redirectsCount <= 3) {
-      const parsedUrl = new URL(currentUrl)
-      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        return NextResponse.json({ error: "Only http/https allowed" }, { status: 400 })
-      }
-
-      // SSRF check
-      const hostname = parsedUrl.hostname
-      const isSafe = await resolveHostAndCheck(hostname)
-      if (!isSafe) {
-        return NextResponse.json({ error: "Access to private or local network is forbidden" }, { status: 403 })
-      }
-
-      const res = await fetch(currentUrl, {
-        method: "GET",
-        headers: { "User-Agent": "Business-Transformation-AI-Bot/1.0" },
-        redirect: "manual",
-        signal: AbortSignal.timeout(10000) // 10s timeout
-      })
-
-      if (res.status >= 300 && res.status < 400 && res.headers.has("location")) {
-        currentUrl = new URL(res.headers.get("location")!, currentUrl).toString()
-        redirectsCount++
-        continue
-      }
-
-      if (!res.ok) {
-        return NextResponse.json({ error: `URL responded with status ${res.status}` }, { status: 400 })
-      }
-
-      const contentLength = res.headers.get("content-length")
-      if (contentLength && parseInt(contentLength) > 2 * 1024 * 1024) {
-        return NextResponse.json({ error: "Payload exceeds 2MB limit" }, { status: 400 })
-      }
-
-      const buffer = await res.arrayBuffer()
-      if (buffer.byteLength > 2 * 1024 * 1024) {
-        return NextResponse.json({ error: "Payload exceeds 2MB limit" }, { status: 400 })
-      }
-
-      html = new TextDecoder().decode(buffer)
-      break
+    if (duplicateFinalUrl) {
+      await rebuildProjectContext(projectId).catch((error) => console.warn("Context refresh after duplicate URL failed:", error))
+      return NextResponse.json({ ok: true, duplicate: true, data: duplicateFinalUrl, message: "This website is already part of the project context." })
     }
 
-    if (redirectsCount > 3) {
-      return NextResponse.json({ error: "Too many redirects" }, { status: 400 })
-    }
-
-    // Parse with Cheerio
-    const $ = cheerio.load(html)
-    $("script, style, nav, footer, iframe, link, meta").remove()
-    
-    const title = $("title").text().trim()
-    const mainText = $("body").text().replace(/\s+/g, " ").trim()
-    
-    const extractedText = `TITLE: ${title}\n\nCONTENT: ${mainText}`
-
-    const intake = await db.intakeSource.create({
+    const source = await db.intakeSource.create({
       data: {
         projectId,
         kind: "URL",
-        label: url,
-        extractedText: extractedText.substring(0, 30000), // Safety clip
-        status: "READY"
-      }
+        label: canonicalUrl,
+        url: extracted.responseUrl,
+        checksum: canonicalChecksum,
+        mimeType: extracted.contentType || "text/html",
+        extractedText: extracted.text,
+        metadata: extracted.metadata as import("@prisma/client").Prisma.InputJsonValue,
+        status: "READY",
+      },
     })
 
-    return NextResponse.json({ ok: true, data: intake })
+    await db.project.update({ where: { id: projectId }, data: { intakeUrl: extracted.responseUrl } })
+    const context = await rebuildProjectContext(projectId)
+
+    return NextResponse.json({
+      ok: true,
+      data: source,
+      source: {
+        id: source.id,
+        kind: source.kind,
+        label: source.label,
+        url: source.url,
+        extractedText: source.extractedText,
+        metadata: source.metadata,
+      },
+      context: { sourceCount: context.sources.length, sourceTypes: context.sourceTypes },
+      organizationId: access.project.workspace.organizationId,
+    })
   } catch (err: unknown) {
-    console.error("URL Intake error:", err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Error" }, { status: 500 })
+    console.error("POST /api/intake/url failed:", err)
+    const message = err instanceof Error ? err.message : "Unable to ingest the website."
+    return NextResponse.json({ error: message }, { status: statusForError(err) || 500 })
   }
 }

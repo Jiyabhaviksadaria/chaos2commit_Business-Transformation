@@ -7,6 +7,7 @@ declare module "next-auth" {
     user: {
       id: string
       role: PlatformRole
+      companyRole?: string | null
       organizationId?: string
       name?: string | null
       email?: string | null
@@ -17,7 +18,9 @@ declare module "next-auth" {
   interface User {
     id: string
     role: PlatformRole
+    companyRole?: string | null
     organizationId?: string
+    emailVerified?: Date | null
   }
 }
 
@@ -25,6 +28,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     role: PlatformRole
+    companyRole?: string | null
     organizationId?: string
   }
 }

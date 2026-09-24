@@ -23,21 +23,13 @@ type LoginFormValues = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-  })
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) })
 
   async function onSubmit(data: LoginFormValues) {
     setError(null)
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.password,
-    })
-
+    const result = await signIn("credentials", { redirect: false, email: data.email, password: data.password })
     if (result?.error) {
-      setError("Invalid email or password")
+      setError("Invalid credentials or an unverified email address.")
     } else {
       router.push("/app")
       router.refresh()
@@ -45,35 +37,20 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
       <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
-        <CardDescription>Sign in to your account to continue</CardDescription>
+        <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Welcome back</CardTitle>
+        <CardDescription>Sign in to continue your transformation workspace.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          {error && <div className="text-sm text-red-500 font-medium">{error}</div>}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" {...register("email")} />
-            {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...register("password")} />
-            {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
-          </div>
+          {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error} <Link href="/resend-verification" className="font-semibold underline">Resend verification</Link></div>}
+          <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" {...register("email")} />{errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}</div>
+          <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="password">Password</Label><Link href="/forgot-password" className="text-xs font-semibold text-neutral-600 underline-offset-2 hover:underline">Forgot password?</Link></div><Input id="password" type="password" autoComplete="current-password" {...register("password")} />{errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}</div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </Button>
-          <div className="text-sm text-center text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </div>
+          <Button type="submit" className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800" disabled={isSubmitting}>{isSubmitting ? "Signing in..." : "Sign in"}</Button>
+          <div className="text-center text-sm text-muted-foreground">Don&apos;t have an account? <Link href="/register" className="font-semibold text-neutral-900 underline-offset-2 hover:underline">Sign up</Link></div>
         </CardFooter>
       </form>
     </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,12 +15,22 @@ import {
   Sparkles,
   ExternalLink,
   Code2,
-  Layout
+  Loader2
 } from "lucide-react"
 import { DiscoveryView } from "../discovery-view"
 import { DiscoveryLoop } from "../discovery-loop"
 import { BusinessAnalysisView } from "../business-analysis-view"
 import { DeliverableSuite } from "../deliverable-suite"
+import { DocumentsView } from "../documents-view"
+import { StageDeliverableView } from "../stage-view"
+
+function scoreLabel(value: number | null | undefined): string {
+  return typeof value === "number" && value > 0 ? `${value}%` : "Not assessed"
+}
+
+function scoreValue(value: number | null | undefined): number {
+  return typeof value === "number" ? value : 0
+}
 
 interface ProjectData {
   id: string
@@ -79,25 +89,25 @@ export function OverviewTabView({ projectId, project, onOpenAi }: TabProps) {
             <div>
               <div className="flex justify-between text-xs font-bold mb-1">
                 <span className="text-neutral-600">Digital Maturity</span>
-                <span className="text-neutral-900">{project.digitalMaturity || 78}%</span>
+                <span className="text-neutral-900">{scoreLabel(project.digitalMaturity)}</span>
               </div>
-              <Progress value={project.digitalMaturity || 78} className="h-2 bg-neutral-100" />
+              <Progress value={scoreValue(project.digitalMaturity)} className="h-2 bg-neutral-100" />
             </div>
 
             <div>
               <div className="flex justify-between text-xs font-bold mb-1">
                 <span className="text-neutral-600">AI & Cloud Readiness</span>
-                <span className="text-neutral-900">{project.aiReadiness || 82}%</span>
+                <span className="text-neutral-900">{scoreLabel(project.aiReadiness)}</span>
               </div>
-              <Progress value={project.aiReadiness || 82} className="h-2 bg-neutral-100" />
+              <Progress value={scoreValue(project.aiReadiness)} className="h-2 bg-neutral-100" />
             </div>
 
             <div>
               <div className="flex justify-between text-xs font-bold mb-1">
                 <span className="text-neutral-600">Discovery Completeness</span>
-                <span className="text-neutral-900">{project.discoveryCompleteness || 90}%</span>
+                <span className="text-neutral-900">{scoreLabel(project.discoveryCompleteness)}</span>
               </div>
-              <Progress value={project.discoveryCompleteness || 90} className="h-2 bg-neutral-100" />
+              <Progress value={scoreValue(project.discoveryCompleteness)} className="h-2 bg-neutral-100" />
             </div>
 
             <Button onClick={onOpenAi} className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2 mt-2">
@@ -165,31 +175,27 @@ export function DiscoveryTabView({ projectId }: TabProps) {
 
       <DiscoveryLoop projectId={projectId} />
       <DiscoveryView projectId={projectId} />
+      <DocumentsView projectId={projectId} />
     </div>
   )
 }
 
 // 3. Business Analysis
 export function BusinessAnalysisTabView({ projectId, project, onOpenAi }: TabProps) {
-  const router = useRouter()
   return (
     <div className="space-y-6">
       <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-[22px] flex items-center justify-between shadow-sm">
         <div>
-          <h3 className="font-extrabold text-sm text-neutral-900">Turn Insights into a Live Website</h3>
-          <p className="text-xs text-neutral-500">Generate a custom website specification matching your analyzed business requirements.</p>
+          <h3 className="font-extrabold text-sm text-neutral-900">Business Analysis</h3>
+          <p className="text-xs text-neutral-500">Review evidence-backed findings and continue the transformation pipeline.</p>
         </div>
-        <Button onClick={() => router.push(`/projects/${projectId}/editor`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Globe className="h-3.5 w-3.5 text-[#F8B4D9]" />
-          Build Website from Analysis
-        </Button>
+        <Badge className="bg-[#FEE895] text-neutral-900 border-none font-bold">Evidence-backed</Badge>
       </div>
-
       <BusinessAnalysisView
         projectId={projectId}
-        digitalMaturity={project.digitalMaturity ?? 78}
-        aiReadiness={project.aiReadiness ?? 82}
-        discoveryCompleteness={project.discoveryCompleteness ?? 85}
+        digitalMaturity={project.digitalMaturity ?? undefined}
+        aiReadiness={project.aiReadiness ?? undefined}
+        discoveryCompleteness={project.discoveryCompleteness ?? undefined}
         onOpenAi={onOpenAi}
       />
     </div>
@@ -212,271 +218,43 @@ export function RequirementsTabView({ project, onOpenAi }: TabProps) {
 }
 
 // 5. Solutions
-export function SolutionsTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Solution Architecture Recommendations</h3>
-          <p className="text-xs text-neutral-500">Evaluated technology stacks, SaaS options, and custom architecture patterns.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Re-Evaluate Matrix
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-2xl space-y-3">
-          <div className="flex justify-between items-center">
-            <h4 className="font-extrabold text-sm text-neutral-900">Option A: Event-Driven Microservices (Recommended)</h4>
-            <Badge className="bg-[#B8DF9E] text-neutral-900 font-bold text-[10px] border-none">Score: 94/100</Badge>
-          </div>
-          <p className="text-xs text-neutral-600 leading-relaxed">Next.js 14 App Router + PostgreSQL (Prisma ORM) + Kafka Queue. High scalability, zero vendor lock-in.</p>
-        </div>
-
-        <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-2xl space-y-3">
-          <div className="flex justify-between items-center">
-            <h4 className="font-extrabold text-sm text-neutral-900">Option B: Off-the-Shelf SaaS Integration</h4>
-            <Badge variant="outline" className="text-neutral-700 font-bold text-[10px]">Score: 78/100</Badge>
-          </div>
-          <p className="text-xs text-neutral-600 leading-relaxed">Shopify POS Enterprise + Custom Middleware. Faster initial deployment but high recurring platform licensing fees.</p>
-        </div>
-      </div>
-    </Card>
-  )
+export function SolutionsTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="SOLUTION_RECOMMENDATION" title="Solution Recommendations" description="Evidence-backed systems and capabilities prioritized from Business Analysis." onOpenAi={onOpenAi} />
 }
 
 // 6. Architecture
-export function ArchitectureTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">High-Level & Low-Level System Architecture</h3>
-          <p className="text-xs text-neutral-500">Component layout, cloud infrastructure topology, and security perimeters.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Generate Architecture Spec
-        </Button>
-      </div>
-
-      <div className="bg-[#18181C] text-emerald-400 p-5 rounded-2xl font-mono text-xs overflow-x-auto space-y-2">
-        <div className="text-neutral-400 font-bold">System Topology Overview</div>
-        <div>[Client POS Terminals] --- (TLS 1.3) ---&gt; [Next.js App Router / Edge API Gateway]</div>
-        <div className="pl-56">|</div>
-        <div className="pl-56">v</div>
-        <div>                             [Prisma ORM / Connection Pooler]</div>
-        <div className="pl-56">|</div>
-        <div className="pl-56">v</div>
-        <div>                       [PostgreSQL Master DB + Read Replicas]</div>
-      </div>
-    </Card>
-  )
+export function ArchitectureTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="ARCHITECTURE_HLD" title="Solution Architecture" description="Architecture generated from the preceding requirements and system context." onOpenAi={onOpenAi} />
 }
 
 // 7. Processes
-export function ProcessesTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Process Intelligence & BPMN Flow</h3>
-          <p className="text-xs text-neutral-500">Business workflow sequences, automated triggers, and decision nodes.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Draft BPMN Diagram
-        </Button>
-      </div>
-
-      <div className="space-y-3">
-        {[
-          { step: "Step 1", name: "POS Transaction Trigger", actor: "Cashier", detail: "Scans items and submits payment at register." },
-          { step: "Step 2", name: "Real-Time Inventory Deduct", actor: "API Service", detail: "Atomic inventory check & deduct in DB." },
-          { step: "Step 3", name: "Audit & Ledger Write", actor: "System Worker", detail: "Writes activity log and credit ledger item." }
-        ].map((s, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between text-xs">
-            <div className="flex items-center gap-3">
-              <span className="font-extrabold bg-[#FEE895] text-neutral-900 px-3 py-1 rounded-full">{s.step}</span>
-              <div>
-                <p className="font-bold text-neutral-900">{s.name}</p>
-                <p className="text-[11px] text-neutral-500">{s.detail}</p>
-              </div>
-            </div>
-            <Badge variant="outline" className="bg-white text-neutral-700 font-bold">{s.actor}</Badge>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
+export function ProcessesTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="PROCESS_MAP" title="Process Intelligence" description="Current and future business processes, actors, decisions, and automation opportunities." onOpenAi={onOpenAi} />
 }
 
 // 8. UX
-export function UxTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">UX / UI Wireframe Architecture</h3>
-          <p className="text-xs text-neutral-500">Screen hierarchy, component design tokens, and user journey specs.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Generate Wireframe Specs
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {["In-Store POS Register Screen", "Real-Time Inventory Dashboard", "Customer Checkout & Receipt Modal"].map((screen, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl text-center space-y-3">
-            <div className="h-28 bg-white rounded-xl border border-dashed border-[#E5DFD4] flex items-center justify-center text-neutral-400">
-              <Layout className="h-8 w-8 text-neutral-300" />
-            </div>
-            <p className="text-xs font-bold text-neutral-900">{screen}</p>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
+export function UxTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="WIREFRAMES" title="UX & Wireframes" description="User journeys, screen concepts, and interface requirements from the process and architecture stages." onOpenAi={onOpenAi} />
 }
 
 // 9. Database
-export function DatabaseTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Database Schema & ERD Specifications</h3>
-          <p className="text-xs text-neutral-500">Relational data models, foreign keys, indexes, and Prisma schema generators.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Generate Schema DDL
-        </Button>
-      </div>
-
-      <div className="bg-[#18181C] text-neutral-200 p-5 rounded-2xl font-mono text-xs space-y-2 overflow-x-auto">
-        <div className="text-purple-400">model Product &#123;</div>
-        <div className="pl-4 text-emerald-400">id        String   @id @default(uuid())</div>
-        <div className="pl-4 text-emerald-400">name      String</div>
-        <div className="pl-4 text-emerald-400">sku       String   @unique</div>
-        <div className="pl-4 text-emerald-400">stockQty  Int      @default(0)</div>
-        <div className="pl-4 text-emerald-400">price     Decimal  @db.Decimal(10, 2)</div>
-        <div className="pl-4 text-emerald-400">createdAt DateTime @default(now())</div>
-        <div className="text-purple-400">&#125;</div>
-      </div>
-    </Card>
-  )
+export function DatabaseTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="DATABASE_DESIGN" title="Database Design" description="Entities, fields, relationships, and persistence definitions generated from the system specification." onOpenAi={onOpenAi} />
 }
 
 // 10. APIs
-export function ApisTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">API Design & OpenAPI 3.0 Specifications</h3>
-          <p className="text-xs text-neutral-500">RESTful microservice endpoints, request payloads, and response schemas.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Generate OpenAPI Contract
-        </Button>
-      </div>
-
-      <div className="space-y-3">
-        {[
-          { method: "POST", path: "/api/v1/inventory/deduct", desc: "Atomic stock deduction during POS sale." },
-          { method: "GET", path: "/api/v1/products/sync", desc: "Batch inventory sync for POS offline cache." },
-          { method: "POST", path: "/api/v1/orders/checkout", desc: "Process order transaction and write receipt." }
-        ].map((api, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between text-xs">
-            <div className="flex items-center gap-3">
-              <Badge className={api.method === "POST" ? "bg-blue-100 text-blue-900 font-extrabold border-none" : "bg-emerald-100 text-emerald-900 font-extrabold border-none"}>
-                {api.method}
-              </Badge>
-              <code className="font-bold text-neutral-900">{api.path}</code>
-            </div>
-            <span className="text-neutral-500 text-[11px] font-medium">{api.desc}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
+export function ApisTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="API_DESIGN" title="API Design" description="REST contracts, authentication boundaries, request/response schemas, and versioning." onOpenAi={onOpenAi} />
 }
 
 // 11. Planning
-export function PlanningTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Resource & Cost Estimation Planning</h3>
-          <p className="text-xs text-neutral-500">Cloud infrastructure costs, sprint velocity estimates, and developer allocations.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Recalculate Budget
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold text-neutral-500 uppercase">Estimated Dev Sprints</span>
-          <p className="text-2xl font-extrabold text-neutral-900">6 Weeks</p>
-        </div>
-        <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold text-neutral-500 uppercase">Monthly Infra Cost</span>
-          <p className="text-2xl font-extrabold text-emerald-700">$240 / mo</p>
-        </div>
-        <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold text-neutral-500 uppercase">ROI Expectation</span>
-          <p className="text-2xl font-extrabold text-blue-700">3.4x Annual</p>
-        </div>
-      </div>
-    </Card>
-  )
+export function PlanningTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="ESTIMATION" title="Planning & Estimation" description="Evidence-based effort, resource, cost, and delivery-risk estimates." onOpenAi={onOpenAi} />
 }
 
 // 12. Roadmap
-export function RoadmapTabView({ onOpenAi }: TabProps) {
-  return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Transformation Roadmap & Milestones</h3>
-          <p className="text-xs text-neutral-500">Chronological rollout phases, dependency gates, and release tags.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
-          Update Milestones
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {[
-          { phase: "Phase 1: Foundation", status: "COMPLETED", date: "Q1 2026", detail: "Database schema setup, multi-tenant RBAC, intake parsing." },
-          { phase: "Phase 2: Core Microservices", status: "IN_PROGRESS", date: "Q2 2026", detail: "Inventory Sync API, POS offline sqlite sync engine." },
-          { phase: "Phase 3: Store Pilot Rollout", status: "PLANNED", date: "Q3 2026", detail: "Deploy to 15 flagship retail stores for live checkout tests." }
-        ].map((m, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between text-xs">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-neutral-900">{m.phase}</span>
-                <Badge className={m.status === "COMPLETED" ? "bg-emerald-100 text-emerald-900 border-none font-bold text-[10px]" : "bg-[#FEE895] text-neutral-900 border-none font-bold text-[10px]"}>
-                  {m.status}
-                </Badge>
-              </div>
-              <p className="text-neutral-500 text-[11px]">{m.detail}</p>
-            </div>
-            <span className="font-bold text-neutral-700 bg-white px-3 py-1 rounded-full border border-[#E5DFD4]">{m.date}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
+export function RoadmapTabView({ projectId, onOpenAi }: TabProps) {
+  return <StageDeliverableView projectId={projectId} type="ROADMAP" title="Transformation Roadmap" description="Sequenced phases, milestones, dependencies, and change-management outcomes." onOpenAi={onOpenAi} />
 }
 
 // 13. Build
@@ -517,117 +295,105 @@ export function BuildTabView({ projectId }: TabProps) {
   )
 }
 
+interface ActivityItem {
+  id: string
+  action: string
+  entity: string
+  entityId: string
+  createdAt: string
+  actor?: { name?: string | null; email?: string | null } | null
+}
+
+interface VersionItem {
+  id: string
+  type: string
+  versionNumber: number
+  note?: string | null
+  createdAt: string
+  createdBy?: { name?: string | null; email?: string | null } | null
+}
+
+const VERSION_TYPES = ["INTAKE_ANALYSIS", "REQUIREMENTS", "SOLUTION_RECOMMENDATION", "ARCHITECTURE_HLD", "PROCESS_MAP", "WIREFRAMES", "DATABASE_DESIGN", "API_DESIGN", "ESTIMATION", "ROADMAP"]
+
 // 14. Collaboration
-export function CollaborationTabView({ onOpenAi }: TabProps) {
+export function CollaborationTabView({ projectId, onOpenAi }: TabProps) {
+  const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    fetch(`/api/projects/${projectId}/activity?limit=30`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Activity unavailable")
+        return response.json() as Promise<{ activities?: ActivityItem[] }>
+      })
+      .then((payload) => { if (active) setActivities(Array.isArray(payload.activities) ? payload.activities : []) })
+      .catch(() => { if (active) setActivities([]) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [projectId])
+
   return (
     <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
       <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
         <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Team Collaboration & Governance</h3>
-          <p className="text-xs text-neutral-500">Manage organization members, assign roles, and inspect approval audit logs.</p>
+          <h3 className="text-lg font-extrabold text-neutral-900">Project Activity & Governance</h3>
+          <p className="text-xs text-neutral-500">Persisted project events and approval activity for this workspace.</p>
         </div>
-        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">
-          Invite Member
-        </Button>
+        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">Ask AI</Button>
       </div>
-
-      <div className="space-y-3">
-        {[
-          { name: "Jiya Sadaria", email: "jiya@enterprise.com", role: "ADMIN", status: "ACTIVE" },
-          { name: "Alex Rivers", email: "alex.rivers@cloud.io", role: "EDITOR", status: "ACTIVE" },
-          { name: "Samantha Vance", email: "s.vance@techcorp.com", role: "VIEWER", status: "PENDING" }
-        ].map((mem, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-3.5 rounded-2xl flex items-center justify-between text-xs">
-            <div>
-              <p className="font-bold text-neutral-900">{mem.name}</p>
-              <p className="text-[11px] text-neutral-500">{mem.email}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-white font-bold">{mem.role}</Badge>
-              <Badge className={mem.status === "ACTIVE" ? "bg-emerald-100 text-emerald-900 border-none font-bold text-[10px]" : "bg-amber-100 text-amber-900 border-none font-bold text-[10px]"}>{mem.status}</Badge>
-            </div>
-          </div>
-        ))}
-      </div>
+      {loading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-neutral-500" /></div> : activities.length === 0 ? <p className="text-xs text-neutral-500">No project activity has been recorded yet.</p> : <div className="space-y-3">{activities.map((activity) => <div key={activity.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-3.5 rounded-2xl flex items-center justify-between gap-4 text-xs"><div><p className="font-bold text-neutral-900">{activity.action.replaceAll("_", " ")}</p><p className="text-[11px] text-neutral-500">{activity.entity} · {new Date(activity.createdAt).toLocaleString()}</p></div><span className="text-[11px] text-neutral-500">{activity.actor?.name || activity.actor?.email || "System"}</span></div>)}</div>}
     </Card>
   )
 }
 
 // 15. Versions
-export function VersionsTabView({ onOpenAi }: TabProps) {
+export function VersionsTabView({ projectId, onOpenAi }: TabProps) {
+  const [versions, setVersions] = useState<VersionItem[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let active = true
+    Promise.all(VERSION_TYPES.map(async (type) => {
+      const response = await fetch(`/api/projects/${projectId}/deliverables/${type}/versions`)
+      if (!response.ok) return []
+      const payload = await response.json().catch(() => ({})) as { versions?: Array<Omit<VersionItem, "type">> }
+      return (payload.versions || []).map((version) => ({ ...version, type }))
+    })).then((groups) => {
+      if (active) setVersions(groups.flat().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+    }).catch(() => { if (active) setVersions([]) }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [projectId])
+
   return (
     <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
       <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Deliverable Version History</h3>
-          <p className="text-xs text-neutral-500">Track deliverable updates, view side-by-side diffs, and restore baseline versions.</p>
-        </div>
-        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">
-          Create Snapshot
-        </Button>
+        <div><h3 className="text-lg font-extrabold text-neutral-900">Deliverable Version History</h3><p className="text-xs text-neutral-500">Persisted versions across the transformation stages.</p></div>
+        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">Ask AI</Button>
       </div>
-
-      <div className="space-y-3">
-        {[
-          { version: "v2.1", date: "Today, 14:20", author: "AI Copilot", summary: "Added OpenAPI endpoints for POS inventory deduction." },
-          { version: "v2.0", date: "Yesterday, 18:00", author: "Jiya Sadaria", summary: "Approved baseline system architecture & PRD." },
-          { version: "v1.0", date: "Sep 20, 2026", author: "System Intake", summary: "Initial automated discovery ingestion." }
-        ].map((v, idx) => (
-          <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between text-xs">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-neutral-900">{v.version}</span>
-                <span className="text-[11px] text-neutral-400">• {v.date} by {v.author}</span>
-              </div>
-              <p className="text-neutral-600 text-[11px]">{v.summary}</p>
-            </div>
-            <Button variant="ghost" size="sm" className="text-xs font-bold text-neutral-800">Compare Diff</Button>
-          </div>
-        ))}
-      </div>
+      {loading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-neutral-500" /></div> : versions.length === 0 ? <p className="text-xs text-neutral-500">No deliverable versions have been persisted yet.</p> : <div className="space-y-3">{versions.map((version) => <div key={version.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between gap-4 text-xs"><div className="space-y-1"><div className="flex items-center gap-2"><span className="font-extrabold text-neutral-900">{version.type} v{version.versionNumber}</span><span className="text-[11px] text-neutral-400">· {new Date(version.createdAt).toLocaleString()}</span></div><p className="text-neutral-600 text-[11px]">{version.note || "Persisted deliverable version"} · {version.createdBy?.name || version.createdBy?.email || "System"}</p></div></div>)}</div>}
     </Card>
   )
 }
 
 // 16. Exports
-export function ExportsTabView({ onOpenAi }: TabProps) {
+export function ExportsTabView({ projectId }: TabProps) {
+  const exports = [
+    { title: "Transformation Report (.docx)", type: "INTAKE_ANALYSIS", format: "docx", label: "Executive report", icon: FileText },
+    { title: "OpenAPI Contract (.json)", type: "API_DESIGN", format: "json", label: "Developer contract", icon: Code2 },
+    { title: "Database Design (.json)", type: "DATABASE_DESIGN", format: "json", label: "Data design", icon: Database },
+  ]
+  const openExport = (type: string, format: string) => {
+    window.open(`/api/projects/${projectId}/export?format=${format}&type=${type}`, "_blank", "noopener,noreferrer")
+  }
+
   return (
     <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
       <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Export & Documentation Center</h3>
-          <p className="text-xs text-neutral-500">Download enterprise architecture packages in PDF, OpenAPI JSON, or Prisma DDL format.</p>
-        </div>
-        <Button onClick={onOpenAi} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-          <Download className="h-3.5 w-3.5" />
-          Export All Specs (.ZIP)
-        </Button>
+        <div><h3 className="text-lg font-extrabold text-neutral-900">Export & Documentation Center</h3><p className="text-xs text-neutral-500">Download persisted transformation outputs in supported formats.</p></div>
+        <Button onClick={() => openExport("ALL", "json")} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2"><Download className="h-3.5 w-3.5" /> Export persisted specs</Button>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { title: "Complete Transformation Blueprint (PDF)", type: "Executive Report", icon: FileText },
-          { title: "OpenAPI 3.0 API Specification (JSON)", type: "Developer Spec", icon: Code2 },
-          { title: "Database ERD & Prisma Schema (.prisma)", type: "Database DDL", icon: Database }
-        ].map((item, idx) => {
-          const Icon = item.icon
-          return (
-            <div key={idx} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex flex-col justify-between space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-full bg-white border border-[#E5DFD4] flex items-center justify-center shrink-0">
-                  <Icon className="h-4 w-4 text-neutral-800" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-neutral-900">{item.title}</h4>
-                  <span className="text-[10px] text-neutral-500 font-semibold">{item.type}</span>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="w-full bg-white border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5">
-                <Download className="h-3 w-3" /> Download
-              </Button>
-            </div>
-          )
-        })}
+        {exports.map((item) => { const Icon = item.icon; return <div key={item.type} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex flex-col justify-between space-y-3"><div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-white border border-[#E5DFD4] flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-neutral-800" /></div><div><h4 className="font-extrabold text-xs text-neutral-900">{item.title}</h4><span className="text-[10px] text-neutral-500 font-semibold">{item.label}</span></div></div><Button variant="outline" size="sm" onClick={() => openExport(item.type, item.format)} className="w-full bg-white border border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5"><Download className="h-3 w-3" /> Download</Button></div> })}
       </div>
     </Card>
   )
