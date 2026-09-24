@@ -108,7 +108,7 @@ export function Sidebar({ className }: { className?: string }) {
         {/* Footer / Log out */}
         <div className="pt-4 border-t border-neutral-800">
           <button
-            onClick={() => signOut()}
+            onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })}
             className="w-full flex items-center gap-3 rounded-full px-4 py-2.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-[#27272A] transition-all"
           >
             <LogOut className="h-4 w-4 text-neutral-400" />

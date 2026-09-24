@@ -88,7 +88,7 @@ export function Topbar({ locale }: { locale: string }) {
             <DropdownMenuItem asChild><Link href="/admin" className="text-xs">Platform Settings</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/app/billing" className="text-xs">Credits & Billing Plan</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()} className="text-xs text-red-600">Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })} className="text-xs text-red-600">Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
