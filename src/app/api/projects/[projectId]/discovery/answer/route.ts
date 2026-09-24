@@ -1,7 +1,8 @@
 import { requireProjectAccess } from "@/lib/access"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
-import { appendProjectContextAnswers } from "@/lib/ai/context"
+import { updateProjectContextMetadata, upsertProjectContextAnswers } from "@/lib/ai/context"
+import { assessDiscoveryState, buildReadinessAssessment } from "@/lib/ai/discovery"
 import { z } from "zod"
 
 export const runtime = "nodejs"
@@ -25,13 +26,13 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
     const currentContext = access.project.businessContext || ""
     const contextDelegate = (db as unknown as { projectContext?: { update?: unknown } }).projectContext
     let updatedContext = currentContext
-    // Persist canonical answers when the ProjectContext table is available.
-    // The legacy text field is updated only for older installations that do
-    // not have the unified context delegate.
     let contextPersisted = false
+    let discoveryState: ReturnType<typeof assessDiscoveryState> | null = null
+    let persistedSnapshot: Awaited<ReturnType<typeof upsertProjectContextAnswers>> | null = null
     if (typeof contextDelegate?.update === "function") {
       try {
-        await appendProjectContextAnswers(params.projectId, answers as unknown as Array<Record<string, unknown>>)
+        persistedSnapshot = await upsertProjectContextAnswers(params.projectId, answers as unknown as Array<Record<string, unknown>>)
+        discoveryState = assessDiscoveryState({ answers: persistedSnapshot.answers, businessContent: persistedSnapshot.businessContent, metadata: persistedSnapshot.metadata, sourceCount: persistedSnapshot.sources.length })
         contextPersisted = true
       } catch (error) {
         console.warn("Answer context persistence failed:", error)
@@ -41,17 +42,20 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
       updatedContext = `${currentContext}${currentContext ? "\n\n" : ""}--- DISCOVERY ANSWERS (${new Date().toISOString()}) ---\n${qaFormatted}`
     }
 
-    const sourceCount = await db.document.count({ where: { projectId: params.projectId, status: "READY" } }).catch(() => 0)
     const currentCompleteness = access.project.discoveryCompleteness ?? 0
-    const newCompleteness = Math.min(100, currentCompleteness + answers.length * 10)
-    const newDigitalMaturity = Math.min(100, (access.project.digitalMaturity ?? 0) + Math.min(5, sourceCount))
-    const newAiReadiness = Math.min(100, (access.project.aiReadiness ?? 0) + Math.min(5, answers.length * 2))
+    const newCompleteness = discoveryState?.progress ?? currentCompleteness
+    const readiness = discoveryState ? buildReadinessAssessment(discoveryState, persistedSnapshot?.businessContent || currentContext, persistedSnapshot?.metadata || {}) : null
+    const newDigitalMaturity = readiness?.dimensions.find((dimension) => dimension.key === "technology-readiness")?.score ?? access.project.digitalMaturity ?? 0
+    const newAiReadiness = readiness?.overallScore ?? access.project.aiReadiness ?? 0
+    const newReadinessScore = readiness?.overallScore ?? access.project.readinessScore ?? 0
+    if (contextPersisted && discoveryState) await updateProjectContextMetadata(params.projectId, { discovery: discoveryState, readiness })
 
     const updatedProject = await db.project.update({
       where: { id: params.projectId },
       data: {
         businessContext: updatedContext,
         discoveryCompleteness: newCompleteness,
+        readinessScore: newReadinessScore,
         digitalMaturity: newDigitalMaturity,
         aiReadiness: newAiReadiness,
       },
@@ -61,9 +65,12 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
       success: true,
       savedAnswers: answers.length,
       discoveryCompleteness: updatedProject.discoveryCompleteness,
+      readinessScore: updatedProject.readinessScore,
       digitalMaturity: updatedProject.digitalMaturity,
       aiReadiness: updatedProject.aiReadiness,
       businessContext: updatedProject.businessContext,
+      discoveryState,
+      understanding: discoveryState?.understanding || null,
     })
   } catch (error) {
     console.error("POST discovery answers failed:", error)

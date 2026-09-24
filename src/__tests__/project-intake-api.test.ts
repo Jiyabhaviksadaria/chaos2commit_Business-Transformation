@@ -51,6 +51,30 @@ describe("project intake creation contract", () => {
     expect(mocks.deliverableCreate).not.toHaveBeenCalled()
   })
 
+  it("persists structured company context for a new analysis project", async () => {
+    const request = new Request("http://localhost/api/projects", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "analyze",
+        companyContext: {
+          companyName: "ABC Retail",
+          industry: "Retail",
+          companySize: "201–1,000 employees",
+          userRole: "Operations Manager",
+          currentTools: ["Legacy POS", "Excel"],
+          businessObjective: "Modernize inventory operations",
+        },
+      }),
+    })
+    const response = await createProject(request)
+    expect(response.status).toBe(200)
+    expect(mocks.projectCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      name: "ABC Retail",
+      projectContext: expect.objectContaining({ create: expect.objectContaining({ metadata: expect.objectContaining({ companyContext: expect.objectContaining({ companyName: "ABC Retail" }) }) }) }),
+    }) }))
+  })
+
   it("rejects an analysis project with no source signal", async () => {
     const request = new Request("http://localhost/api/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "analyze" }) })
     const response = await createProject(request)

@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { getDeliverableConfig } from "@/modules/registry"
 import { generateStructured } from "@/lib/ai/orchestrator"
-import { buildProjectContext, updateProjectContextMetadata } from "@/lib/ai/context"
+import { buildProjectContext, getProjectContextSnapshot, updateProjectContextMetadata } from "@/lib/ai/context"
 import { DeliverableType, VersionSource } from "@prisma/client"
 
 const GenerateSchema = z.object({
@@ -24,6 +24,8 @@ function normalizeSolutions(content: Record<string, unknown>): Record<string, un
     }),
   }
 }
+
+const DOWNSTREAM_TRANSFORMATION_TYPES = ["REQUIREMENTS", "SYSTEM_SPEC", "SOLUTION_RECOMMENDATION", "ARCHITECTURE_HLD", "PROCESS_MAP", "WIREFRAMES", "DATABASE_DESIGN", "API_DESIGN", "ESTIMATION", "ROADMAP"]
 
 function normalizeAnalysis(content: Record<string, unknown>): Record<string, unknown> {
   const systems = [
@@ -78,6 +80,17 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       }
     }
 
+    const contextDelegate = (db as unknown as { projectContext?: unknown }).projectContext
+    if (type === DeliverableType.INTAKE_ANALYSIS && contextDelegate) {
+      const snapshot = await getProjectContextSnapshot(params.projectId)
+      const hasStructuredCompanyContext = Boolean(snapshot.metadata.companyContext)
+      const discovery = snapshot.metadata.discovery
+      const discoveryRecord = discovery && typeof discovery === "object" && !Array.isArray(discovery) ? discovery as Record<string, unknown> : {}
+      if (hasStructuredCompanyContext && discoveryRecord.readyForAnalysis !== true) {
+        return NextResponse.json({ error: "Complete the adaptive INTELLY Discovery interview before generating Business Analysis." }, { status: 409 })
+      }
+    }
+
     const context = await buildProjectContext(params.projectId)
     const aiResult = await generateStructured({
       task: type,
@@ -125,10 +138,52 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     if (type === DeliverableType.INTAKE_ANALYSIS) {
       const contextDelegate = (db as unknown as { projectContext?: unknown }).projectContext
       if (contextDelegate) {
+        const snapshot = await getProjectContextSnapshot(params.projectId)
         const questions = Array.isArray(content.clarifyingQuestions) ? content.clarifyingQuestions : content.missingInformation
-        await updateProjectContextMetadata(params.projectId, { discoveryQuestions: questions || [] }).catch((error) => console.warn("Analysis context metadata persistence failed:", error))
+        const previousDiscovery = snapshot.metadata.discovery && typeof snapshot.metadata.discovery === "object" && !Array.isArray(snapshot.metadata.discovery)
+          ? snapshot.metadata.discovery as Record<string, unknown>
+          : {}
+        const understanding = {
+          confirmedFacts: Array.isArray(content.confirmedFacts) ? content.confirmedFacts : previousDiscovery.understanding && typeof previousDiscovery.understanding === "object" ? (previousDiscovery.understanding as Record<string, unknown>).confirmedFacts || [] : [],
+          currentProcess: Array.isArray(content.currentWorkflow) ? content.currentWorkflow : content.currentBusinessProcesses || [],
+          observedProblems: Array.isArray(content.problems) ? content.problems : [],
+          potentialRootCauses: Array.isArray(content.rootCauses) ? content.rootCauses : [],
+          unknowns: Array.isArray(content.unknowns) ? content.unknowns : [],
+          constraints: Array.isArray(content.constraints) ? content.constraints : [],
+          evidence: Array.isArray(content.evidence) ? content.evidence : [],
+          businessImpact: Array.isArray(content.businessImpact) ? content.businessImpact : [],
+        }
+        const analysisProgress = content.readiness && typeof content.readiness === "object" && !Array.isArray(content.readiness) && typeof (content.readiness as Record<string, unknown>).overallScore === "number"
+          ? (content.readiness as Record<string, number>).overallScore as number
+          : typeof previousDiscovery.progress === "number" ? previousDiscovery.progress : 0
+        const metadataPatch: Record<string, unknown> = {
+          discoveryQuestions: questions || [],
+          intelligence: content,
+          staleDeliverables: DOWNSTREAM_TRANSFORMATION_TYPES,
+          discovery: {
+            ...previousDiscovery,
+            status: content.readyToBuild ? "ANALYSIS_COMPLETE" : "IN_PROGRESS",
+            progress: analysisProgress,
+            readyForAnalysis: Boolean(content.readyToBuild),
+            understanding,
+            lastUpdatedAt: new Date().toISOString(),
+          },
+        }
+        if (content.readiness !== undefined) metadataPatch.readiness = content.readiness
+        await updateProjectContextMetadata(params.projectId, metadataPatch).catch((error) => console.warn("Analysis context metadata persistence failed:", error))
       }
       await db.project.update({ where: { id: params.projectId }, data: { industry: String(content.industry || "") || null, detectedLanguage: String(content.detectedLanguage || language) } }).catch(() => undefined)
+    }
+
+    if (type !== DeliverableType.INTAKE_ANALYSIS) {
+      const contextDelegate = (db as unknown as { projectContext?: unknown }).projectContext
+      if (contextDelegate) {
+        const snapshot = await getProjectContextSnapshot(params.projectId)
+        const stale = Array.isArray(snapshot.metadata.staleDeliverables)
+          ? snapshot.metadata.staleDeliverables.map(String).filter((value) => value !== type)
+          : []
+        await updateProjectContextMetadata(params.projectId, { staleDeliverables: stale }).catch((error) => console.warn("Stale marker update failed:", error))
+      }
     }
 
     return NextResponse.json(updatedDeliverable)

@@ -77,8 +77,8 @@ export function initEffortEstimationModule() {
     type: DeliverableType.ESTIMATION,
     i18nTitleKey: "deliverables.estimation.title",
     dependsOn: [DeliverableType.SYSTEM_SPEC],
-    systemPrompt: "Generate an Effort, Cost, Resource, and Risk Estimation report in JSON format.",
-    buildUserPrompt: (ctx: string) => `Generate Effort & Cost Estimation based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Delivery Estimator. Generate an evidence-based effort, resource, risk, and cost-estimation report from the discovered requirements, process scope, constraints, and solution options. Do not invent precise costs or timelines when evidence is insufficient; explicitly mark them as requiring further estimation and explain the missing inputs.",
+    buildUserPrompt: (ctx: string) => `Generate evidence-based effort and cost estimation from the canonical INTELLY context. Preserve requirement, problem, and constraint links:\n\n${ctx}`,
     outputSchema: EffortEstimationSchema,
     mockFixture: MOCK_EFFORT_ESTIMATION_FIXTURE
   })

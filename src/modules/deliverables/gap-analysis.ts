@@ -19,7 +19,7 @@ export const GapAnalysisSchema = z.object({
     impactDescription: z.string(),
     readinessLevel: z.enum(["READY", "NEEDS_TRAINING", "RESISTANT"])
   })),
-  digitalMaturityScore: z.number().min(1).max(5),
+  digitalMaturityScore: z.number().min(1).max(5).nullable(),
   disclaimer: z.string()
 })
 
@@ -60,7 +60,7 @@ export function initGapAnalysisModule() {
     type: DeliverableType.GAP_ANALYSIS,
     i18nTitleKey: "deliverables.gap_analysis.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
-    systemPrompt: "Generate a Business Gap Analysis and Digital Maturity Assessment in JSON format.",
+    systemPrompt: "You are a Lead Business Transformation Analyst. Generate an evidence-driven AS-IS / TO-BE gap analysis from the discovered current process, problems, root causes, impact, constraints, and selected requirements. Link gaps to the source problem where possible. Use insufficient information rather than inventing a maturity score or compliance claim.",
     buildUserPrompt: (ctx: string) => `Generate Gap Analysis based on context:\n\n${ctx}`,
     outputSchema: GapAnalysisSchema,
     mockFixture: MOCK_GAP_ANALYSIS_FIXTURE

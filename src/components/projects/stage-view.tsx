@@ -70,6 +70,7 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasData, setHasData] = useState(false)
+  const [stale, setStale] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,6 +79,10 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
       const response = await fetch(`/api/projects/${projectId}/deliverables/${type}`)
       const payload = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(payload.error || "Unable to load this stage.")
+      const contextResponse = await fetch(`/api/projects/${projectId}/context`)
+      const contextPayload = await contextResponse.json().catch(() => ({}))
+      const staleTypes = Array.isArray(contextPayload.context?.metadata?.staleDeliverables) ? contextPayload.context.metadata.staleDeliverables.map(String) : []
+      setStale(staleTypes.includes(type))
       const versionId = payload?.currentVersionId || payload?.versions?.[0]?.id
       if (!versionId) {
         setContent(null)
@@ -152,7 +157,8 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
           </div>
         ) : hasData ? (
           <div className="space-y-4">
-            <Badge variant="outline" className="border-[#E5DFD4] text-[10px] font-bold">Persisted structured output</Badge>
+            {stale && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Project context changed after this output was generated. Review the evidence and regenerate when ready.</div>}
+             <Badge variant="outline" className="border-[#E5DFD4] text-[10px] font-bold">Persisted structured output</Badge>
             <StructuredValue value={content} />
           </div>
         ) : (

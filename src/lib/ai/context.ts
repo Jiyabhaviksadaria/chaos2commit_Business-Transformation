@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import type { Prisma } from "@prisma/client"
+import { formatCompanyContext } from "@/lib/company-context"
 
 const MAX_SOURCE_TEXT = 12_000
 const DEFAULT_CONTEXT_BUDGET = 15_000
@@ -35,6 +36,31 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function asAnswers(value: unknown): Array<Record<string, unknown>> {
   return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))) : []
+}
+
+function formatStructuredMetadata(metadata: Record<string, unknown>): string {
+  const companyContext = formatCompanyContext(metadata.companyContext)
+  const discovery = asRecord(metadata.discovery)
+  const intelligence = asRecord(metadata.intelligence)
+  const discoveryLines = [
+    discovery.status ? `Discovery status: ${String(discovery.status)}` : "",
+    typeof discovery.progress === "number" ? `Discovery progress: ${discovery.progress}%` : "",
+    discovery.readyForAnalysis === true ? "INTELLY has enough information to analyze the transformation." : "",
+  ].filter(Boolean)
+  const understanding = asRecord(discovery.understanding)
+  const intelligenceLines = [
+    typeof intelligence.businessSummary === "string" ? `Current business understanding: ${intelligence.businessSummary}` : "",
+    Array.isArray(intelligence.problems) && intelligence.problems.length ? `Observed problems: ${JSON.stringify(intelligence.problems)}` : "",
+    Array.isArray(intelligence.rootCauses) && intelligence.rootCauses.length ? `Potential root causes: ${JSON.stringify(intelligence.rootCauses)}` : "",
+    Array.isArray(intelligence.unknowns) && intelligence.unknowns.length ? `Unknowns requiring validation: ${JSON.stringify(intelligence.unknowns)}` : "",
+    Array.isArray(understanding.currentProcess) && understanding.currentProcess.length ? `Discovery current process: ${JSON.stringify(understanding.currentProcess)}` : "",
+    Array.isArray(understanding.observedProblems) && understanding.observedProblems.length ? `Discovery observed problems: ${JSON.stringify(understanding.observedProblems)}` : "",
+    Array.isArray(understanding.potentialRootCauses) && understanding.potentialRootCauses.length ? `Discovery potential root causes: ${JSON.stringify(understanding.potentialRootCauses)}` : "",
+    Array.isArray(understanding.evidence) && understanding.evidence.length ? `Discovery evidence: ${JSON.stringify(understanding.evidence)}` : "",
+  ].filter(Boolean)
+  const readiness = asRecord(metadata.readiness)
+  const readinessLines = readiness.status ? `Readiness state: ${String(readiness.status)}${typeof readiness.overallScore === "number" ? ` (${readiness.overallScore}%)` : ""}` : ""
+  return [companyContext, discoveryLines.join("\n"), intelligenceLines.join("\n"), readinessLines].filter(Boolean).join("\n\n")
 }
 
 function normalize(value: string): string {
@@ -145,6 +171,7 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
   if (!project) throw new Error("Project context not found.")
 
   const existingContext = asRecord(project.projectContext)
+  const existingMetadata = asRecord(existingContext.metadata)
   const sources = buildSources(project)
   const sourceTypes = Array.from(new Set(sources.map((source) => source.kind)))
   const sourceTextBlocks = sources.map((source) => `SOURCE: ${source.label} [${source.kind}]\n${source.extractedText}`)
@@ -157,6 +184,7 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
     `Project: ${String(project.name || "Untitled project")}`,
     project.industry ? `Industry: ${String(project.industry)}` : "",
     project.businessGoal ? `Project source summary: ${String(project.businessGoal)}` : "",
+    formatStructuredMetadata(existingMetadata),
     typeof project.businessContext === "string" ? project.businessContext : "",
     answerContext,
     project.blueprintData ? `Persisted Master Blueprint:\n${JSON.stringify(project.blueprintData)}` : "",
@@ -165,7 +193,7 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
   ].filter(Boolean).join("\n\n"))
 
   const metadata = {
-    ...asRecord(existingContext.metadata),
+    ...existingMetadata,
     projectName: project.name || null,
     projectIndustry: project.industry || null,
     sourceCount: sources.length,
@@ -216,7 +244,8 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
   // Keep the legacy field useful for older consumers, but never use it as a
   // replacement for the unified source snapshot.
   const projectUpdate = (db as unknown as { project?: { update?: (args: unknown) => Promise<unknown> } }).project
-  if (projectUpdate?.update && !project.businessContext) {
+  const hasStructuredCompanyContext = Boolean(existingMetadata.companyContext)
+  if (projectUpdate?.update && !project.businessContext && !hasStructuredCompanyContext) {
     await projectUpdate.update({ where: { id: projectId }, data: { businessContext: businessContent } })
   }
 
@@ -261,16 +290,72 @@ export async function appendProjectContextAnswers(projectId: string, incoming: A
   return { ...snapshot, answers }
 }
 
+export async function upsertProjectContextAnswers(projectId: string, incoming: Array<Record<string, unknown>>): Promise<ProjectContextSnapshot> {
+  const snapshot = await rebuildProjectContext(projectId)
+  const answers = [...snapshot.answers]
+  for (const answer of incoming) {
+    const questionId = String(answer.questionId || "")
+    const question = String(answer.question || "")
+    const index = answers.findIndex((existing) => {
+      const existingId = String(existing.questionId || "")
+      const existingQuestion = String(existing.question || "")
+      return (questionId && existingId === questionId) || (!questionId && existingQuestion === question)
+    })
+    if (index >= 0) answers[index] = { ...answers[index], ...answer, updatedAt: new Date().toISOString() }
+    else answers.push({ ...answer, createdAt: new Date().toISOString() })
+  }
+  const discovery = asRecord(snapshot.metadata.discovery)
+  const staleDeliverables = Array.from(new Set([
+    ...(Array.isArray(snapshot.metadata.staleDeliverables) ? snapshot.metadata.staleDeliverables.map(String) : []),
+    "REQUIREMENTS",
+    "SYSTEM_SPEC",
+    "SOLUTION_RECOMMENDATION",
+    "ARCHITECTURE_HLD",
+    "PROCESS_MAP",
+    "WIREFRAMES",
+    "DATABASE_DESIGN",
+    "API_DESIGN",
+    "ESTIMATION",
+    "ROADMAP",
+  ]))
+  const metadata = {
+    ...snapshot.metadata,
+    discovery: {
+      ...discovery,
+      answers,
+      lastUpdatedAt: new Date().toISOString(),
+    },
+    staleDeliverables,
+    updatedAt: new Date().toISOString(),
+  }
+  const delegate = (db as unknown as {
+    projectContext?: { update?: (args: unknown) => Promise<unknown> }
+  }).projectContext
+  if (delegate?.update) {
+    await delegate.update({
+      where: { projectId },
+      data: {
+        answers: answers as Prisma.InputJsonValue,
+        metadata: metadata as Prisma.InputJsonValue,
+      },
+    })
+  }
+  return { ...snapshot, answers, metadata }
+}
+
 function formatUserContext(metadata: Record<string, unknown>): string {
   const userContext = asRecord(metadata.userContext)
   const name = typeof userContext.name === "string" ? userContext.name.trim() : ""
   const companyRole = typeof userContext.companyRole === "string" ? userContext.companyRole.trim() : ""
-  if (!name && !companyRole) return ""
+  const intakeRole = typeof userContext.intakeRole === "string" ? userContext.intakeRole.trim() : ""
+  const effectiveRole = companyRole || intakeRole
+  if (!name && !effectiveRole) return ""
 
   return [
     "--- USER CONTEXT (PERSON USING THE PLATFORM) ---",
     name ? `Name: ${name}` : "",
-    companyRole ? `Role in Company: ${companyRole}` : "",
+    effectiveRole ? `Role in Company: ${effectiveRole}` : "",
+    intakeRole && intakeRole !== companyRole ? `Intake role: ${intakeRole}` : "",
   ].filter(Boolean).join("\n")
 }
 

@@ -5,13 +5,20 @@ import { DeliverableType } from "@prisma/client"
 export const ProcessIntelligenceSchema = z.object({
   title: z.string(),
   processName: z.string(),
+  currentState: z.string().optional(),
+  targetState: z.string().optional(),
+  processProblemIds: z.array(z.string()).optional(),
   bpmnSteps: z.array(z.object({
     stepId: z.string(),
     label: z.string(),
     type: z.enum(["START_EVENT", "USER_TASK", "SERVICE_TASK", "DECISION_GATEWAY", "END_EVENT"]),
     actor: z.string(),
     description: z.string(),
-    automationPotential: z.enum(["HIGH", "MEDIUM", "LOW"])
+    automationPotential: z.enum(["HIGH", "MEDIUM", "LOW"]),
+    currentState: z.string().optional(),
+    targetState: z.string().optional(),
+    problemIds: z.array(z.string()).optional(),
+    evidenceRefs: z.array(z.string()).optional()
   })),
   swimlanes: z.array(z.object({
     role: z.string(),
@@ -51,8 +58,8 @@ export function initProcessIntelligenceModule() {
     type: DeliverableType.PROCESS_MAP,
     i18nTitleKey: "deliverables.process_map.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
-    systemPrompt: "Generate a Process Intelligence BPMN & Workflow Specification in JSON format.",
-    buildUserPrompt: (ctx: string) => `Generate Process Intelligence workflow based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Business Process Analyst. Generate an evidence-driven AS-IS and TO-BE BPMN/process specification from the discovered workflow, pain points, root causes, impact, constraints, and selected solution direction. Link process improvements to the source problem and evidence. Mark unverified future-state assumptions clearly.",
+    buildUserPrompt: (ctx: string) => `Generate AS-IS / TO-BE Process Intelligence from the canonical INTELLY context. Preserve problem and evidence links for every improvement:\n\n${ctx}`,
     outputSchema: ProcessIntelligenceSchema,
     mockFixture: MOCK_PROCESS_INTELLIGENCE_FIXTURE
   })

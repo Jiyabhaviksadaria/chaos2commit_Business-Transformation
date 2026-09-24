@@ -28,12 +28,12 @@ function statusForError(error: unknown): number {
   return 503
 }
 
-export async function POST(req: Request, { params }: { params: { projectId: string } }) {
-  const projectId = params.projectId
+export async function POST(req: Request) {
   try {
-    const access = await requireProjectAccess(projectId, "project:edit")
     const parsed = Schema.safeParse(await req.json().catch(() => ({})))
-    if (!parsed.success) return NextResponse.json({ error: "A valid website URL is required." }, { status: 400 })
+    if (!parsed.success) return NextResponse.json({ error: "A project and a valid website URL are required." }, { status: 400 })
+    const projectId = parsed.data.projectId
+    const access = await requireProjectAccess(projectId, "project:edit")
 
     const requestedUrl = await validateExternalUrl(parsed.data.url)
     const canonicalUrl = canonicalizeUrl(requestedUrl)

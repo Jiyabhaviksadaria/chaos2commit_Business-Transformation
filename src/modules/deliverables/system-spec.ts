@@ -28,7 +28,9 @@ export const ModuleSchema = z.object({
   fields: z.array(FieldSchema).max(12),
   views: z.array(z.enum(["table", "kanban"])),
   kanbanField: z.string().optional(),
-  quickActions: z.array(z.enum(["CHECK_IN_OUT"])).optional()
+  quickActions: z.array(z.enum(["CHECK_IN_OUT"])).optional(),
+  problemIds: z.array(z.string()).optional(),
+  requirementIds: z.array(z.string()).optional()
 })
 
 export const SystemSpecSchema = z.object({
@@ -42,11 +44,14 @@ export const SystemSpecSchema = z.object({
   workflows: z.array(z.object({
     name: z.string(),
     trigger: z.string(),
-    steps: z.array(z.string())
+    steps: z.array(z.string()),
+    problemIds: z.array(z.string()).optional(),
+    requirementIds: z.array(z.string()).optional()
   })),
   roles: z.array(z.object({
     name: z.string(),
-    permissions: z.array(z.string())
+    permissions: z.array(z.string()),
+    requirementIds: z.array(z.string()).optional()
   }))
 })
 
@@ -156,7 +161,7 @@ export function initSystemSpecModule() {
     type: DeliverableType.SYSTEM_SPEC,
     i18nTitleKey: "deliverables.system_spec.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
-    systemPrompt: `You are an expert system architect. Design a workable application system spec as JSON.
+    systemPrompt: `You are an expert system architect. Design a workable application system spec as JSON from the discovered business problems, requirements, user roles, process needs, data needs, and evidence. Tailor every module and workflow to evidenced needs and link them to problem/requirement IDs when available. Do not invent integrations or precision that is not supported.
 Rules:
 - max 8 modules, max 12 fields per module
 - field keys must be lowercase snake_case

@@ -11,7 +11,10 @@ export const UxDesignSchema = z.object({
     purpose: z.string(),
     keyComponents: z.array(z.string()),
     layoutGrid: z.string(),
-    userActions: z.array(z.string())
+    userActions: z.array(z.string()),
+    problemIds: z.array(z.string()).optional(),
+    requirementIds: z.array(z.string()).optional(),
+    evidenceRefs: z.array(z.string()).optional()
   })),
   navigationFlow: z.array(z.string()),
   uxRecommendations: z.array(z.string()),
@@ -59,8 +62,8 @@ export function initUxDesignModule() {
     type: DeliverableType.WIREFRAMES,
     i18nTitleKey: "deliverables.wireframes.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
-    systemPrompt: "Generate AI UX Wireframe Concepts and Navigation Flows in JSON format.",
-    buildUserPrompt: (ctx: string) => `Generate UX Wireframe Concepts based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Business UX Analyst. Generate role-specific UX concepts from the discovered user roles, workflows, pain points, root causes, requirements, and evidence. Explain which problem each screen/workflow addresses and link to requirement/problem/evidence IDs when available. Do not create generic dashboards for users and processes that are not evidenced.",
+    buildUserPrompt: (ctx: string) => `Generate role-specific UX Wireframe Concepts from the canonical INTELLY context. Preserve workflow, problem, requirement, and evidence links:\n\n${ctx}`,
     outputSchema: UxDesignSchema,
     mockFixture: MOCK_UX_DESIGN_FIXTURE
   })

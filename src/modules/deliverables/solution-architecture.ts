@@ -10,7 +10,11 @@ export const SolutionArchitectureSchema = z.object({
       name: z.string(),
       description: z.string(),
       technology: z.string(),
-      layer: z.enum(["FRONTEND", "BACKEND", "DATABASE", "INTEGRATION", "SECURITY"])
+      layer: z.enum(["FRONTEND", "BACKEND", "DATABASE", "INTEGRATION", "SECURITY"]),
+      whyRequired: z.string().optional(),
+      businessRequirementIds: z.array(z.string()).optional(),
+      problemIds: z.array(z.string()).optional(),
+      evidenceRefs: z.array(z.string()).optional()
     })),
     dataFlowSummary: z.string(),
     securityArchitecture: z.array(z.string()),
@@ -62,8 +66,8 @@ export function initSolutionArchitectureModule() {
     type: DeliverableType.ARCHITECTURE_HLD,
     i18nTitleKey: "deliverables.architecture_hld.title",
     dependsOn: [DeliverableType.SYSTEM_SPEC],
-    systemPrompt: "Generate a High-Level and Low-Level Solution Architecture specification in JSON format.",
-    buildUserPrompt: (ctx: string) => `Generate Solution Architecture based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Solution Architect. Generate a High-Level and Low-Level Solution Architecture specification from the discovered business problems, requirements, selected or candidate solutions, process needs, data needs, and constraints. Explain why every component is required and link components to requirement/problem/evidence IDs when available. Never invent unavailable APIs, integrations, compliance, or exact non-functional targets.",
+    buildUserPrompt: (ctx: string) => `Generate Solution Architecture based on the canonical INTELLY context. Preserve requirement/problem/evidence links and explain component necessity:\n\n${ctx}`,
     outputSchema: SolutionArchitectureSchema,
     mockFixture: MOCK_SOLUTION_ARCH_FIXTURE
   })

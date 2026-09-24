@@ -17,7 +17,6 @@ import {
   Code2,
   Loader2
 } from "lucide-react"
-import { DiscoveryView } from "../discovery-view"
 import { DiscoveryLoop } from "../discovery-loop"
 import { BusinessAnalysisView } from "../business-analysis-view"
 import { DeliverableSuite } from "../deliverable-suite"
@@ -32,6 +31,10 @@ function scoreValue(value: number | null | undefined): number {
   return typeof value === "number" ? value : 0
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
 interface ProjectData {
   id: string
   name: string
@@ -39,6 +42,7 @@ interface ProjectData {
   status: string
   businessGoal?: string | null
   businessContext?: string | null
+  language?: string | null
   digitalMaturity?: number | null
   aiReadiness?: number | null
   discoveryCompleteness?: number | null
@@ -48,11 +52,46 @@ interface TabProps {
   projectId: string
   project: ProjectData
   onOpenAi: () => void
+  onScoreUpdate?: () => void
 }
 
 // 1. Overview
-export function OverviewTabView({ projectId, project, onOpenAi }: TabProps) {
+export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }: TabProps) {
   const router = useRouter()
+  const [recalculating, setRecalculating] = useState(false)
+  const [intelligence, setIntelligence] = useState<Record<string, unknown> | null>(null)
+
+  useEffect(() => {
+    let active = true
+    fetch(`/api/projects/${projectId}/context`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Context unavailable")
+        return response.json() as Promise<{ context?: Record<string, unknown> }>
+      })
+      .then((payload) => { if (active) setIntelligence(payload.context || null) })
+      .catch(() => { if (active) setIntelligence(null) })
+    return () => { active = false }
+  }, [projectId])
+
+  const metadata = asRecord(intelligence?.metadata)
+  const discovery = asRecord(metadata.discovery)
+  const company = asRecord(metadata.companyContext)
+  const understanding = asRecord(metadata.intelligence)
+  const problems = Array.isArray(understanding.problems) ? understanding.problems as Array<Record<string, unknown>> : []
+  const rootCauses = Array.isArray(understanding.rootCauses) ? understanding.rootCauses as Array<Record<string, unknown>> : []
+  const opportunities = Array.isArray(understanding.transformationOpportunities) ? understanding.transformationOpportunities.map(String) : []
+  const readiness = asRecord(metadata.readiness)
+  const ready = Boolean(discovery.readyForAnalysis)
+  const runDiagnostic = async () => {
+    setRecalculating(true)
+    try {
+      await fetch(`/api/projects/${projectId}/discovery/recalculate`, { method: "POST" })
+      onScoreUpdate?.()
+    } finally {
+      setRecalculating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -110,13 +149,19 @@ export function OverviewTabView({ projectId, project, onOpenAi }: TabProps) {
               <Progress value={scoreValue(project.discoveryCompleteness)} className="h-2 bg-neutral-100" />
             </div>
 
-            <Button onClick={onOpenAi} className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2 mt-2">
+            <Button onClick={runDiagnostic} disabled={recalculating} className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2 mt-2">
               <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
               Run Readiness Diagnostic
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm">
+        <CardHeader className="pb-3"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><CardTitle className="text-base font-extrabold text-neutral-900">AI transformation phase</CardTitle><CardDescription className="text-xs">Company context → investigation → evidence-backed analysis → existing workflow.</CardDescription></div><Badge className={ready ? "bg-emerald-100 text-emerald-800 border-none" : "bg-[#FEE895] text-neutral-900 border-none"}>{ready ? "Ready for analysis" : "Discovery in progress"}</Badge></div></CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs"><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Business objective</p><p className="mt-1 text-neutral-800">{project.businessGoal || (typeof company.businessObjective === "string" ? company.businessObjective : "Not yet defined")}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Discovery progress</p><p className="mt-1 text-neutral-800">{typeof discovery.progress === "number" ? `${discovery.progress}%` : "Not assessed"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Problems discovered</p><p className="mt-1 text-neutral-800">{problems.length || "No validated problem yet"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Readiness</p><p className="mt-1 text-neutral-800">{readiness?.overallScore === null || readiness?.overallScore === undefined ? "Insufficient information" : `${readiness.overallScore}%`}</p></div></CardContent>
+        <CardContent className="pt-0 flex flex-wrap items-center justify-between gap-3"><div className="text-xs text-neutral-600">{rootCauses.length > 0 ? `Top hypothesis: ${typeof rootCauses[0] === "string" ? rootCauses[0] : rootCauses[0]?.statement || "Needs validation"}` : opportunities.length > 0 ? `Top opportunity: ${opportunities[0]}` : "INTELLY will investigate the current process and evidence before making a recommendation."}</div><Button onClick={() => router.push(`/projects/${projectId}/${ready ? "business-analysis" : "discovery"}`)} className="bg-[#18181C] text-white rounded-full text-xs font-bold gap-2">{ready ? "Review Business Analysis" : "Continue AI Discovery"}<ExternalLink className="w-3.5 h-3.5" /></Button></CardContent>
+      </Card>
 
       {/* Quick Launch Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -158,30 +203,29 @@ export function OverviewTabView({ projectId, project, onOpenAi }: TabProps) {
 }
 
 // 2. Discovery
-export function DiscoveryTabView({ projectId }: TabProps) {
+export function DiscoveryTabView({ projectId, project, onScoreUpdate }: TabProps) {
   const router = useRouter()
   return (
     <div className="space-y-6">
       <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-[22px] flex items-center justify-between shadow-sm">
         <div>
-          <h3 className="font-extrabold text-sm text-neutral-900">Ready to build your website?</h3>
-          <p className="text-xs text-neutral-500">Transform your business discovery analysis into a live customizable site.</p>
+          <h3 className="font-extrabold text-sm text-neutral-900">INTELLY Discovery is evidence-first</h3>
+          <p className="text-xs text-neutral-500">Answer targeted questions, validate the understanding, and only then move to solution options.</p>
         </div>
         <Button onClick={() => router.push(`/projects/${projectId}/editor`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
           <Globe className="h-3.5 w-3.5 text-[#F8B4D9]" />
-          Build Website from Analysis
+          Open Website Builder
         </Button>
       </div>
 
-      <DiscoveryLoop projectId={projectId} />
-      <DiscoveryView projectId={projectId} />
+      <DiscoveryLoop projectId={projectId} language={project.language} onScoreUpdate={onScoreUpdate} />
       <DocumentsView projectId={projectId} />
     </div>
   )
 }
 
 // 3. Business Analysis
-export function BusinessAnalysisTabView({ projectId, project, onOpenAi }: TabProps) {
+export function BusinessAnalysisTabView({ projectId, project, onOpenAi, onScoreUpdate }: TabProps) {
   return (
     <div className="space-y-6">
       <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-[22px] flex items-center justify-between shadow-sm">
@@ -193,10 +237,12 @@ export function BusinessAnalysisTabView({ projectId, project, onOpenAi }: TabPro
       </div>
       <BusinessAnalysisView
         projectId={projectId}
+        language={project.language}
         digitalMaturity={project.digitalMaturity ?? undefined}
         aiReadiness={project.aiReadiness ?? undefined}
         discoveryCompleteness={project.discoveryCompleteness ?? undefined}
         onOpenAi={onOpenAi}
+        onScoreUpdate={onScoreUpdate}
       />
     </div>
   )

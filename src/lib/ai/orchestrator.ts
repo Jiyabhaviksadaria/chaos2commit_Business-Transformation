@@ -17,6 +17,8 @@ export type GenerateOpts<T> = {
   language: string
   userId?: string
   organizationId?: string
+  /** Optional per-task provider timeout. Defaults to 45 seconds. */
+  timeoutMs?: number
   /** Optional deterministic fixture used only when AI_MOCK=true. */
   mockFixture?: T
 }
@@ -63,7 +65,7 @@ export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Resu
     if (provider === "mock" && env.AI_MOCK !== "true") continue
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 45000)
+    const timeout = setTimeout(() => controller.abort(), opts.timeoutMs || 45000)
     const startTime = Date.now()
     
     let rawResult = ""

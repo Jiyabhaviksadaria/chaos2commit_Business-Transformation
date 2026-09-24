@@ -9,7 +9,13 @@ export const RequirementsSchema = z.object({
     id: z.string(),
     title: z.string(),
     description: z.string(),
-    priority: z.enum(["HIGH", "MEDIUM", "LOW"])
+    businessReason: z.string().optional(),
+    sourceProblem: z.string().optional(),
+    affectedUser: z.string().optional(),
+    priority: z.enum(["HIGH", "MEDIUM", "LOW"]),
+    acceptanceCriteria: z.array(z.string()).optional(),
+    dependencies: z.array(z.string()).optional(),
+    evidence: z.array(z.string()).optional()
   })),
   userStories: z.array(z.object({
     id: z.string(),
@@ -49,9 +55,9 @@ export function initRequirementsModule() {
     type: DeliverableType.REQUIREMENTS,
     i18nTitleKey: "deliverables.requirements",
     dependsOn: [], // no prerequisites for requirements
-    systemPrompt: `You are a Senior Business Analyst. Create a rigorous, complete Business Requirements Document based on the user's project context. Follow the requested schema exactly.`,
+    systemPrompt: `You are a Senior Business Analyst. Create a rigorous, evidence-driven Business Requirements Document based only on the user's project context. For every business requirement, connect it to a discovered problem, business reason, affected user, acceptance criteria, dependencies, and available evidence where supported. Mark unsupported assumptions as assumptions or unknowns. Follow the requested schema exactly. Do not invent precision or silently turn inferred root causes into facts.`,
     buildUserPrompt: (ctx: string, extraInstructions?: string) => {
-      let prompt = `Here is the current project context:\n\n${ctx}\n\nPlease generate the Business Requirements Document.`
+      let prompt = `Here is the canonical INTELLY project context, including structured company context, discovery understanding, evidence, and persisted analysis:\n\n${ctx}\n\nGenerate requirements that propagate the discovered problems, root causes, business impact, user roles, and constraints into testable capabilities. Cite the source problem or evidence whenever available.`
       if (extraInstructions) {
         prompt += `\n\nAdhere to these additional instructions:\n${extraInstructions}`
       }

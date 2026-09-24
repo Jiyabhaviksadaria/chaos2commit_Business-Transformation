@@ -107,8 +107,8 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
         {[['overview','Overview'],['discovery','Discovery'],['business-analysis','Business Analysis'],['requirements','Requirements'],['blueprint','Blueprint'],['solutions','Solutions'],['architecture','Architecture'],['processes','Processes'],['ux','UX'],['database','Database'],['apis','APIs'],['planning','Planning'],['roadmap','Roadmap'],['build','Build'],['collaboration','Collaboration'],['versions','Versions'],['exports','Exports']].map(([value, label]) => <TabsTrigger key={value} value={value} className="data-[state=active]:bg-[#18181C] data-[state=active]:text-white text-xs font-extrabold rounded-full px-4 py-2 transition-all">{label}</TabsTrigger>)}
       </TabsList></div>
       <TabsContent value="overview"><OverviewTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="discovery"><DiscoveryTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="business-analysis"><BusinessAnalysisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+      <TabsContent value="discovery"><DiscoveryTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
+      <TabsContent value="business-analysis"><BusinessAnalysisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
       <TabsContent value="requirements"><RequirementsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
       <TabsContent value="blueprint"><BlueprintView projectId={projectId} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
       <TabsContent value="solutions"><SolutionsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>

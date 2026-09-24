@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { buildWebsiteSpecFromTemplate } from "@/lib/templates/template-registry"
 import { parseExternalUrl } from "@/lib/ssrf"
+import { companyContextSchema, normalizeCompanyContext } from "@/lib/company-context"
 
 const ProjectInputSchema = z.object({
   name: z.string().trim().min(1).max(160).optional(),
@@ -15,6 +16,7 @@ const ProjectInputSchema = z.object({
   businessContext: z.string().trim().max(50_000).optional(),
   intakeUrl: z.string().trim().max(2_048).optional(),
   hasDocument: z.boolean().optional(),
+  companyContext: companyContextSchema.optional(),
   mode: z.enum(["analyze", "build"]).optional(),
 })
 
@@ -55,23 +57,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parse.error.message }, { status: 400 })
     }
 
-    const { templateId, industry, language, businessContext, intakeUrl, hasDocument, mode } = parse.data
-    if (mode === "analyze" && !intakeUrl && !hasDocument) {
+    const { templateId, language, businessContext, intakeUrl, hasDocument, mode } = parse.data
+    const companyContext = parse.data.companyContext ? normalizeCompanyContext(parse.data.companyContext) : undefined
+    const requestedUrl = intakeUrl || companyContext?.companyWebsite
+    if (mode === "analyze" && !requestedUrl && !hasDocument && !companyContext) {
       return NextResponse.json({ error: "Please provide a website URL or upload a document." }, { status: 400 })
     }
     let normalizedUrl: string | undefined
-    if (intakeUrl) {
+    if (requestedUrl) {
       try {
-        normalizedUrl = parseExternalUrl(intakeUrl).toString()
+        normalizedUrl = parseExternalUrl(requestedUrl).toString()
       } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid website URL." }, { status: 400 })
       }
     }
     const explicitTemplate = typeof body.templateId === "string" && body.templateId.trim().length > 0
-    const isWebsiteBuild = mode === "build" || (mode !== "analyze" && !intakeUrl && explicitTemplate) || (mode !== "analyze" && !intakeUrl && (parse.data.businessGoal || "").toLowerCase().startsWith("build website"))
-    const name = parse.data.name || (normalizedUrl ? (() => { try { return new URL(normalizedUrl).hostname.replace(/^www\./i, "") } catch { return "Website Transformation Project" } })() : "Source-based Transformation Project")
-    const businessGoal = parse.data.businessGoal || (normalizedUrl ? `Analyze the business information published at ${normalizedUrl}.` : "Analyze the uploaded business document(s).")
+    const isWebsiteBuild = mode === "build" || (mode !== "analyze" && !requestedUrl && explicitTemplate) || (mode !== "analyze" && !requestedUrl && (parse.data.businessGoal || "").toLowerCase().startsWith("build website"))
+    const name = companyContext?.companyName || parse.data.name || (normalizedUrl ? (() => { try { return new URL(normalizedUrl).hostname.replace(/^www\./i, "") } catch { return "Website Transformation Project" } })() : "Source-based Transformation Project")
+    const industry = companyContext?.industry || parse.data.industry
+    const businessGoal = companyContext
+      ? [companyContext.businessObjective, companyContext.objectiveClarification].filter(Boolean).join(" — ")
+      : parse.data.businessGoal || (normalizedUrl ? `Analyze the business information published at ${normalizedUrl}.` : "Analyze the uploaded business document(s).")
     const spec = isWebsiteBuild && templateId ? buildWebsiteSpecFromTemplate(templateId, name) : null
+    const storedCompanyContext = companyContext ? {
+      ...companyContext,
+      companyWebsite: companyContext.companyWebsite || "",
+      objectiveClarification: companyContext.objectiveClarification || "",
+    } : null
 
     try {
       let firstWorkspace = await db.workspace.findFirst({
@@ -100,16 +112,35 @@ export async function POST(req: Request) {
           industry: industry || "General Business",
           businessGoal,
           language: language || "en",
-          businessContext,
+          businessContext: companyContext ? undefined : businessContext,
           intakeUrl: normalizedUrl || null,
           projectContext: {
             create: {
               extractedText: "",
               businessContent: "",
               metadata: {
+                companyContext: storedCompanyContext,
                 userContext: {
                   name: user.name || "Unknown user",
                   companyRole: user.companyRole || "Not specified",
+                  intakeRole: companyContext?.userRole || null,
+                  source: "SESSION",
+                },
+                discovery: {
+                  status: "NOT_STARTED",
+                  progress: 0,
+                  readyForAnalysis: false,
+                  questions: [],
+                  understanding: {
+                    confirmedFacts: [],
+                    currentProcess: [],
+                    observedProblems: [],
+                    potentialRootCauses: [],
+                    unknowns: [],
+                    constraints: [],
+                    evidence: [],
+                  },
+                  lastUpdatedAt: new Date().toISOString(),
                 },
               },
             },

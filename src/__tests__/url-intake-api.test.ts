@@ -46,7 +46,7 @@ describe("URL intake API", () => {
 
   it("persists extracted website content into the canonical context", async () => {
     const request = new Request("http://localhost/api/intake/url", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectId: "project-1", url: "https://acme.example" }) })
-    const response = await ingestUrl(request, { params: { projectId: "project-1" } })
+    const response = await ingestUrl(request)
     const body = await response.json()
     expect(response.status).toBe(200)
     expect(body.source.id).toBe("source-1")
@@ -57,7 +57,7 @@ describe("URL intake API", () => {
   it("treats an already-ingested URL as idempotent", async () => {
     mocks.findFirst.mockResolvedValue({ id: "existing", kind: "URL", label: "https://acme.example" })
     const request = new Request("http://localhost/api/intake/url", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectId: "project-1", url: "https://acme.example" }) })
-    const response = await ingestUrl(request, { params: { projectId: "project-1" } })
+    const response = await ingestUrl(request)
     const body = await response.json()
     expect(response.status).toBe(200)
     expect(body.duplicate).toBe(true)

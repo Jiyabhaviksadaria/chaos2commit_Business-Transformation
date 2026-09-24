@@ -14,7 +14,10 @@ export const DatabaseApiDesignSchema = z.object({
         isPrimary: z.boolean().default(false),
         isNullable: z.boolean().default(false)
       })),
-      relationships: z.array(z.string())
+      relationships: z.array(z.string()),
+      businessProblemIds: z.array(z.string()).optional(),
+      requirementIds: z.array(z.string()).optional(),
+      evidenceRefs: z.array(z.string()).optional()
     }))
   }),
   apiEndpoints: z.array(z.object({
@@ -22,7 +25,12 @@ export const DatabaseApiDesignSchema = z.object({
     method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
     description: z.string(),
     requestBody: z.string().optional(),
-    responseBody: z.string()
+    responseBody: z.string(),
+    businessRequirementIds: z.array(z.string()).optional(),
+    relatedProcess: z.string().optional(),
+    dataUsed: z.array(z.string()).optional(),
+    authenticationRequirement: z.string().optional(),
+    evidenceRefs: z.array(z.string()).optional()
   })),
   integrationArchitecture: z.array(z.string()),
   disclaimer: z.string()
@@ -86,8 +94,8 @@ export function initDatabaseApiDesignModule() {
     type: DeliverableType.DATABASE_DESIGN,
     i18nTitleKey: "deliverables.database_design.title",
     dependsOn: [DeliverableType.SYSTEM_SPEC],
-    systemPrompt: "Generate a Database Schema ERD and API Integration Specification in JSON format.",
-    buildUserPrompt: (ctx: string) => `Generate Database & API Specification based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Data and API Architect. Generate a database schema and API specification grounded in the discovered business problems, requirements, process steps, user roles, integrations, and evidence. Link entities and endpoints to requirement/problem/evidence IDs when available. Explain purpose, related process, data used, and authentication requirement. Do not claim an API or integration exists without evidence.",
+    buildUserPrompt: (ctx: string) => `Generate Database & API Specification from the canonical INTELLY context. Trace every entity and endpoint back to a requirement, process, user role, or evidence item when available:\n\n${ctx}`,
     outputSchema: DatabaseApiDesignSchema,
     mockFixture: MOCK_DATABASE_API_FIXTURE
   })

@@ -71,8 +71,8 @@ export function initTransformationRoadmapModule() {
     type: DeliverableType.ROADMAP,
     i18nTitleKey: "deliverables.roadmap.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
-    systemPrompt: "Generate a comprehensive Transformation Roadmap with phase breakdowns, timelines, and change management strategies.",
-    buildUserPrompt: (ctx: string) => `Generate Transformation Roadmap based on context:\n\n${ctx}`,
+    systemPrompt: "You are a Lead Transformation Program Lead. Generate a comprehensive roadmap from the discovered problems, root causes, business impact, requirements, selected solution direction, constraints, and organizational context. Sequence outcomes and dependencies clearly. Do not invent precise timelines or compliance outcomes when evidence is insufficient; mark them for validation.",
+    buildUserPrompt: (ctx: string) => `Generate an evidence-based Transformation Roadmap from the canonical INTELLY context and preserve problem, requirement, and dependency links:\n\n${ctx}`,
     outputSchema: TransformationRoadmapSchema,
     mockFixture: MOCK_ROADMAP_FIXTURE
   })
