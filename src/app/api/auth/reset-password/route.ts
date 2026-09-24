@@ -4,6 +4,7 @@ import * as bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { hashToken } from "@/lib/auth-tokens"
 import { sendPasswordChangedEmail } from "@/lib/mail/templates/password-changed"
+import { DEMO_MODE_RESTRICTION_MESSAGE, isDemoIdentity } from "@/lib/demo-account"
 
 const schema = z.object({
   token: z.string().min(32).max(256),
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
     const tokenHash = hashToken(parsed.data.token)
     const record = await db.passwordResetToken.findUnique({ where: { tokenHash }, include: { user: true } })
     if (!record || record.usedAt || record.expiresAt <= new Date()) throw new InvalidResetToken("Invalid or expired reset link")
+    if (isDemoIdentity(record.user)) return NextResponse.json({ error: DEMO_MODE_RESTRICTION_MESSAGE }, { status: 403 })
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 10)
     const now = new Date()

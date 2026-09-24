@@ -35,7 +35,7 @@ export default function LoginPage() {
   const justSignedOut = searchParams.get("signedOut") === "1"
   const passwordResetSuccess = searchParams.get("passwordReset") === "1"
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   })
 

@@ -34,10 +34,15 @@ export const config = {
     "/app/:path*",
     "/admin",
     "/admin/:path*",
+    "/api/projects",
     "/api/projects/:path*",
     "/api/demo/:path*",
+    "/api/billing",
     "/api/billing/:path*",
     "/api/intake/:path*",
+    "/api/admin/:path*",
+    "/api/sites/:path*",
+    "/api/notifications/:path*",
   ],
 }
 

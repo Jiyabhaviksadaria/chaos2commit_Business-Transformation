@@ -2,7 +2,21 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireUser } from "@/lib/access"
 import { DeliverableType, VersionSource, ProjectStatus } from "@prisma/client"
-import { HR_INTAKE_FIXTURE, HR_SYSTEM_FIXTURE, HR_WEBSITE_FIXTURE } from "@/modules/fixtures/hr-fixtures"
+import { 
+  HR_INTAKE_FIXTURE, 
+  HR_SYSTEM_FIXTURE, 
+  HR_WEBSITE_FIXTURE,
+  HR_REQUIREMENTS_FIXTURE,
+  HR_SOLUTION_RECOMMENDATION_FIXTURE,
+  HR_ARCHITECTURE_HLD_FIXTURE,
+  HR_PROCESS_MAP_FIXTURE,
+  HR_WIREFRAMES_FIXTURE,
+  HR_DATABASE_DESIGN_FIXTURE,
+  HR_API_DESIGN_FIXTURE,
+  HR_ESTIMATION_FIXTURE,
+  HR_ROADMAP_FIXTURE,
+  HR_GAP_ANALYSIS_FIXTURE
+} from "@/modules/fixtures/hr-fixtures"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -41,7 +55,6 @@ export async function POST() {
         id: user.id,
         email: user.email || "demo@demo.com",
         name: user.name || "Demo User",
-        companyRole: user.companyRole,
         role: user.role,
       },
     })
@@ -91,6 +104,16 @@ export async function POST() {
       { type: DeliverableType.INTAKE_ANALYSIS, content: HR_INTAKE_FIXTURE, title: "Intake Analysis" },
       { type: DeliverableType.SYSTEM_SPEC, content: HR_SYSTEM_FIXTURE, title: "System Specification" },
       { type: DeliverableType.WEBSITE_SPEC, content: HR_WEBSITE_FIXTURE, title: "Website Specification" },
+      { type: DeliverableType.REQUIREMENTS, content: HR_REQUIREMENTS_FIXTURE, title: "Requirements Specification" },
+      { type: DeliverableType.SOLUTION_RECOMMENDATION, content: HR_SOLUTION_RECOMMENDATION_FIXTURE, title: "Solution Recommendations" },
+      { type: DeliverableType.ARCHITECTURE_HLD, content: HR_ARCHITECTURE_HLD_FIXTURE, title: "Solution Architecture (HLD)" },
+      { type: DeliverableType.PROCESS_MAP, content: HR_PROCESS_MAP_FIXTURE, title: "Process Map & Workflow" },
+      { type: DeliverableType.WIREFRAMES, content: HR_WIREFRAMES_FIXTURE, title: "UI/UX & Screen Concepts" },
+      { type: DeliverableType.DATABASE_DESIGN, content: HR_DATABASE_DESIGN_FIXTURE, title: "Database Schema Design" },
+      { type: DeliverableType.API_DESIGN, content: HR_API_DESIGN_FIXTURE, title: "API Endpoint Specs" },
+      { type: DeliverableType.ESTIMATION, content: HR_ESTIMATION_FIXTURE, title: "Planning & Effort Estimation" },
+      { type: DeliverableType.ROADMAP, content: HR_ROADMAP_FIXTURE, title: "Transformation Roadmap" },
+      { type: DeliverableType.GAP_ANALYSIS, content: HR_GAP_ANALYSIS_FIXTURE, title: "Gap Analysis & Capability Assessment" }
     ]
 
     for (const { type, content, title } of deliverableTypes) {

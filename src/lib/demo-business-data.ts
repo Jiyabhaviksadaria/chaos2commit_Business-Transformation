@@ -1,3 +1,5 @@
+export const DEMO_PROJECT_ID = "demo-project-intelly"
+
 export type DemoHealthDimension = {
   label: string
   value: number

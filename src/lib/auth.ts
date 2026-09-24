@@ -62,10 +62,12 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
-    CredentialsProvider({
+    {
       id: "demo",
       name: "Demo Mode",
+      type: "credentials" as const,
       credentials: {},
+      options: {},
       async authorize() {
         const demo = await ensureDemoAccount()
         return {
@@ -77,10 +79,11 @@ export const authOptions: NextAuthOptions = {
           companyRole: demo.user.companyRole,
           organizationId: demo.organization.id,
           isDemo: true,
+          demoProjectId: demo.projectId,
           emailVerified: demo.user.emailVerified,
         }
       },
-    }),
+    },
   ],
   callbacks: {
     async signIn({ user, account }) {
@@ -94,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.companyRole = user.companyRole
         token.isDemo = isDemoIdentity({ id: user.id, email: user.email }) || Boolean((user as { isDemo?: boolean }).isDemo)
+        token.demoProjectId = (user as { demoProjectId?: string }).demoProjectId
 
         const firstMembership = await db.membership.findFirst({
           where: { userId: user.id },
@@ -115,6 +119,7 @@ export const authOptions: NextAuthOptions = {
         session.user.companyRole = token.companyRole
         session.user.organizationId = token.organizationId
         session.user.isDemo = Boolean(token.isDemo)
+        session.user.demoProjectId = token.demoProjectId
       }
       return session
     },

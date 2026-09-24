@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { demoBusinessData } from "@/lib/demo-business-data"
+import { demoBusinessData, DEMO_PROJECT_ID } from "@/lib/demo-business-data"
 
 describe("NovaCart demo business data", () => {
   it("keeps the demo dataset deterministic and complete", () => {
@@ -14,6 +14,10 @@ describe("NovaCart demo business data", () => {
     expect(demoBusinessData.risks).toHaveLength(5)
     expect(demoBusinessData.roadmap).toHaveLength(4)
     expect(demoBusinessData.qa).toHaveLength(6)
+  })
+
+  it("uses a fixed demo project identity", () => {
+    expect(DEMO_PROJECT_ID).toBe("demo-project-intelly")
   })
 
   it("labels the data as illustrative", () => {

@@ -61,22 +61,22 @@ export function Topbar({ locale }: { locale: string }) {
         {session?.user?.isDemo && <details className="relative"><summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#FEE895] bg-[#FEE895] px-3 py-1.5 text-[10px] font-extrabold tracking-wider text-neutral-900 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />DEMO MODE</summary><div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#E5DFD4] bg-white p-3 text-xs shadow-xl"><p className="font-extrabold text-neutral-900">Demo Account</p><p className="mt-1 leading-relaxed text-neutral-600">You&apos;re exploring Intelly using a demonstration account. All business data shown in this workspace is illustrative demo data.</p></div></details>}
 
         {/* Credit Monetization Badge */}
-        <Link href="/app/billing">
+        {!session?.user?.isDemo && <Link href="/app/billing">
           <button className="flex items-center gap-1.5 bg-[#FEE895] hover:bg-yellow-300 text-neutral-900 border border-amber-300 text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm transition-all">
             <Zap className="h-3.5 w-3.5 fill-current text-amber-600" />
             <span>30 Credits</span>
           </button>
-        </Link>
+        </Link>}
 
         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all">
           <Bell className="h-4 w-4" />
         </Button>
         
-        <Link href="/admin">
+        {!session?.user?.isDemo && <Link href="/admin">
           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all">
             <Settings className="h-4 w-4" />
           </Button>
-        </Link>
+        </Link>}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

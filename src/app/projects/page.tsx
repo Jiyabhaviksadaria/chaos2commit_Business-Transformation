@@ -4,10 +4,13 @@ import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus, ArrowRight, Sparkles, Loader2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, Clock, CheckCircle2, FileCode } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
+import { DEMO_PROJECT_ID } from "@/lib/demo-business-data"
 import { toast } from "sonner"
 import type { Project } from "@prisma/client"
 
 export default function ProjectsDashboard() {
+  const { data: session } = useSession()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingDemo, setLoadingDemo] = useState(false)
@@ -47,6 +50,7 @@ export default function ProjectsDashboard() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-8 font-sans">
+      {session?.user?.isDemo && <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#FEE895] bg-[#FEE895] px-4 py-3 shadow-sm"><div><p className="text-xs font-extrabold text-neutral-900">✨ You&apos;re in Demo Mode</p><p className="mt-0.5 text-[11px] text-neutral-700">Explore Intelly using a preloaded NovaCart business workspace.</p></div><div className="flex gap-2"><Link href={`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`} className="rounded-full bg-[#18181C] px-3 py-2 text-[10px] font-extrabold text-white">Explore Business Analysis</Link><button type="button" onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })} className="rounded-full border border-neutral-900/20 px-3 py-2 text-[10px] font-extrabold text-neutral-900">Exit Demo</button></div></div>}
       {/* Top Banner Greeting */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

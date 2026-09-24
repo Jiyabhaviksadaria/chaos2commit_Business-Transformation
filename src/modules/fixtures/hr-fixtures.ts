@@ -134,10 +134,6 @@ export const HR_WEBSITE_FIXTURE: WebsiteSpecData = {
       { title: "Evaluation", description: "Structured interviews and assessments to verify fit" },
       { title: "Placement", description: "Seamless onboarding and post-placement support" }
     ]},
-    { type: "testimonials", title: "What Our Clients Say", items: [
-      { name: "Rahul Mehta, CEO - TechCorp India", quote: "TalentBridge found us 5 senior engineers in 3 weeks. Exceptional service." },
-      { name: "Priya Shah, HR Director - FinServ Ltd", quote: "Their structured onboarding process saved us 2 weeks per new hire." }
-    ]},
     { type: "contact", title: "Get In Touch", body: "Ready to transform your HR processes? Contact us today for a free consultation." },
     { type: "footer", text: "© 2024 TalentBridge HR. All rights reserved. AI-generated content — please verify before publishing." }
   ],
@@ -146,3 +142,212 @@ export const HR_WEBSITE_FIXTURE: WebsiteSpecData = {
     description: "End-to-end HR consultancy specializing in recruitment, placement, and workforce management."
   }
 }
+
+export const HR_REQUIREMENTS_FIXTURE = {
+  functionalRequirements: [
+    { id: "FR-01", title: "Candidate Management", description: "Centralized talent pipeline with stage tracking, resume parsing, and skill tagging.", priority: "CRITICAL" },
+    { id: "FR-02", title: "Client Portal & Vacancy Intake", description: "Self-service portal for client companies to post job openings and review candidate shortlists.", priority: "HIGH" },
+    { id: "FR-03", title: "Attendance & Shift Verification", description: "Daily check-in and check-out tracking for placed contractors and internal consultants.", priority: "HIGH" },
+    { id: "FR-04", title: "Automated AI Matching", description: "AI algorithm matching candidate profiles against job requirements with confidence scoring.", priority: "MEDIUM" }
+  ],
+  nonFunctionalRequirements: [
+    { category: "Performance", requirement: "API sub-500ms latency under 1,000 concurrent active users." },
+    { category: "Security", requirement: "AES-256 encryption at rest, TLS 1.3 in transit, and role-based access control (RBAC)." },
+    { category: "Compliance", requirement: "GDPR and ISO 27001 data privacy compliance for candidate personal information." }
+  ],
+  integrations: ["SendGrid Email Service", "Twilio WhatsApp API", "Stripe Client Invoicing"]
+}
+
+export const HR_SOLUTION_RECOMMENDATION_FIXTURE = {
+  recommendedSolutions: [
+    {
+      id: "sol-1",
+      title: "AI Talent Pipeline & Recruitment CRM",
+      category: "Core Operational System",
+      businessValue: "Reduces time-to-hire by 65% and doubles consultant placement capacity.",
+      estimatedCost: "$18,000",
+      estimatedDuration: "5 Weeks",
+      priority: "MUST_HAVE",
+      roi: "340%"
+    },
+    {
+      id: "sol-2",
+      title: "Client & Candidate Self-Service Portal",
+      category: "Customer Engagement",
+      businessValue: "Eliminates back-and-forth status emails and increases client satisfaction.",
+      estimatedCost: "$12,000",
+      estimatedDuration: "3 Weeks",
+      priority: "HIGH_PRIORITY",
+      roi: "210%"
+    },
+    {
+      id: "sol-3",
+      title: "Automated Attendance & Time-Tracking Module",
+      category: "Workforce Management",
+      businessValue: "Automates monthly contractor billing and prevents attendance disputes.",
+      estimatedCost: "$10,000",
+      estimatedDuration: "2.5 Weeks",
+      priority: "HIGH_PRIORITY",
+      roi: "280%"
+    }
+  ],
+  keyDecisionDrivers: ["Speed to Market", "User Experience", "Data Security", "Scalability"]
+}
+
+export const HR_ARCHITECTURE_HLD_FIXTURE = {
+  architectureStyle: "Modern Cloud-Native Micro-frontend & API Architecture",
+  coreComponents: [
+    { name: "Frontend Web Layer", technology: "Next.js 14 App Router, Tailwind CSS, Lucide Icons", purpose: "Responsive web portal for candidates, clients, and consultants." },
+    { name: "API Gateway & Serverless Backend", technology: "Node.js TypeScript, Prisma ORM", purpose: "Handles REST APIs, authentication, and database transactions." },
+    { name: "Database Engine", technology: "PostgreSQL (Hosted on Render / Neon)", purpose: "Relational store for candidate profiles, placements, and attendance logs." },
+    { name: "AI Processing Engine", technology: "Google Gemini 1.5 Flash / OpenAI GPT-4o", purpose: "Resume parsing, candidate matching, and intelligent intake analysis." }
+  ],
+  securityModel: {
+    authentication: "NextAuth.js JWT Sessions with OAuth 2.0 support",
+    authorization: "Role-Based Access Control (Admin, Consultant, Client, Candidate)",
+    dataProtection: "Field-level encryption for sensitive PII data (phone, salary, background notes)."
+  }
+}
+
+export const HR_PROCESS_MAP_FIXTURE = {
+  currentProcessSummary: "Manual spreadsheets, delayed email responses, unstructured candidate tracking causing 14-day placement delays.",
+  targetProcessSummary: "Fully automated AI-assisted pipeline from candidate application to client placement and attendance tracking.",
+  processPhases: [
+    { phase: "Phase 1: Candidate Sourcing & Intake", steps: ["Resume Upload", "AI Attribute Extraction", "Automated Screening Score", "Talent Pool Insertion"] },
+    { phase: "Phase 2: Client Vacancy & Shortlisting", steps: ["Client Requirement Intake", "Automated AI Candidate Matching", "Client Review & Feedback"] },
+    { phase: "Phase 3: Interview & Offer", steps: ["Interview Scheduling", "Feedback Log", "Digital Offer Letter Issue", "Status Update to Placed"] },
+    { phase: "Phase 4: Onboarding & Shift Attendance", steps: ["Client Onboarding Setup", "Daily Check-in Log", "Monthly Automated Billing Report"] }
+  ],
+  identifiedBottlenecks: ["48-hour delay in getting client interview feedback", "Manual resume data entry by consultants"]
+}
+
+export const HR_WIREFRAMES_FIXTURE = {
+  screenConcepts: [
+    { name: "Executive Dashboard", description: "High-level overview of active placements, revenue forecasts, candidate pipeline health, and urgent tasks." },
+    { name: "Candidate Kanban Board", description: "Interactive drag-and-drop board tracking candidates across Applied, Screening, Interview, Offer, and Placed stages." },
+    { name: "Client Portal & Job Posting", description: "Clean client interface to view assigned candidate shortlists, approve hires, and submit new job requests." },
+    { name: "Attendance & Shift Log", description: "Real-time daily attendance grid showing consultant check-in times, statuses, and monthly summary stats." }
+  ],
+  designTokens: {
+    theme: "Cream Pastel Aesthetic",
+    colors: { primary: "#18181C", accentYellow: "#FEE895", accentPink: "#F8B4D9", accentGreen: "#B8DF9E", background: "#F7F4EB" },
+    typography: "Inter / Sans-serif modern font hierarchy"
+  }
+}
+
+export const HR_DATABASE_DESIGN_FIXTURE = {
+  databaseType: "Relational PostgreSQL",
+  schemaTables: [
+    {
+      tableName: "candidates",
+      primaryKey: "id (cuid)",
+      columns: [
+        { name: "name", type: "VARCHAR(255)", nullable: false },
+        { name: "email", type: "VARCHAR(255)", nullable: false },
+        { name: "phone", type: "VARCHAR(50)", nullable: true },
+        { name: "stage", type: "ENUM('Applied', 'Screening', 'Interview', 'Offer', 'Placed')", nullable: false },
+        { name: "expected_salary", type: "NUMERIC(10,2)", nullable: true },
+        { name: "notes", type: "TEXT", nullable: true }
+      ]
+    },
+    {
+      tableName: "clients",
+      primaryKey: "id (cuid)",
+      columns: [
+        { name: "company_name", type: "VARCHAR(255)", nullable: false },
+        { name: "contact_name", type: "VARCHAR(255)", nullable: false },
+        { name: "email", type: "VARCHAR(255)", nullable: false },
+        { name: "phone", type: "VARCHAR(50)", nullable: true },
+        { name: "status", type: "ENUM('Prospect', 'Active', 'On Hold', 'Closed')", nullable: false }
+      ]
+    },
+    {
+      tableName: "attendance",
+      primaryKey: "id (cuid)",
+      columns: [
+        { name: "employee_name", type: "VARCHAR(255)", nullable: false },
+        { name: "date", type: "DATE", nullable: false },
+        { name: "check_in", type: "TIMESTAMP", nullable: true },
+        { name: "check_out", type: "TIMESTAMP", nullable: true },
+        { name: "status", type: "ENUM('Present', 'Absent', 'Half Day', 'On Leave')", nullable: false }
+      ]
+    }
+  ]
+}
+
+export const HR_API_DESIGN_FIXTURE = {
+  baseUrl: "https://api.talentbridge.com/v1",
+  endpoints: [
+    { method: "GET", path: "/api/candidates", description: "Fetch list of candidates with stage and skill filtering.", authRequired: true },
+    { method: "POST", path: "/api/candidates", description: "Create a new candidate profile in the pipeline.", authRequired: true },
+    { method: "POST", path: "/api/candidates/:id/match", description: "Trigger AI matching between candidate and active job postings.", authRequired: true },
+    { method: "GET", path: "/api/clients", description: "Fetch client accounts and active requirements.", authRequired: true },
+    { method: "POST", path: "/api/attendance/check-in", description: "Log daily attendance check-in for a consultant.", authRequired: true }
+  ]
+}
+
+export const HR_ESTIMATION_FIXTURE = {
+  totalDurationWeeks: 12,
+  totalEstimatedBudgetUSD: 40000,
+  teamComposition: [
+    { role: "Lead Solutions Architect", allocation: "50%", hoursPerWeek: 20 },
+    { role: "Full-Stack Senior Engineer", allocation: "100%", hoursPerWeek: 40 },
+    { role: "UI/UX Designer", allocation: "50%", hoursPerWeek: 20 },
+    { role: "QA Engineer", allocation: "50%", hoursPerWeek: 20 }
+  ],
+  phaseEstimates: [
+    { phase: "Phase 1: Architecture & Data Modeling", durationWeeks: 2, costUSD: 7000 },
+    { phase: "Phase 2: Core CRM & AI Pipeline", durationWeeks: 5, costUSD: 17000 },
+    { phase: "Phase 3: Client Portal & Attendance", durationWeeks: 3, costUSD: 10000 },
+    { phase: "Phase 4: Integration, QA & Go-Live", durationWeeks: 2, costUSD: 6000 }
+  ]
+}
+
+export const HR_ROADMAP_FIXTURE = {
+  strategicGoal: "Transform HR operations from spreadsheet-based tracking to an intelligent, automated recruitment platform.",
+  quarters: [
+    {
+      quarter: "Q1 2026",
+      theme: "Foundation & Intake Automation",
+      initiatives: [
+        { title: "Intelly AI Platform Deployment", status: "COMPLETED", impact: "High" },
+        { title: "Candidate & Client Database Migration", status: "IN_PROGRESS", impact: "High" }
+      ]
+    },
+    {
+      quarter: "Q2 2026",
+      theme: "AI Matching & Recruitment CRM",
+      initiatives: [
+        { title: "Launch HR Connect Candidate Pipeline", status: "PLANNED", impact: "Critical" },
+        { title: "AI Skill Matching Engine Rollout", status: "PLANNED", impact: "High" }
+      ]
+    },
+    {
+      quarter: "Q3 2026",
+      theme: "Client Portal & Attendance",
+      initiatives: [
+        { title: "Self-Service Client Portal", status: "PLANNED", impact: "Medium" },
+        { title: "Automated Attendance & Shift Tracker", status: "PLANNED", impact: "High" }
+      ]
+    },
+    {
+      quarter: "Q4 2026",
+      theme: "Scale & Analytics",
+      initiatives: [
+        { title: "Advanced Predictive Hiring Analytics", status: "PLANNED", impact: "Medium" },
+        { title: "Multi-Location Enterprise Scaling", status: "PLANNED", impact: "High" }
+      ]
+    }
+  ]
+}
+
+export const HR_GAP_ANALYSIS_FIXTURE = {
+  currentState: "Spreadsheet-based records, fragmented communication, 14-day average placement cycle time.",
+  targetState: "Integrated cloud platform, AI-driven candidate matching, sub-4-day placement cycle time.",
+  gapsIdentified: [
+    { area: "Technology", gap: "No central database for candidate profiles.", risk: "HIGH", mitigation: "Deploy Postgres relational CRM." },
+    { area: "Process", gap: "Manual attendance logging by email/SMS.", risk: "MEDIUM", mitigation: "Implement single-click check-in module." },
+    { area: "Customer Experience", gap: "Clients lack visibility into recruitment candidate status.", risk: "HIGH", mitigation: "Provide client portal login." }
+  ]
+}
+
