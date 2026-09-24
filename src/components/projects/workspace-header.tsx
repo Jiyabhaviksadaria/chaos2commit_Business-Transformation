@@ -51,10 +51,10 @@ export function WorkspaceHeader({
   const readinessLabel = availableScores.length > 0 || (typeof project.readinessScore === "number" && project.readinessScore > 0) ? `${readiness}%` : "Not assessed"
 
   return (
-    <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[28px] p-5 shadow-sm space-y-4 mb-6">
+    <div className="min-w-0 bg-[#FAF8F2] border border-[#E5DFD4] rounded-[28px] p-5 shadow-sm space-y-4 mb-6">
       {/* Top Bar: Navigation + Title + Quick Actions */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[#E5DFD4] pb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-col justify-between items-start gap-4 border-b border-[#E5DFD4] pb-4 xl:flex-row xl:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <Button
             variant="outline"
             size="icon"
@@ -64,9 +64,9 @@ export function WorkspaceHeader({
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2.5 flex-wrap">
+              <h1 className="max-w-full break-words text-2xl font-extrabold text-neutral-900 tracking-tight">
                 {project.name}
               </h1>
               <Badge
@@ -97,7 +97,7 @@ export function WorkspaceHeader({
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto justify-end">
+        <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end">
           <Button
             onClick={onOpenAiCompanion}
             className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-full shadow gap-2 transition-all"
@@ -137,7 +137,7 @@ export function WorkspaceHeader({
       {/* Metrics Row: Transformation Readiness %, Credits, Team Members */}
       <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 pt-1">
         {/* Readiness Metric */}
-        <div className="bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm space-y-2">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-neutral-600 flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
@@ -149,8 +149,8 @@ export function WorkspaceHeader({
         </div>
 
         {/* Industry & Standards */}
-        <div className="bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+          <div className="min-w-0 space-y-0.5">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
               Governance Standard
             </span>
@@ -165,8 +165,8 @@ export function WorkspaceHeader({
         </div>
 
         {/* Credits Metric */}
-        <div className="bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+          <div className="min-w-0 space-y-0.5">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
               Workspace Credits
             </span>
@@ -184,8 +184,8 @@ export function WorkspaceHeader({
         </div>
 
         {/* Team Members */}
-        <div className="bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between sm:col-span-3 lg:col-span-1">
-          <div className="space-y-0.5">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between sm:col-span-3 lg:col-span-1">
+          <div className="min-w-0 space-y-0.5">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
               Team Members
             </span>

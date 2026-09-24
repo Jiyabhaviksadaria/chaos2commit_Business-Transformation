@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     const result = await db.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { name, email, passwordHash, companyRole, emailVerified: null, role: PlatformRole.USER },
+        data: { name, email, passwordHash, emailVerified: null, role: PlatformRole.USER },
       })
 
       await tx.emailVerificationToken.create({
@@ -53,7 +53,15 @@ export async function POST(req: Request) {
     })
 
     const emailSent = await sendVerificationEmail(name, email, rawToken)
-    return NextResponse.json({ ok: true, data: { userId: result.user.id, companyRole }, requiresEmailVerification: true, emailSent })
+    let autoVerified = false
+    if (!emailSent) {
+      await db.user.update({
+        where: { id: result.user.id },
+        data: { emailVerified: new Date() }
+      })
+      autoVerified = true
+    }
+    return NextResponse.json({ ok: true, data: { userId: result.user.id, companyRole }, requiresEmailVerification: !autoVerified, emailSent, autoVerified })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return NextResponse.json({ ok: false, error: { code: "CONFLICT", message: "User with this email already exists." } }, { status: 409 })

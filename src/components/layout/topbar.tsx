@@ -22,7 +22,7 @@ export function Topbar({ locale }: { locale: string }) {
   const [open, setOpen] = React.useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-between px-6 bg-[#F7F4EB]">
+    <header className="sticky top-0 z-30 flex h-20 min-w-0 shrink-0 items-center justify-between px-6 bg-[#F7F4EB]">
       {/* Mobile Sidebar Trigger */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
@@ -37,7 +37,7 @@ export function Topbar({ locale }: { locale: string }) {
       </Sheet>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-xl mx-4">
+      <div className="flex min-w-0 flex-1 max-w-xl mx-4">
         <div className="flex items-center gap-2 bg-[#FAF8F2] border border-[#E6E0D2] rounded-full px-3 py-1.5 shadow-sm">
           <div className="bg-[#F472B6] text-white p-1.5 rounded-full flex items-center justify-center shrink-0">
             <Search className="h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export function Topbar({ locale }: { locale: string }) {
       </div>
 
       {/* Right Actions & Pay-Per-Generation Credit Balance Badge */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {session?.user?.isDemo && <details className="relative"><summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#FEE895] bg-[#FEE895] px-3 py-1.5 text-[10px] font-extrabold tracking-wider text-neutral-900 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />DEMO MODE</summary><div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#E5DFD4] bg-white p-3 text-xs shadow-xl"><p className="font-extrabold text-neutral-900">Demo Account</p><p className="mt-1 leading-relaxed text-neutral-600">You&apos;re exploring Intelly using a demonstration account. All business data shown in this workspace is illustrative demo data.</p></div></details>}
 
         {/* Credit Monetization Badge */}

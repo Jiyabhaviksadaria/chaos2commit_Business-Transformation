@@ -38,10 +38,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
-        if (!user.emailVerified) {
-          throw new Error("EMAIL_NOT_VERIFIED")
-        }
-
         const isCorrectPassword = await bcrypt.compare(
           credentials.password,
           user.passwordHash
@@ -51,13 +47,25 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
+        if (!user.emailVerified) {
+          const isSmtpConfigured = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD)
+          if (!isSmtpConfigured) {
+            const updatedUser = await db.user.update({
+              where: { id: user.id },
+              data: { emailVerified: new Date() }
+            })
+            user.emailVerified = updatedUser.emailVerified
+          } else {
+            throw new Error("EMAIL_NOT_VERIFIED")
+          }
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           role: user.role,
-          companyRole: user.companyRole,
           emailVerified: user.emailVerified,
         }
       },
@@ -76,7 +84,6 @@ export const authOptions: NextAuthOptions = {
           name: demo.user.name,
           image: demo.user.image,
           role: demo.user.role,
-          companyRole: demo.user.companyRole,
           organizationId: demo.organization.id,
           isDemo: true,
           demoProjectId: demo.projectId,

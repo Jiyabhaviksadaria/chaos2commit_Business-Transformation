@@ -100,7 +100,7 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
   if (loading) return <div className="container mx-auto py-8 flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-neutral-800" /></div>
   if (!project) return <div className="container mx-auto py-8 text-center pt-20"><h2 className="text-2xl font-bold mb-4 text-neutral-900">Project Not Found</h2><Button onClick={() => router.push("/projects")} className="bg-[#18181C] text-white rounded-full">Back to Projects</Button></div>
 
-  return <div className="container mx-auto py-6 px-4 max-w-7xl font-sans bg-[#F7F4EB] min-h-screen">
+  return <div className="container mx-auto min-w-0 py-6 px-4 max-w-7xl font-sans bg-[#F7F4EB] min-h-screen">
     <WorkspaceHeader project={project} onOpenAiCompanion={() => setAiDrawerOpen(true)} onGenerate={handleGenerate} onShare={handleShare} onExport={handleExport} />
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
       <div className="overflow-x-auto pb-2 scrollbar-none bg-[#FAF8F2] border border-[#E5DFD4] rounded-[22px] p-1.5 shadow-sm"><TabsList className="min-w-max bg-transparent space-x-1 h-auto p-0">
