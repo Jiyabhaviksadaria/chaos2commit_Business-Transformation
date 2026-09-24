@@ -3,6 +3,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { createRawToken, EMAIL_VERIFICATION_TOKEN_TTL_MS, hashToken, normalizeEmail, tokenExpiry } from "@/lib/auth-tokens"
 import { sendVerificationEmail } from "@/lib/mail/templates/verification"
+import { DEMO_MODE_RESTRICTION_MESSAGE, isDemoIdentity } from "@/lib/demo-account"
 
 const schema = z.object({ email: z.string().trim().email("Invalid email address").max(320) })
 
@@ -12,6 +13,10 @@ export async function POST(req: Request) {
     if (!parsed.success) return NextResponse.json({ success: false, error: "Enter a valid email address." }, { status: 400 })
     const email = normalizeEmail(parsed.data.email)
     const user = await db.user.findUnique({ where: { email } })
+
+    if (isDemoIdentity(user)) {
+      return NextResponse.json({ error: DEMO_MODE_RESTRICTION_MESSAGE }, { status: 403 })
+    }
 
     if (user && !user.emailVerified) {
       const rawToken = createRawToken()

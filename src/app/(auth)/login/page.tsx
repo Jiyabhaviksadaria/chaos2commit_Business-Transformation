@@ -7,7 +7,7 @@ import * as z from "zod"
 import { signIn, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Loader2, CheckCircle2 } from "lucide-react"
+import { Loader2, CheckCircle2, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [showUnverifiedHelp, setShowUnverifiedHelp] = useState(false)
   const [loginEmail, setLoginEmail] = useState("")
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoError, setDemoError] = useState<string | null>(null)
 
   const callbackUrl = searchParams.get("callbackUrl") || "/projects"
   const justSignedOut = searchParams.get("signedOut") === "1"
@@ -65,6 +67,24 @@ export default function LoginPage() {
     } else {
       router.push(callbackUrl)
       router.refresh()
+    }
+  }
+
+  async function onDemoMode() {
+    setDemoError(null)
+    setDemoLoading(true)
+    try {
+      const result = await signIn("demo", { redirect: false, callbackUrl: "/projects" })
+      if (!result || result.error) {
+        setDemoError("Demo Mode could not be started. Please try again.")
+        return
+      }
+      router.push("/projects")
+      router.refresh()
+    } catch {
+      setDemoError("Demo Mode could not be started. Please try again.")
+    } finally {
+      setDemoLoading(false)
     }
   }
 
@@ -182,6 +202,17 @@ export default function LoginPage() {
               "Sign in"
             )}
           </Button>
+
+          <div className="flex items-center gap-3 py-1"><div className="h-px flex-1 bg-[#E5DFD4]" /><span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400">OR</span><div className="h-px flex-1 bg-[#E5DFD4]" /></div>
+          <div className="rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-4 text-center">
+            <p className="text-sm font-extrabold text-neutral-900">✨ Explore Intelly</p>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500">Explore Intelly instantly with a preloaded demo workspace. No login required.</p>
+            <Button type="button" onClick={onDemoMode} disabled={demoLoading} className="mt-4 w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all text-xs font-bold">
+              {demoLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing Demo Workspace...</> : <><Sparkles className="h-4 w-4 text-[#FEE895]" /> Try Demo Mode</>}
+            </Button>
+            <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-400">DEMO • NO PASSWORD REQUIRED</p>
+            {demoError && <p className="mt-3 text-xs font-semibold text-red-600" role="alert">{demoError}</p>}
+          </div>
 
           <div className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}

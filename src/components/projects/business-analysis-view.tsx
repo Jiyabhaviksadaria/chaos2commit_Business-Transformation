@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 import type { IntakeAnalysisData } from "@/modules/deliverables/intake-analysis"
+import { DemoBusinessAnalysisDashboard } from "@/components/projects/demo-business-analysis-dashboard"
 
 interface BusinessAnalysisViewProps { projectId: string; language?: string | null; digitalMaturity?: number; aiReadiness?: number; discoveryCompleteness?: number; onScoreUpdate?: () => void; onOpenAi?: () => void }
 interface GapData { title?: string; currentState?: string; futureState?: string; gapItems?: Array<{ id?: string; area?: string; currentDeficiency?: string; desiredTarget?: string; gapSeverity?: string; recommendedAction?: string }>; stakeholderImpact?: Array<{ stakeholderGroup?: string; impactDescription?: string; readinessLevel?: string }>; digitalMaturityScore?: number; disclaimer?: string }
@@ -49,7 +51,12 @@ function ReadinessCard({ readiness }: { readiness: unknown }) {
   return <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm"><CardHeader><CardTitle className="text-base font-extrabold text-neutral-900">Transformation Readiness</CardTitle><CardDescription className="text-xs">Scores are shown only when the corresponding evidence exists. Missing evidence remains visible.</CardDescription></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">{dimensions.map((rawDimension) => { const dimension = record(rawDimension); const score = typeof dimension.score === "number" ? dimension.score : null; return <div key={text(dimension.key) || text(dimension.label)} className="rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-extrabold text-neutral-900">{text(dimension.label) || text(dimension.key)}</p><Badge variant="outline" className="border-[#E5DFD4] text-[10px]">{score === null ? "Insufficient information" : `${score}%`}</Badge></div>{score !== null && <Progress value={score} className="h-2 mt-2 bg-neutral-200" />}<p className="text-[11px] text-neutral-600 mt-2">{text(dimension.explanation)}</p>{Array.isArray(dimension.evidence) && dimension.evidence.length > 0 && <p className="text-[10px] text-neutral-500 mt-2">Evidence: {dimension.evidence.map(String).join(" · ")}</p>}{Array.isArray(dimension.missingInformation) && dimension.missingInformation.length > 0 && <p className="text-[10px] text-amber-700 mt-1">Missing: {dimension.missingInformation.map(String).join(" · ")}</p>}</div>})}</CardContent></Card>
 }
 
+function DemoLoadingState() {
+  return <div className="space-y-4" aria-live="polite"><div className="flex items-center justify-between"><div><div className="h-5 w-48 animate-pulse rounded bg-neutral-200" /><div className="mt-2 h-3 w-80 animate-pulse rounded bg-neutral-100" /></div><div className="h-10 w-36 animate-pulse rounded-full bg-neutral-200" /></div><div className="grid grid-cols-1 gap-4 md:grid-cols-3"><div className="h-36 animate-pulse rounded-[24px] bg-neutral-100" /><div className="h-36 animate-pulse rounded-[24px] bg-neutral-100" /><div className="h-36 animate-pulse rounded-[24px] bg-neutral-100" /></div><div className="h-72 animate-pulse rounded-[26px] bg-neutral-100" /><div className="flex items-center justify-center gap-2 text-xs font-bold text-neutral-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading illustrative business intelligence…</div></div>
+}
+
 export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiReadiness, discoveryCompleteness, onScoreUpdate, onOpenAi }: BusinessAnalysisViewProps) {
+  const { data: session } = useSession()
   const [analysis, setAnalysis] = useState<IntakeAnalysisData | null>(null)
   const [gap, setGap] = useState<GapData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,6 +66,8 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
   const [scores, setScores] = useState({ digitalMaturity, aiReadiness, discoveryCompleteness })
   const [readiness, setReadiness] = useState<unknown>(null)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [isDemoMode, setIsDemoMode] = useState(false)
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -92,6 +101,24 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
   }, [projectId])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (session?.user?.isDemo) setIsDemoMode(true)
+  }, [session?.user?.isDemo])
+
+  const loadDemo = () => {
+    if (isLoadingDemo) return
+    setIsLoadingDemo(true)
+    window.setTimeout(() => {
+      setIsDemoMode(true)
+      setIsLoadingDemo(false)
+    }, 750)
+  }
+
+  const resetDemo = () => {
+    setIsDemoMode(false)
+    setIsLoadingDemo(false)
+  }
 
   const generateAnalysis = async (instructions?: string) => {
     setGenerating(true)
@@ -154,11 +181,13 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
   const companyContext = analysis?.companyContext
   const companyContextItems = companyContext ? Object.entries(companyContext).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`) : []
 
-  if (loading) return <div className="flex items-center justify-center h-64 gap-2 text-xs text-neutral-500"><Loader2 className="h-6 w-6 animate-spin" /> Loading persisted analysis...</div>
+  if (isLoadingDemo) return <DemoLoadingState />
+  if (isDemoMode) return <DemoBusinessAnalysisDashboard onReset={resetDemo} />
+  if (loading) return <div className="space-y-6"><div className="flex justify-end"><Button onClick={loadDemo} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2"><Sparkles className="w-3.5 h-3.5" /> Load Demo Data</Button></div><DemoLoadingState /></div>
 
   return <div className="space-y-6">
     {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 flex items-center gap-2 text-xs text-red-800"><AlertCircle className="w-4 h-4" /> {error}<Button variant="ghost" size="sm" onClick={load} className="ml-auto">Retry</Button><Button variant="ghost" size="sm" onClick={() => setError(null)}>Continue manually</Button></div>}
-    <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader className="pb-3 border-b border-[#E5DFD4]"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><CardTitle className="text-base font-extrabold text-neutral-900">Business Analysis</CardTitle><CardDescription className="text-xs">Evidence-backed understanding of the business before transformation design.</CardDescription></div><div className="flex flex-wrap gap-2"><Button onClick={() => generateAnalysis()} disabled={generating} variant="outline" className="border-[#E5DFD4] text-xs font-bold rounded-full gap-2">{generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} {analysis ? "Re-analyze" : "Generate analysis"}</Button><Button onClick={recalculate} disabled={recalculating} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2">{recalculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Recalculate readiness</Button></div></div></CardHeader><CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">{[["Digital Maturity", scores.digitalMaturity], ["AI & Cloud Readiness", scores.aiReadiness], ["Discovery Completeness", scores.discoveryCompleteness]].map(([label, value]) => <div key={String(label)} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl"><div className="flex justify-between text-xs font-extrabold text-neutral-900"><span>{label}</span><span>{scoreText(value)}</span></div><Progress value={typeof value === "number" ? value : 0} className="h-2 bg-neutral-200 mt-2" /></div>)}</CardContent></Card>
+    <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader className="pb-3 border-b border-[#E5DFD4]"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><CardTitle className="text-base font-extrabold text-neutral-900">Business Analysis</CardTitle><CardDescription className="text-xs">Evidence-backed understanding of the business before transformation design.</CardDescription></div><div className="flex flex-wrap gap-2"><Button onClick={loadDemo} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2"><Sparkles className="w-3.5 h-3.5" /> Load Demo Data</Button><Button onClick={() => generateAnalysis()} disabled={generating} variant="outline" className="border-[#E5DFD4] text-xs font-bold rounded-full gap-2">{generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} {analysis ? "Re-analyze" : "Generate analysis"}</Button><Button onClick={recalculate} disabled={recalculating} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2">{recalculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Recalculate readiness</Button></div></div></CardHeader><CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">{[["Digital Maturity", scores.digitalMaturity], ["AI & Cloud Readiness", scores.aiReadiness], ["Discovery Completeness", scores.discoveryCompleteness]].map(([label, value]) => <div key={String(label)} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl"><div className="flex justify-between text-xs font-extrabold text-neutral-900"><span>{label}</span><span>{scoreText(value)}</span></div><Progress value={typeof value === "number" ? value : 0} className="h-2 bg-neutral-200 mt-2" /></div>)}</CardContent></Card>
 
     {analysis ? <>
       <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader><CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600" /> Executive understanding</CardTitle><CardDescription className="text-xs">Conclusions are separated into confirmed, inferred, assumed, and unknown information.</CardDescription></CardHeader><CardContent className="space-y-5"><p className="text-sm text-neutral-800 leading-relaxed">{analysis.executiveSummary || analysis.businessSummary}</p><div className="flex flex-wrap gap-2"><Badge className="bg-[#FEE895] text-neutral-900 border-none">{analysis.industry}</Badge>{analysis.businessType && <Badge variant="outline" className="border-[#E5DFD4]">{analysis.businessType}</Badge>}{analysis.businessModel && <Badge variant="outline" className="border-[#E5DFD4]">{analysis.businessModel}</Badge>}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{section("Company context", companyContextItems)}{section("Current state", analysis.currentState)}{section("Current workflow", analysis.currentWorkflow || analysis.currentBusinessProcesses)}{section("Business impact", analysis.businessImpact)}{section("Transformation opportunities", analysis.transformationOpportunities || analysis.digitalOpportunities)}{section("Assumptions", analysis.assumptions, "warning")}{section("Unknowns", analysis.unknowns, "warning")}{section("Constraints", analysis.constraints, "warning")}{section("Risks", analysis.risks, "warning")}</div></CardContent></Card>

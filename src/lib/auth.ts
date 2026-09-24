@@ -7,6 +7,7 @@ import { db } from "@/lib/db"
 import { env } from "@/env"
 import * as bcrypt from "bcryptjs"
 import { normalizeEmail } from "@/lib/auth-tokens"
+import { ensureDemoAccount, isDemoIdentity } from "@/lib/demo-account"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -61,9 +62,29 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    CredentialsProvider({
+      id: "demo",
+      name: "Demo Mode",
+      credentials: {},
+      async authorize() {
+        const demo = await ensureDemoAccount()
+        return {
+          id: demo.user.id,
+          email: demo.user.email,
+          name: demo.user.name,
+          image: demo.user.image,
+          role: demo.user.role,
+          companyRole: demo.user.companyRole,
+          organizationId: demo.organization.id,
+          isDemo: true,
+          emailVerified: demo.user.emailVerified,
+        }
+      },
+    }),
   ],
   callbacks: {
     async signIn({ user, account }) {
+      if (account?.provider === "demo") return true
       if (account?.provider === "credentials") return Boolean((user as { emailVerified?: Date | null }).emailVerified)
       return true
     },
@@ -72,6 +93,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role
         token.companyRole = user.companyRole
+        token.isDemo = isDemoIdentity({ id: user.id, email: user.email }) || Boolean((user as { isDemo?: boolean }).isDemo)
 
         const firstMembership = await db.membership.findFirst({
           where: { userId: user.id },
@@ -80,6 +102,8 @@ export const authOptions: NextAuthOptions = {
 
         if (firstMembership) {
           token.organizationId = firstMembership.organizationId
+        } else if (user.organizationId) {
+          token.organizationId = user.organizationId
         }
       }
       return token
@@ -90,6 +114,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role
         session.user.companyRole = token.companyRole
         session.user.organizationId = token.organizationId
+        session.user.isDemo = Boolean(token.isDemo)
       }
       return session
     },

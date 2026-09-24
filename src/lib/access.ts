@@ -11,22 +11,10 @@ export class AuthError extends Error {
   constructor(message: string = "Unauthorized") { super(message); this.name = "AuthError" }
 }
 
-function demoModeEnabled(): boolean {
-  return process.env.DEMO_MODE === "true" && process.env.NODE_ENV !== "production"
-}
-
-/** Require a real authenticated session. Demo identity is explicit and local-only. */
+/** Require a real authenticated session. Demo Mode still uses a valid NextAuth session. */
 export async function requireUser() {
   const session = await getServerSession(authOptions)
   if (session?.user?.id) return session.user
-  if (demoModeEnabled()) {
-    try {
-      const demoUser = await db.user.findFirst({ include: { memberships: true } })
-      if (demoUser) return { id: demoUser.id, email: demoUser.email || "demo@demo.com", name: demoUser.name || "Demo User", image: demoUser.image || null, role: demoUser.role, companyRole: demoUser.companyRole, organizationId: demoUser.memberships[0]?.organizationId }
-    } catch (error) {
-      console.warn("Explicit demo identity lookup failed:", error)
-    }
-  }
   throw new AuthError("You must be signed in to perform this action.")
 }
 

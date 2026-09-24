@@ -8,6 +8,7 @@ declare module "next-auth" {
       id: string
       role: PlatformRole
       companyRole?: string | null
+      isDemo?: boolean
       organizationId?: string
       name?: string | null
       email?: string | null
@@ -19,6 +20,7 @@ declare module "next-auth" {
     id: string
     role: PlatformRole
     companyRole?: string | null
+    isDemo?: boolean
     organizationId?: string
     emailVerified?: Date | null
   }
@@ -29,6 +31,7 @@ declare module "next-auth/jwt" {
     id: string
     role: PlatformRole
     companyRole?: string | null
+    isDemo?: boolean
     organizationId?: string
   }
 }
