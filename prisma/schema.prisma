@@ -252,9 +252,9 @@ model ChatSession {
   projectId String?
   userId    String
   kind      ChatSessionKind
-  title     String          @default("New chat")
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+  title     String          @default("New chat")
   messages  ChatMessage[]
   project   Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -273,6 +273,7 @@ model ChatMessage {
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  @@index([sessionId, createdAt])
 }
 
 model IntakeSource {

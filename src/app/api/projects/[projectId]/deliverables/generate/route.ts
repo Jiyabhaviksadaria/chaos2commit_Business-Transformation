@@ -27,7 +27,7 @@ function normalizeSolutions(content: Record<string, unknown>): Record<string, un
 
 const DOWNSTREAM_TRANSFORMATION_TYPES = ["REQUIREMENTS", "SYSTEM_SPEC", "SOLUTION_RECOMMENDATION", "ARCHITECTURE_HLD", "PROCESS_MAP", "WIREFRAMES", "DATABASE_DESIGN", "API_DESIGN", "ESTIMATION", "ROADMAP"]
 
-function normalizeAnalysis(content: Record<string, unknown>): Record<string, unknown> {
+function normalizeAnalysis(content: Record<string, unknown>, snapshotMetadata?: Record<string, unknown>): Record<string, unknown> {
   const systems = [
     ...((Array.isArray(content.recommendedSystems) ? content.recommendedSystems : []) as Array<Record<string, unknown>>),
     ...((Array.isArray(content.recommendedSolutions) ? content.recommendedSolutions : []) as Array<Record<string, unknown>>),
@@ -52,8 +52,44 @@ function normalizeAnalysis(content: Record<string, unknown>): Record<string, unk
   const questions = Array.isArray(content.clarifyingQuestions) && content.clarifyingQuestions.length > 0
     ? content.clarifyingQuestions
     : (Array.isArray(content.missingInformation) ? content.missingInformation : [])
+
+  // Evidence coverage statistics from snapshot metadata if available
+  const totalDocs = typeof snapshotMetadata?.totalDocuments === "number" ? snapshotMetadata.totalDocuments : 0
+  const readyDocs = typeof snapshotMetadata?.readyDocuments === "number" ? snapshotMetadata.readyDocuments : 0
+  const failedDocs = typeof snapshotMetadata?.failedDocuments === "number" ? snapshotMetadata.failedDocuments : 0
+  const coveragePercentage = typeof snapshotMetadata?.evidenceCoveragePercentage === "number" ? snapshotMetadata.evidenceCoveragePercentage : 100
+
+  const evidenceCoverage = content.evidenceCoverage && typeof content.evidenceCoverage === "object"
+    ? content.evidenceCoverage
+    : totalDocs > 0
+      ? {
+          totalDocuments: totalDocs,
+          readyDocuments: readyDocs,
+          unavailableDocuments: failedDocs,
+          coveragePercentage,
+          impactStatement: failedDocs > 0 ? `${failedDocs} document(s) failed extraction. Analysis is based on ${readyDocs} ready document(s).` : "All uploaded documents processed successfully.",
+        }
+      : undefined
+
+  // Ensure facts without evidence are labeled as INFERRED or ASSUMED (Quality Gate)
+  const confirmedFacts = Array.isArray(content.confirmedFacts)
+    ? (content.confirmedFacts as Array<Record<string, unknown>>).map((fact) => {
+        if (!fact.source || fact.source === "PROJECT_CONTEXT" || fact.source === "UNKNOWN") {
+          return { ...fact, status: fact.status === "CONFIRMED" ? "INFERRED" : fact.status || "INFERRED" }
+        }
+        return fact
+      })
+    : []
+
+  const contradictions = Array.isArray(content.contradictions) ? content.contradictions.map(String) : []
+  const processBottlenecks = Array.isArray(content.processBottlenecks) ? content.processBottlenecks.map(String) : []
+
   return {
     ...content,
+    confirmedFacts,
+    contradictions,
+    processBottlenecks,
+    evidenceCoverage,
     recommendedSystems: recommendations,
     recommendedSolutions: recommendations,
     missingInformation: questions,
@@ -105,8 +141,20 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     if (!aiResult.ok) return NextResponse.json({ error: aiResult.error.message }, { status: 502 })
 
     const rawContent = aiResult.data.data as Record<string, unknown>
+    let snapshotMetadata: Record<string, unknown> | undefined
+    if (type === DeliverableType.INTAKE_ANALYSIS) {
+      try {
+        const ctxModule = await import("@/lib/ai/context")
+        if (typeof ctxModule.getProjectContextSnapshot === "function") {
+          const snapshot = await ctxModule.getProjectContextSnapshot(params.projectId)
+          snapshotMetadata = snapshot?.metadata as Record<string, unknown> | undefined
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
     const content = type === DeliverableType.INTAKE_ANALYSIS
-      ? normalizeAnalysis(rawContent)
+      ? normalizeAnalysis(rawContent, snapshotMetadata)
       : type === DeliverableType.SOLUTION_RECOMMENDATION
         ? normalizeSolutions(rawContent)
         : rawContent

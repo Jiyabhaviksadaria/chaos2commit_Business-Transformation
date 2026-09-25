@@ -194,9 +194,103 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
 
       <ReadinessCard readiness={readiness || analysis.readiness} />
 
+      {analysis.contradictions && analysis.contradictions.length > 0 && (
+        <Card className="bg-amber-50 border-amber-300 rounded-[24px] shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-extrabold text-amber-900 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              Cross-Document Contradictions Detected
+            </CardTitle>
+            <CardDescription className="text-xs text-amber-800">
+              Discrepancies identified across supporting business documents or company inputs:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {analysis.contradictions.map((item, idx) => (
+              <div key={idx} className="p-3 bg-white/80 rounded-xl border border-amber-200 text-xs text-amber-950">
+                ⚠️ {item}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {analysis.evidenceCoverage && (
+        <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-extrabold text-neutral-900">
+                Evidence Coverage & Portfolio Confidence
+              </CardTitle>
+              <Badge className="bg-[#FEE895] text-neutral-900 border-none font-bold text-[10px]">
+                {analysis.evidenceCoverage.coveragePercentage}% Coverage
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs text-neutral-700">
+            <p>
+              <strong>{analysis.evidenceCoverage.readyDocuments}</strong> of{" "}
+              <strong>{analysis.evidenceCoverage.totalDocuments}</strong> supporting documents successfully analyzed as business evidence.
+            </p>
+            {analysis.evidenceCoverage.impactStatement && (
+              <p className="text-[11px] text-neutral-600 bg-[#FAF8F2] p-2.5 rounded-xl border border-[#E5DFD4]">
+                {analysis.evidenceCoverage.impactStatement}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader><CardTitle className="text-base font-extrabold text-neutral-900">Evidence ledger</CardTitle><CardDescription className="text-xs">Every important conclusion should be traceable to an available source.</CardDescription></CardHeader><CardContent>{evidence.length ? <div className="space-y-3">{evidence.map((item, index) => <div key={`${item.statement}-${index}`} className="rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-3"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="border-[#E5DFD4] text-[10px]">{item.status}</Badge><span className="text-[10px] text-neutral-500">{item.source} · {item.sourceType} · {item.confidence}% confidence</span></div><p className="text-xs text-neutral-800 mt-2">{item.statement}</p></div>)}</div> : <p className="text-xs text-neutral-500">No traceable evidence has been persisted yet. INTELLY will not present unsupported conclusions as facts.</p>}</CardContent></Card>
 
       <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader><CardTitle className="text-base font-extrabold text-neutral-900">Problems, root causes, and impact</CardTitle><CardDescription className="text-xs">Separate symptoms from underlying causes and business consequences.</CardDescription></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">{section("Observed problems", analysis.problems || analysis.risksAndGaps)}{section("Root causes", analysis.rootCauses)}{section("Business impact", analysis.businessImpact)}</CardContent></Card>
+
+      {analysis.processBottlenecks && analysis.processBottlenecks.length > 0 && (
+        <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-extrabold text-neutral-900">
+              Process Bottlenecks & Operational Gaps
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Operational frictions, manual handoffs, and data quality barriers uncovered across documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {analysis.processBottlenecks.map((item, idx) => (
+              <div key={idx} className="p-3.5 bg-[#FAF8F2] rounded-xl border border-[#E5DFD4] text-xs text-neutral-800">
+                ● {item}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {analysis.functionalRequirements && analysis.functionalRequirements.length > 0 && (
+        <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-extrabold text-neutral-900">
+              Traceable Functional Requirements ({analysis.functionalRequirements.length})
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Capabilities directly derived from discovered problems, workflow gaps, and evidence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {analysis.functionalRequirements.map((req) => (
+              <div key={req.id} className="p-3.5 bg-[#FAF8F2] rounded-xl border border-[#E5DFD4] text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-neutral-900">{req.id}: {req.title}</span>
+                  <Badge variant="outline" className="text-[10px] border-[#E5DFD4]">{req.priority}</Badge>
+                </div>
+                <p className="text-neutral-700">{req.description}</p>
+                {req.sourceEvidence && (
+                  <p className="text-[10px] text-neutral-500 font-semibold">Provenance: {req.sourceEvidence}</p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {problemMap && problemMap.nodes?.length > 0 && <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader><CardTitle className="text-base font-extrabold text-neutral-900">Business problem map</CardTitle><CardDescription className="text-xs">Click a node to inspect its evidence and relationship to the transformation.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2">{problemMap.nodes.map((node) => <button type="button" key={node.id} onClick={() => setSelectedNode(node.id)} className={`rounded-full border px-3 py-2 text-xs font-bold ${selectedNode === node.id ? "border-[#18181C] bg-[#18181C] text-white" : "border-[#E5DFD4] bg-[#FAF8F2] text-neutral-700"}`}>{node.label}<span className="ml-1 text-[9px] opacity-60">{node.type}</span></button>)}</div>{selectedNodeData && <div className="mt-4 rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-4"><p className="text-sm font-extrabold text-neutral-900">{selectedNodeData.label}</p><p className="text-xs text-neutral-700 mt-2">{selectedNodeData.description || "No additional description was returned."}</p>{selectedNodeData.evidenceIds?.length > 0 && <p className="text-[10px] text-neutral-500 mt-2">Evidence IDs: {selectedNodeData.evidenceIds.join(", ")}</p>}</div>}</CardContent></Card>}
 

@@ -46,6 +46,14 @@ export const DiscoveryQuestionSchema = z.object({
   status: z.enum(["OPEN", "ANSWERED", "SKIPPED"]).default("OPEN"),
 })
 
+export const DiscoveryCoverageSchema = z.object({
+  totalDocuments: z.number().default(0),
+  readyDocuments: z.number().default(0),
+  unavailableDocuments: z.number().default(0),
+  coveragePercentage: z.number().default(100),
+  missingAreas: z.array(z.string()).default([]),
+})
+
 export const DiscoveryUnderstandingSchema = z.object({
   confirmedFacts: z.array(DiscoveryEvidenceSchema).default([]),
   currentProcess: z.array(z.string()).default([]),
@@ -55,6 +63,9 @@ export const DiscoveryUnderstandingSchema = z.object({
   constraints: z.array(z.string()).default([]),
   evidence: z.array(DiscoveryEvidenceSchema).default([]),
   businessImpact: z.array(z.string()).default([]),
+  contradictions: z.array(z.string()).default([]),
+  processBottlenecks: z.array(z.string()).default([]),
+  evidenceCoverage: DiscoveryCoverageSchema.optional(),
 })
 
 export const DiscoveryInterviewSchema = z.object({
@@ -111,6 +122,8 @@ export function emptyUnderstanding(): DiscoveryUnderstanding {
     constraints: [],
     evidence: [],
     businessImpact: [],
+    contradictions: [],
+    processBottlenecks: [],
   }
 }
 
@@ -164,6 +177,8 @@ export function assessDiscoveryState(input: {
     constraints: Array.isArray(storedUnderstanding.constraints) ? storedUnderstanding.constraints : [],
     evidence: Array.isArray(storedUnderstanding.evidence) ? storedUnderstanding.evidence : [],
     businessImpact: Array.isArray(storedUnderstanding.businessImpact) ? storedUnderstanding.businessImpact : [],
+    contradictions: Array.isArray(storedUnderstanding.contradictions) ? storedUnderstanding.contradictions : [],
+    processBottlenecks: Array.isArray(storedUnderstanding.processBottlenecks) ? storedUnderstanding.processBottlenecks : [],
   }
 
   const dimensions: Record<DiscoveryDimension, boolean> = {
@@ -330,6 +345,8 @@ export function formatDiscoveryUnderstanding(understanding: DiscoveryUnderstandi
     understanding.currentProcess.length ? `Current process: ${understanding.currentProcess.join("; ")}` : "",
     understanding.observedProblems.length ? `Observed problems: ${understanding.observedProblems.map((problem) => problem.title).join("; ")}` : "",
     understanding.potentialRootCauses.length ? `Potential root causes: ${understanding.potentialRootCauses.map((cause) => cause.statement).join("; ")}` : "",
+    understanding.processBottlenecks?.length ? `Process bottlenecks: ${understanding.processBottlenecks.join("; ")}` : "",
+    understanding.contradictions?.length ? `Cross-document contradictions: ${understanding.contradictions.join("; ")}` : "",
     understanding.businessImpact.length ? `Business impact: ${understanding.businessImpact.join("; ")}` : "",
     understanding.unknowns.length ? `Unknowns: ${understanding.unknowns.join("; ")}` : "",
     understanding.constraints.length ? `Constraints: ${understanding.constraints.join("; ")}` : "",

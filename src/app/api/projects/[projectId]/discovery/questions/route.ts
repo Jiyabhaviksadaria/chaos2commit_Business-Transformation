@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { generateStructured } from "@/lib/ai/orchestrator"
 import { buildProjectContext, getProjectContextSnapshot, updateProjectContextMetadata } from "@/lib/ai/context"
 import { assessDiscoveryState, DiscoveryInterviewSchema, formatDiscoveryUnderstanding, mergeDiscoveryInterview, reconcileDiscoveryQuestions, type DiscoveryInterview, type DiscoveryQuestion, type DiscoveryState } from "@/lib/ai/discovery"
+import { buildNormalizedProjectEvidence } from "@/lib/ai/evidence"
 
 export const runtime = "nodejs"
 
@@ -68,17 +69,41 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
     const snapshot = await getProjectContextSnapshot(params.projectId)
     const state = assessDiscoveryState({ answers: snapshot.answers, businessContent: snapshot.businessContent, metadata: snapshot.metadata, sourceCount: snapshot.sources.length })
     const context = await buildProjectContext(params.projectId)
+    const evidenceReport = await buildNormalizedProjectEvidence(params.projectId)
     const understanding = formatDiscoveryUnderstanding(state.understanding)
     const answerHistory = snapshot.answers.map((answer) => `Q: ${String(answer.question || "")}\nA: ${String(answer.answer || "")}`).join("\n\n")
+
+    const userPrompt = [
+      `PROJECT: ${project.name}`,
+      `COMPANY CONTEXT:\n${snapshot.businessContent}`,
+      evidenceReport.synthesisText ? `EVIDENCE LEDGER (${evidenceReport.readyDocumentCount} of ${evidenceReport.totalDocumentCount} documents ready, ${evidenceReport.coveragePercentage}% coverage):\n${evidenceReport.synthesisText}` : "",
+      `CURRENT UNDERSTANDING:\n${understanding || "No structured understanding yet."}`,
+      `PERSISTED ANSWERS:\n${answerHistory || "No answers yet."}`,
+      `CANONICAL PROJECT CONTEXT:\n${context}`,
+    ].filter(Boolean).join("\n\n")
+
     const aiResult = await generateStructured({
       task: "adaptive_discovery_interview",
-      system: `You are INTELLY, an evidence-driven business transformation analyst. Conduct an adaptive discovery interview, not a generic questionnaire. Use only the supplied company context, source text, persisted answers, and confirmed understanding. Identify what is known, missing, contradictory, uncertain, or likely to change the current hypothesis. Ask no more than six questions, ordered by information value. Do not expose chain-of-thought. For each question provide a concise business rationale, not private reasoning. Distinguish confirmed facts, inferred hypotheses, assumptions, and unknowns. Mark readyForAnalysis only when objective, process, major problem, evidence, impact, and constraints are sufficiently evidenced. Never fabricate evidence or claim a source was analyzed if it is not in the context.`,
-      user: `PROJECT: ${project.name}\nCOMPANY CONTEXT:\n${snapshot.businessContent}\nCURRENT UNDERSTANDING:\n${understanding || "No structured understanding yet."}\nPERSISTED ANSWERS:\n${answerHistory || "No answers yet."}\nCANONICAL PROJECT CONTEXT:\n${context}`,
+      system: `You are INTELLY, a senior evidence-driven Business Analysis intelligence engine. You conduct an adaptive, source-grounded discovery investigation, not a generic questionnaire.
+Rules for discovery:
+1. Treat all supporting documents as business evidence with traceable provenance. Use ALL successfully processed documents across the portfolio (up to 20 documents).
+2. Distinguish strictly between:
+   - CONFIRMED FACTS: directly supported by documents or structured company input.
+   - INFERENCES: derived logically from evidence.
+   - ASSUMPTIONS: hypotheses requiring validation.
+   - UNKNOWNS: missing business metrics, transaction volumes, user counts, SLAs, costs, or owners.
+3. Detect cross-document contradictions (e.g. conflicting system descriptions, divergent workflows) and surface them in understanding.contradictions.
+4. Detect process bottlenecks (e.g. manual handoffs, spreadsheet data re-entry, delayed approvals) and surface them in understanding.processBottlenecks.
+5. Retain exact source provenance (e.g. "Sales_Process.pdf, Page 4"). Never fabricate citations or page numbers.
+6. If any documents failed extraction, note that analysis may be incomplete in those functional areas.
+7. Ask up to 6 high-value questions that resolve the most critical business unknowns, ordered by information value.
+8. Output narrative in the requested project language (${project.language || "en"}), but keep document filenames and source citations unchanged. Never expose internal chain-of-thought.`,
+      user: userPrompt,
       schema: DiscoveryInterviewSchema,
       language: project.language && project.language !== "auto" ? project.language : "en",
       userId: access.user?.id,
       organizationId: project.workspace?.organizationId,
-      timeoutMs: 8_000,
+      timeoutMs: 12_000,
     })
 
     let interview: DiscoveryInterview
