@@ -1,12 +1,15 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
+import { getAppBaseUrl, logAuthDiagnostics } from "@/lib/auth-tokens"
 
 export async function sendPasswordResetEmail(
   name: string,
   email: string,
-  rawToken: string
+  rawToken: string,
+  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined>; url?: string } | string | null
 ): Promise<boolean> {
-  const appUrl = process.env.APP_URL || "http://localhost:3000"
+  const appUrl = getAppBaseUrl(requestOrBaseUrl)
+  logAuthDiagnostics(requestOrBaseUrl, appUrl)
   const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(rawToken)}`
   const displayName = name || "there"
   const safeDisplayName = escapeHtml(displayName)

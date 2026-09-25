@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import * as React from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import Link from "next/link"
+import { Loader2, Mail, CheckCircle2, ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,6 +43,17 @@ export default function RegisterPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [resending, setResending] = useState(false)
   const [resendMessage, setResendMessage] = useState<string | null>(null)
+  const [cooldown, setCooldown] = useState(0)
+
+  // Cooldown countdown effect
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
+
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { role: "", customRole: "" },
@@ -51,43 +64,78 @@ export default function RegisterPage() {
     setError(null)
     setResendMessage(null)
     try {
-      const response = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) { setError(result.error?.message || "Registration failed"); return }
+      if (!response.ok) {
+        setError(result.error?.message || "Registration failed")
+        return
+      }
       setRegisteredEmail(data.email)
       setEmailSent(Boolean(result.emailSent))
       setAutoVerified(Boolean(result.autoVerified))
-    } catch { setError("An unexpected error occurred") }
+    } catch {
+      setError("An unexpected error occurred. Please try again.")
+    }
   }
 
   async function resendVerification() {
-    if (!registeredEmail) return
+    if (!registeredEmail || resending || cooldown > 0) return
     setResending(true)
     setResendMessage(null)
     try {
-      const response = await fetch("/api/auth/resend-verification", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: registeredEmail }) })
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: registeredEmail }),
+      })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || "Unable to resend verification email")
+
+      if (result.alreadyVerified) {
+        setAutoVerified(true)
+        return
+      }
+
+      if (!response.ok) {
+        if (result.retryAfterSeconds) {
+          setCooldown(result.retryAfterSeconds)
+        }
+        throw new Error(result.error || "Unable to resend verification email")
+      }
+
       setEmailSent(true)
-      setResendMessage("If the account exists, a fresh verification link is on its way.")
-    } catch (resendError) { setResendMessage(resendError instanceof Error ? resendError.message : "Unable to resend verification email") }
-    finally { setResending(false) }
+      setCooldown(result.cooldownSeconds || 60)
+      setResendMessage(result.message || "A fresh verification link has been sent to your email. Check your inbox and spam folder.")
+    } catch (resendError) {
+      setResendMessage(resendError instanceof Error ? resendError.message : "Unable to resend verification email")
+    } finally {
+      setResending(false)
+    }
   }
 
   if (registeredEmail) {
     if (autoVerified || !emailSent) {
       return (
         <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
-          <CardHeader>
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto h-12 w-12 rounded-2xl bg-[#F1F8EC] border border-[#B8DF9E] flex items-center justify-center mb-2 shadow-xs">
+              <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+            </div>
             <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Account Ready!</CardTitle>
-            <CardDescription>Your account has been created successfully.</CardDescription>
+            <CardDescription className="text-xs text-neutral-500">Your account has been created successfully.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-[#B8DF9E] bg-[#F1F8EC] p-4 text-sm text-neutral-800">
+          <CardContent className="space-y-4 pt-2">
+            <div className="rounded-2xl border border-[#B8DF9E] bg-[#F1F8EC] p-4 text-xs text-neutral-800 leading-relaxed text-center">
               Account created for <strong>{registeredEmail}</strong>. SMTP email delivery is currently disabled on this server, so your account has been <strong>automatically verified</strong> for immediate access.
             </div>
-            <Button asChild className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800">
-              <Link href="/login">Sign In to Your Account</Link>
+            <Button asChild className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 h-11 text-sm font-semibold">
+              <Link href={`/login?email=${encodeURIComponent(registeredEmail)}`}>
+                Sign In to Your Account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -96,21 +144,46 @@ export default function RegisterPage() {
 
     return (
       <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Check your email</CardTitle>
-          <CardDescription>Verify your account to activate Intelly AI.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-2xl border border-[#B8DF9E] bg-[#F1F8EC] p-4 text-sm text-neutral-800">
-            We sent a verification link to <strong>{registeredEmail}</strong>. The link expires in 24 hours.
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto h-12 w-12 rounded-2xl bg-[#FAF8F5] border border-[#E8E4DC] flex items-center justify-center mb-2 shadow-xs">
+            <Mail className="h-6 w-6 text-[#18181C]" />
           </div>
-          <Button type="button" variant="outline" className="w-full rounded-full border-[#E5DFD4]" onClick={resendVerification} disabled={resending}>
-            {resending ? "Sending..." : "Resend verification email"}
+          <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Check your email</CardTitle>
+          <CardDescription className="text-xs text-neutral-500">Verify your account to activate Intelly AI.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-2">
+          <div className="rounded-2xl border border-[#B8DF9E] bg-[#F1F8EC] p-4 text-xs text-neutral-800 leading-relaxed text-center">
+            We sent a verification link to <strong>{registeredEmail}</strong>. Please check your inbox (and spam folder) to activate your account. The link expires in 24 hours.
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-full border-[#E5DFD4] font-semibold text-xs h-10"
+            onClick={resendVerification}
+            disabled={resending || cooldown > 0}
+          >
+            {resending ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Sending link...
+              </span>
+            ) : cooldown > 0 ? (
+              `Resend in ${cooldown}s`
+            ) : (
+              "Resend verification email"
+            )}
           </Button>
-          {resendMessage && <p className="text-center text-sm text-neutral-600">{resendMessage}</p>}
+          {resendMessage && (
+            <p className="text-center text-xs text-neutral-600 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E8E4DC]">
+              {resendMessage}
+            </p>
+          )}
         </CardContent>
-        <CardFooter>
-          <Link href="/login" className="w-full text-center text-sm font-semibold text-neutral-900 underline-offset-2 hover:underline">
+        <CardFooter className="pt-2">
+          <Link
+            href={`/login?email=${encodeURIComponent(registeredEmail)}`}
+            className="w-full text-center text-xs font-semibold text-neutral-600 hover:text-black transition-colors"
+          >
             Back to sign in
           </Link>
         </CardFooter>
@@ -118,5 +191,81 @@ export default function RegisterPage() {
     )
   }
 
-  return <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm"><CardHeader><CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Create your account</CardTitle><CardDescription>Start with your work email. No business description is required.</CardDescription></CardHeader><form onSubmit={handleSubmit(onSubmit)}><CardContent className="space-y-4">{error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</div>}<div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" autoComplete="name" {...register("name")} />{errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}</div><div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" {...register("email")} />{errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}</div><div className="space-y-2"><Label htmlFor="role">Role in Company</Label><Select value={selectedRole || undefined} onValueChange={(value) => setValue("role", value, { shouldDirty: true, shouldValidate: true })}><SelectTrigger id="role" aria-label="Role in Company"><SelectValue placeholder="Select your role" /></SelectTrigger><SelectContent>{COMPANY_ROLE_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select>{errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}{selectedRole === "Other" && <div className="space-y-2 pt-2"><Label htmlFor="customRole">Custom role</Label><Input id="customRole" autoComplete="organization-title" placeholder="Enter your role" {...register("customRole")} />{errors.customRole && <p className="text-sm text-red-500">{errors.customRole.message}</p>}</div>}</div><div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" autoComplete="new-password" {...register("password")} /><p className="text-xs text-neutral-500">Use at least 8 characters.</p>{errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}</div><div className="space-y-2"><Label htmlFor="confirmPassword">Confirm Password</Label><Input id="confirmPassword" type="password" autoComplete="new-password" {...register("confirmPassword")} />{errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}</div></CardContent><CardFooter className="flex flex-col space-y-4"><Button type="submit" className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800" disabled={isSubmitting}>{isSubmitting ? "Creating account..." : "Create Account"}</Button><div className="text-center text-sm text-muted-foreground">Already have an account? <Link href="/login" className="font-semibold text-neutral-900 underline-offset-2 hover:underline">Log in</Link></div></CardFooter></form></Card>
+  return (
+    <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">Create your account</CardTitle>
+        <CardDescription>Start with your work email. No business description is required.</CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700" role="alert">
+              {error}
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" autoComplete="name" {...register("name")} />
+            {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" autoComplete="email" {...register("email")} />
+            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="role">Role in Company</Label>
+            <Select value={selectedRole || undefined} onValueChange={(value) => setValue("role", value, { shouldDirty: true, shouldValidate: true })}>
+              <SelectTrigger id="role" aria-label="Role in Company">
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPANY_ROLE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.role && <p className="text-xs text-red-500">{errors.role.message}</p>}
+            {selectedRole === "Other" && (
+              <div className="space-y-1.5 pt-2">
+                <Label htmlFor="customRole">Custom role</Label>
+                <Input id="customRole" autoComplete="organization-title" placeholder="Enter your role" {...register("customRole")} />
+                {errors.customRole && <p className="text-xs text-red-500">{errors.customRole.message}</p>}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" autoComplete="new-password" {...register("password")} />
+            <p className="text-[11px] text-neutral-500">Use at least 8 characters.</p>
+            {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input id="confirmPassword" type="password" autoComplete="new-password" {...register("confirmPassword")} />
+            {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <Button type="submit" className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 font-semibold" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating account...
+              </span>
+            ) : (
+              "Create Account"
+            )}
+          </Button>
+          <div className="text-center text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="font-semibold text-neutral-900 underline-offset-2 hover:underline">
+              Log in
+            </Link>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
+  )
 }

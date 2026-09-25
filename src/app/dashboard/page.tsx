@@ -4,8 +4,10 @@ import { getServerSession } from "next-auth"
 import { ArrowRight, BarChart3, Briefcase, Sparkles } from "lucide-react"
 
 import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { DEMO_PROJECT_ID } from "@/lib/demo-business-data"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -18,12 +20,59 @@ export default async function DashboardPage() {
     redirect(`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`)
   }
 
+  // Retrieve user memberships
+  const memberships = await db.membership.findMany({
+    where: { userId: session.user.id },
+    include: {
+      organization: {
+        include: {
+          workspaces: {
+            take: 1,
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  })
+
+  // If user does not belong to any organization, route to company selection
+  if (memberships.length === 0) {
+    redirect("/onboarding/company")
+  }
+
+  const activeMembership = memberships[0]
+  const company = activeMembership.organization
+  const workspace = company.workspaces[0]
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-      <div>
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-neutral-500">Normal workspace</p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Welcome, {session.user.name || "there"}</h1>
-        <p className="mt-2 text-sm text-neutral-500">Manage your company workspaces and continue your transformation journey.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-neutral-500">
+              {company.name}
+            </span>
+            <Badge variant="outline" className="text-[10px] uppercase font-bold border-neutral-300">
+              {activeMembership.role}
+            </Badge>
+          </div>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">
+            Welcome, {session.user.name || "there"}
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            {workspace ? workspace.name : "Company Workspace"} &bull; {session.user.companyRole || "Team Member"}
+          </p>
+        </div>
+
+        {memberships.length > 1 && (
+          <Link
+            href="/onboarding/select-workspace"
+            className="inline-flex items-center text-xs font-semibold text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+          >
+            Switch Company ({memberships.length}) →
+          </Link>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

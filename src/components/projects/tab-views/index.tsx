@@ -95,11 +95,11 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 bg-white border-[#E5DFD4] rounded-[24px] shadow-sm">
+        <Card className="md:col-span-2 bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
           <CardHeader>
             <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center justify-between">
               <span>Business Transformation Objective</span>
-              <Badge className="bg-[#FEE895] text-neutral-900 font-bold border-none">Active Phase</Badge>
+              <Badge variant="accent">Active Phase</Badge>
             </CardTitle>
             <CardDescription className="text-xs">Primary strategic goal registered during intake.</CardDescription>
           </CardHeader>
@@ -119,7 +119,7 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm flex flex-col justify-between">
+        <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs flex flex-col justify-between">
           <CardHeader>
             <CardTitle className="text-base font-extrabold text-neutral-900">Transformation Scores</CardTitle>
             <CardDescription className="text-xs">AI audit of organizational readiness.</CardDescription>
@@ -149,7 +149,13 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
               <Progress value={scoreValue(project.discoveryCompleteness)} className="h-2 bg-neutral-100" />
             </div>
 
-            <Button onClick={runDiagnostic} disabled={recalculating} className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2 mt-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={runDiagnostic}
+              disabled={recalculating}
+              className="w-full gap-2 mt-2"
+            >
               <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
               Run Readiness Diagnostic
             </Button>
@@ -157,15 +163,62 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
         </Card>
       </div>
 
-      <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm">
-        <CardHeader className="pb-3"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><CardTitle className="text-base font-extrabold text-neutral-900">AI transformation phase</CardTitle><CardDescription className="text-xs">Company context → investigation → evidence-backed analysis → existing workflow.</CardDescription></div><Badge className={ready ? "bg-emerald-100 text-emerald-800 border-none" : "bg-[#FEE895] text-neutral-900 border-none"}>{ready ? "Ready for analysis" : "Discovery in progress"}</Badge></div></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs"><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Business objective</p><p className="mt-1 text-neutral-800">{project.businessGoal || (typeof company.businessObjective === "string" ? company.businessObjective : "Not yet defined")}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Discovery progress</p><p className="mt-1 text-neutral-800">{typeof discovery.progress === "number" ? `${discovery.progress}%` : "Not assessed"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Problems discovered</p><p className="mt-1 text-neutral-800">{problems.length || "No validated problem yet"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Readiness</p><p className="mt-1 text-neutral-800">{readiness?.overallScore === null || readiness?.overallScore === undefined ? "Insufficient information" : `${readiness.overallScore}%`}</p></div></CardContent>
-        <CardContent className="pt-0 flex flex-wrap items-center justify-between gap-3"><div className="text-xs text-neutral-600">{rootCauses.length > 0 ? `Top hypothesis: ${typeof rootCauses[0] === "string" ? rootCauses[0] : rootCauses[0]?.statement || "Needs validation"}` : opportunities.length > 0 ? `Top opportunity: ${opportunities[0]}` : "INTELLY will investigate the current process and evidence before making a recommendation."}</div><Button onClick={() => router.push(`/projects/${projectId}/${ready ? "business-analysis" : "discovery"}`)} className="bg-[#18181C] text-white rounded-full text-xs font-bold gap-2">{ready ? "Review Business Analysis" : "Continue AI Discovery"}<ExternalLink className="w-3.5 h-3.5" /></Button></CardContent>
+      <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-extrabold text-neutral-900">AI transformation phase</CardTitle>
+              <CardDescription className="text-xs">Company context → investigation → evidence-backed analysis → existing workflow.</CardDescription>
+            </div>
+            <Badge variant={ready ? "success" : "accent"}>
+              {ready ? "Ready for analysis" : "Discovery in progress"}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Business objective</p>
+            <p className="mt-1 text-neutral-800">{project.businessGoal || (typeof company.businessObjective === "string" ? company.businessObjective : "Not yet defined")}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Discovery progress</p>
+            <p className="mt-1 text-neutral-800">{typeof discovery.progress === "number" ? `${discovery.progress}%` : "Not assessed"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Problems discovered</p>
+            <p className="mt-1 text-neutral-800">{problems.length || "No validated problem yet"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Readiness</p>
+            <p className="mt-1 text-neutral-800">{readiness?.overallScore === null || readiness?.overallScore === undefined ? "Insufficient information" : `${readiness.overallScore}%`}</p>
+          </div>
+        </CardContent>
+        <CardContent className="pt-0 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-neutral-600">
+            {rootCauses.length > 0
+              ? `Top hypothesis: ${typeof rootCauses[0] === "string" ? rootCauses[0] : rootCauses[0]?.statement || "Needs validation"}`
+              : opportunities.length > 0
+              ? `Top opportunity: ${opportunities[0]}`
+              : "INTELLY will investigate the current process and evidence before making a recommendation."}
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => router.push(`/projects/${projectId}/${ready ? "business-analysis" : "discovery"}`)}
+            className="gap-2"
+          >
+            {ready ? "Review Business Analysis" : "Continue AI Discovery"}
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Button>
+        </CardContent>
       </Card>
 
       {/* Quick Launch Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div onClick={() => router.push(`/projects/${projectId}/system`)} className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[22px] cursor-pointer transition-all shadow-sm group">
+        <div
+          onClick={() => router.push(`/projects/${projectId}/system`)}
+          className="bg-white border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[24px] cursor-pointer transition-all shadow-xs group hover:bg-[#FAF8F2]"
+        >
           <div className="flex justify-between items-start mb-3">
             <div className="h-10 w-10 rounded-2xl bg-[#B8DF9E] flex items-center justify-center text-neutral-900">
               <Cpu className="h-5 w-5" />
@@ -176,7 +229,10 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
           <p className="text-xs text-neutral-500 mt-1">Interact with live CRUD forms and runtime database tables.</p>
         </div>
 
-        <div onClick={() => router.push(`/projects/${projectId}/editor`)} className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[22px] cursor-pointer transition-all shadow-sm group">
+        <div
+          onClick={() => router.push(`/projects/${projectId}/editor`)}
+          className="bg-white border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[24px] cursor-pointer transition-all shadow-xs group hover:bg-[#FAF8F2]"
+        >
           <div className="flex justify-between items-start mb-3">
             <div className="h-10 w-10 rounded-2xl bg-[#F8B4D9] flex items-center justify-center text-neutral-900">
               <Globe className="h-5 w-5" />
@@ -187,7 +243,10 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
           <p className="text-xs text-neutral-500 mt-1">Open visual website editor, customize sections with AI, & deploy.</p>
         </div>
 
-        <div onClick={onOpenAi} className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[22px] cursor-pointer transition-all shadow-sm group">
+        <div
+          onClick={onOpenAi}
+          className="bg-white border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[24px] cursor-pointer transition-all shadow-xs group hover:bg-[#FAF8F2]"
+        >
           <div className="flex justify-between items-start mb-3">
             <div className="h-10 w-10 rounded-2xl bg-[#FEE895] flex items-center justify-center text-neutral-900">
               <Sparkles className="h-5 w-5 text-neutral-900" />
@@ -207,12 +266,17 @@ export function DiscoveryTabView({ projectId, project, onScoreUpdate }: TabProps
   const router = useRouter()
   return (
     <div className="space-y-6">
-      <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-[22px] flex items-center justify-between shadow-sm">
+      <div className="bg-white border border-[#E5DFD4] p-5 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div>
           <h3 className="font-extrabold text-sm text-neutral-900">INTELLY Discovery is evidence-first</h3>
-          <p className="text-xs text-neutral-500">Answer targeted questions, validate the understanding, and only then move to solution options.</p>
+          <p className="text-xs text-neutral-500 mt-0.5">Answer targeted questions, validate the understanding, and only then move to solution options.</p>
         </div>
-        <Button onClick={() => router.push(`/projects/${projectId}/editor`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => router.push(`/projects/${projectId}/editor`)}
+          className="gap-2 shrink-0"
+        >
           <Globe className="h-3.5 w-3.5 text-[#F8B4D9]" />
           Open Website Builder
         </Button>
@@ -228,12 +292,12 @@ export function DiscoveryTabView({ projectId, project, onScoreUpdate }: TabProps
 export function BusinessAnalysisTabView({ projectId, project, onOpenAi, onScoreUpdate }: TabProps) {
   return (
     <div className="space-y-6">
-      <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-[22px] flex items-center justify-between shadow-sm">
+      <div className="bg-white border border-[#E5DFD4] p-5 rounded-[24px] flex items-center justify-between shadow-xs">
         <div>
           <h3 className="font-extrabold text-sm text-neutral-900">Business Analysis</h3>
-          <p className="text-xs text-neutral-500">Review evidence-backed findings and continue the transformation pipeline.</p>
+          <p className="text-xs text-neutral-500 mt-0.5">Review evidence-backed findings and continue the transformation pipeline.</p>
         </div>
-        <Badge className="bg-[#FEE895] text-neutral-900 border-none font-bold">Evidence-backed</Badge>
+        <Badge variant="accent">Evidence-backed</Badge>
       </div>
       <BusinessAnalysisView
         projectId={projectId}
@@ -308,32 +372,40 @@ export function BuildTabView({ projectId }: TabProps) {
   const router = useRouter()
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-8 shadow-sm text-center space-y-4 flex flex-col justify-between">
+      <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-8 shadow-xs text-center space-y-4 flex flex-col justify-between">
         <div className="space-y-4">
-          <div className="h-14 w-14 bg-[#F8B4D9] rounded-full flex items-center justify-center mx-auto text-neutral-900">
+          <div className="h-14 w-14 bg-[#F8B4D9] rounded-2xl flex items-center justify-center mx-auto text-neutral-900">
             <Globe className="h-7 w-7" />
           </div>
           <h3 className="text-xl font-extrabold text-neutral-900">Visual Website Editor</h3>
-          <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto leading-relaxed">
             Customize layout sections, theme palettes, language translations, AI requests, and deploy to Vercel/Render QA.
           </p>
         </div>
-        <Button onClick={() => router.push(`/projects/${projectId}/editor`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full px-6 py-2">
+        <Button
+          variant="default"
+          onClick={() => router.push(`/projects/${projectId}/editor`)}
+          className="w-full"
+        >
           Launch Visual Website Editor
         </Button>
       </Card>
 
-      <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-8 shadow-sm text-center space-y-4 flex flex-col justify-between">
+      <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-8 shadow-xs text-center space-y-4 flex flex-col justify-between">
         <div className="space-y-4">
-          <div className="h-14 w-14 bg-[#B8DF9E] rounded-full flex items-center justify-center mx-auto text-neutral-900">
+          <div className="h-14 w-14 bg-[#B8DF9E] rounded-2xl flex items-center justify-center mx-auto text-neutral-900">
             <Cpu className="h-7 w-7" />
           </div>
           <h3 className="text-xl font-extrabold text-neutral-900">Workable System Runtime</h3>
-          <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto leading-relaxed">
             Interact with dynamic database schema modules, execute live CRUD operations, and preview published systems.
           </p>
         </div>
-        <Button onClick={() => router.push(`/projects/${projectId}/system`)} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full px-6 py-2">
+        <Button
+          variant="default"
+          onClick={() => router.push(`/projects/${projectId}/system`)}
+          className="w-full"
+        >
           Launch Workable System Runtime
         </Button>
       </Card>
@@ -380,15 +452,35 @@ export function CollaborationTabView({ projectId, onOpenAi }: TabProps) {
   }, [projectId])
 
   return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
+    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-xs space-y-6">
       <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
         <div>
-          <h3 className="text-lg font-extrabold text-neutral-900">Project Activity & Governance</h3>
-          <p className="text-xs text-neutral-500">Persisted project events and approval activity for this workspace.</p>
+          <h3 className="text-base font-extrabold text-neutral-900">Project Activity & Governance</h3>
+          <p className="text-xs text-neutral-500 mt-0.5">Persisted project events and approval activity for this workspace.</p>
         </div>
-        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">Ask AI</Button>
+        <Button variant="outline" size="sm" onClick={onOpenAi}>
+          Ask AI
+        </Button>
       </div>
-      {loading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-neutral-500" /></div> : activities.length === 0 ? <p className="text-xs text-neutral-500">No project activity has been recorded yet.</p> : <div className="space-y-3">{activities.map((activity) => <div key={activity.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-3.5 rounded-2xl flex items-center justify-between gap-4 text-xs"><div><p className="font-bold text-neutral-900">{activity.action.replaceAll("_", " ")}</p><p className="text-[11px] text-neutral-500">{activity.entity} · {new Date(activity.createdAt).toLocaleString()}</p></div><span className="text-[11px] text-neutral-500">{activity.actor?.name || activity.actor?.email || "System"}</span></div>)}</div>}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-500" />
+        </div>
+      ) : activities.length === 0 ? (
+        <p className="text-xs text-neutral-500">No project activity has been recorded yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {activities.map((activity) => (
+            <div key={activity.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-3.5 rounded-2xl flex items-center justify-between gap-4 text-xs">
+              <div>
+                <p className="font-bold text-neutral-900">{activity.action.replaceAll("_", " ")}</p>
+                <p className="text-[11px] text-neutral-500">{activity.entity} · {new Date(activity.createdAt).toLocaleString()}</p>
+              </div>
+              <span className="text-[11px] text-neutral-500 font-medium">{activity.actor?.name || activity.actor?.email || "System"}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   )
 }
@@ -411,12 +503,37 @@ export function VersionsTabView({ projectId, onOpenAi }: TabProps) {
   }, [projectId])
 
   return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
+    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-xs space-y-6">
       <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div><h3 className="text-lg font-extrabold text-neutral-900">Deliverable Version History</h3><p className="text-xs text-neutral-500">Persisted versions across the transformation stages.</p></div>
-        <Button variant="outline" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full">Ask AI</Button>
+        <div>
+          <h3 className="text-base font-extrabold text-neutral-900">Deliverable Version History</h3>
+          <p className="text-xs text-neutral-500 mt-0.5">Persisted versions across the transformation stages.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onOpenAi}>
+          Ask AI
+        </Button>
       </div>
-      {loading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-neutral-500" /></div> : versions.length === 0 ? <p className="text-xs text-neutral-500">No deliverable versions have been persisted yet.</p> : <div className="space-y-3">{versions.map((version) => <div key={version.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between gap-4 text-xs"><div className="space-y-1"><div className="flex items-center gap-2"><span className="font-extrabold text-neutral-900">{version.type} v{version.versionNumber}</span><span className="text-[11px] text-neutral-400">· {new Date(version.createdAt).toLocaleString()}</span></div><p className="text-neutral-600 text-[11px]">{version.note || "Persisted deliverable version"} · {version.createdBy?.name || version.createdBy?.email || "System"}</p></div></div>)}</div>}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-500" />
+        </div>
+      ) : versions.length === 0 ? (
+        <p className="text-xs text-neutral-500">No deliverable versions have been persisted yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {versions.map((version) => (
+            <div key={version.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex items-center justify-between gap-4 text-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-neutral-900">{version.type} v{version.versionNumber}</span>
+                  <span className="text-[11px] text-neutral-400">· {new Date(version.createdAt).toLocaleString()}</span>
+                </div>
+                <p className="text-neutral-600 text-[11px]">{version.note || "Persisted deliverable version"} · {version.createdBy?.name || version.createdBy?.email || "System"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   )
 }
@@ -433,13 +550,46 @@ export function ExportsTabView({ projectId }: TabProps) {
   }
 
   return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-sm space-y-6">
-      <div className="flex justify-between items-center border-b border-[#E5DFD4] pb-4">
-        <div><h3 className="text-lg font-extrabold text-neutral-900">Export & Documentation Center</h3><p className="text-xs text-neutral-500">Download persisted transformation outputs in supported formats.</p></div>
-        <Button onClick={() => openExport("ALL", "json")} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2"><Download className="h-3.5 w-3.5" /> Export persisted specs</Button>
+    <Card className="bg-white border-[#E5DFD4] rounded-[24px] p-6 shadow-xs space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DFD4] pb-4">
+        <div>
+          <h3 className="text-base font-extrabold text-neutral-900">Export & Documentation Center</h3>
+          <p className="text-xs text-neutral-500 mt-0.5">Download persisted transformation outputs in supported formats.</p>
+        </div>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => openExport("ALL", "json")}
+          className="gap-2 shrink-0"
+        >
+          <Download className="h-3.5 w-3.5" /> Export persisted specs
+        </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {exports.map((item) => { const Icon = item.icon; return <div key={item.type} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl flex flex-col justify-between space-y-3"><div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-white border border-[#E5DFD4] flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-neutral-800" /></div><div><h4 className="font-extrabold text-xs text-neutral-900">{item.title}</h4><span className="text-[10px] text-neutral-500 font-semibold">{item.label}</span></div></div><Button variant="outline" size="sm" onClick={() => openExport(item.type, item.format)} className="w-full bg-white border border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5"><Download className="h-3 w-3" /> Download</Button></div> })}
+        {exports.map((item) => {
+          const Icon = item.icon
+          return (
+            <div key={item.type} className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 p-4 rounded-2xl flex flex-col justify-between space-y-3 transition-colors">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-full bg-white border border-[#E5DFD4] flex items-center justify-center shrink-0">
+                  <Icon className="h-4 w-4 text-neutral-800" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-neutral-900">{item.title}</h4>
+                  <span className="text-[10px] text-neutral-500 font-semibold">{item.label}</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openExport(item.type, item.format)}
+                className="w-full bg-white gap-1.5"
+              >
+                <Download className="h-3 w-3" /> Download
+              </Button>
+            </div>
+          )
+        })}
       </div>
     </Card>
   )

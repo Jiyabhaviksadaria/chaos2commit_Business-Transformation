@@ -193,6 +193,8 @@
     "documents": "Documents",
     "billingCredits": "Billing & Credits",
     "settings": "Settings",
+    "teamChat": "Team Chat",
+    "switchCompany": "Switch Company",
     "logOut": "Log out"
   }
 }

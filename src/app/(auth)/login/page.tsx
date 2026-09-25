@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -21,7 +22,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
@@ -34,15 +35,33 @@ export default function LoginPage() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
   const justSignedOut = searchParams.get("signedOut") === "1"
   const passwordResetSuccess = searchParams.get("passwordReset") === "1"
+  const isVerifiedSuccess = searchParams.get("verified") === "1"
+  const emailParam = searchParams.get("email") || ""
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: emailParam,
+      password: "",
+    },
   })
+
+  // Pre-fill email if passed in query params
+  useEffect(() => {
+    if (emailParam) {
+      setValue("email", emailParam)
+      setLoginEmail(emailParam)
+    }
+  }, [emailParam, setValue])
 
   // Redirect authenticated users away from login page
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
-      router.replace(callbackUrl)
+      if (session.user.membershipCount === 0) {
+        router.replace("/onboarding/company")
+      } else {
+        router.replace(callbackUrl)
+      }
     }
   }, [status, session, router, callbackUrl])
 
@@ -65,7 +84,23 @@ export default function LoginPage() {
         setError("Invalid email or password. Please try again.")
       }
     } else {
-      router.push(callbackUrl)
+      try {
+        const meRes = await fetch("/api/organization/me")
+        const meData = await meRes.json().catch(() => ({}))
+        if (meRes.ok && meData.ok) {
+          if (meData.membershipCount === 0) {
+            router.push("/onboarding/company")
+          } else if (meData.membershipCount > 1 && (callbackUrl === "/dashboard" || callbackUrl === "/projects")) {
+            router.push("/onboarding/select-workspace")
+          } else {
+            router.push(callbackUrl === "/login" ? "/dashboard" : callbackUrl)
+          }
+        } else {
+          router.push(callbackUrl)
+        }
+      } catch {
+        router.push(callbackUrl)
+      }
       router.refresh()
     }
   }
@@ -122,8 +157,16 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
+          {/* Email verified success banner */}
+          {isVerifiedSuccess && !error && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>Email verified successfully! Sign in to enter your workspace.</span>
+            </div>
+          )}
+
           {/* Sign-out confirmation banner */}
-          {justSignedOut && !error && (
+          {justSignedOut && !error && !isVerifiedSuccess && (
             <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>You&apos;ve been signed out successfully.</span>
@@ -131,7 +174,7 @@ export default function LoginPage() {
           )}
 
           {/* Password reset success banner */}
-          {passwordResetSuccess && !error && (
+          {passwordResetSuccess && !error && !isVerifiedSuccess && (
             <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Password reset successfully. Sign in with your new password.</span>
@@ -203,13 +246,37 @@ export default function LoginPage() {
             )}
           </Button>
 
-          <div className="flex items-center gap-3 py-1"><div className="h-px flex-1 bg-[#E5DFD4]" /><span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400">OR</span><div className="h-px flex-1 bg-[#E5DFD4]" /></div>
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-[#E5DFD4]" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400">OR</span>
+            <div className="h-px flex-1 bg-[#E5DFD4]" />
+          </div>
+
           <div className="rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-4 text-center">
-            <Button type="button" onClick={onDemoMode} disabled={demoLoading} className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all text-xs font-bold">
-              {demoLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing Demo Workspace...</> : <><Sparkles className="h-4 w-4 text-[#FEE895]" /> Continue with Demo</>}
+            <Button
+              type="button"
+              onClick={onDemoMode}
+              disabled={demoLoading}
+              className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all text-xs font-bold"
+            >
+              {demoLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Preparing Demo Workspace...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 text-[#FEE895]" /> Continue with Demo
+                </>
+              )}
             </Button>
-            <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-400">No email • No password • Instant access</p>
-            {demoError && <p className="mt-3 text-xs font-semibold text-red-600" role="alert">{demoError}</p>}
+            <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-400">
+              No email • No password • Instant access
+            </p>
+            {demoError && (
+              <p className="mt-3 text-xs font-semibold text-red-600" role="alert">
+                {demoError}
+              </p>
+            )}
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
@@ -221,5 +288,21 @@ export default function LoginPage() {
         </CardFooter>
       </form>
     </Card>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
+          <CardContent className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <LoginContent />
+    </React.Suspense>
   )
 }

@@ -91,7 +91,7 @@ export default function NewProjectScreen() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Choice 1: BUILD WEBSITE */}
-          <div className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+          <div className="bg-white border border-[#E5DFD4] hover:border-neutral-400 rounded-[24px] p-8 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between group hover:bg-[#FAF8F2]">
             <div className="space-y-4">
               <div className="h-14 w-14 rounded-2xl bg-[#F8B4D9] text-neutral-900 flex items-center justify-center">
                 <Layout className="h-7 w-7" />
@@ -103,16 +103,18 @@ export default function NewProjectScreen() {
                 Start from a business starter template and create a production-ready website. Customize it visually or using AI, preview it, and deploy it.
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">8 Templates</Badge>
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">Visual Editor</Badge>
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">Vercel & Render QA</Badge>
+                <Badge variant="outline">8 Templates</Badge>
+                <Badge variant="outline">Visual Editor</Badge>
+                <Badge variant="outline">Vercel & Render QA</Badge>
               </div>
             </div>
 
             <div className="pt-8">
               <Button
+                variant="default"
+                size="lg"
                 onClick={() => setMode("build")}
-                className="w-full bg-[#18181C] hover:bg-neutral-800 text-white font-bold text-xs h-11 rounded-full gap-2 shadow"
+                className="w-full gap-2"
               >
                 <span>Build Website</span>
                 <ArrowRight className="h-4 w-4" />
@@ -121,7 +123,7 @@ export default function NewProjectScreen() {
           </div>
 
           {/* Choice 2: ANALYZE BUSINESS */}
-          <div className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 rounded-[28px] p-8 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+          <div className="bg-white border border-[#E5DFD4] hover:border-neutral-400 rounded-[24px] p-8 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between group hover:bg-[#FAF8F2]">
             <div className="space-y-4">
               <div className="h-14 w-14 rounded-2xl bg-[#FEE895] text-neutral-900 flex items-center justify-center">
                 <Search className="h-7 w-7" />
@@ -133,16 +135,18 @@ export default function NewProjectScreen() {
                 Analyze your business requirements, understand the business, identify opportunities, and generate structured insights before building.
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">Multi-lingual Intake</Badge>
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">URL & Doc Parsing</Badge>
-                <Badge variant="outline" className="bg-white border-[#E5DFD4] text-[10px] font-bold text-neutral-700">Architecture Blueprint</Badge>
+                <Badge variant="outline">Multi-lingual Intake</Badge>
+                <Badge variant="outline">URL & Doc Parsing</Badge>
+                <Badge variant="outline">Architecture Blueprint</Badge>
               </div>
             </div>
 
             <div className="pt-8">
               <Button
+                variant="default"
+                size="lg"
                 onClick={() => setMode("analyze")}
-                className="w-full bg-[#18181C] hover:bg-neutral-800 text-white font-bold text-xs h-11 rounded-full gap-2 shadow"
+                className="w-full gap-2"
               >
                 <span>Analyze Business</span>
                 <ArrowRight className="h-4 w-4" />
@@ -169,7 +173,7 @@ export default function NewProjectScreen() {
             Back to Options
           </Button>
 
-          <Badge variant="outline" className="bg-[#FEE895] text-neutral-900 border-amber-300 font-extrabold text-xs px-3 py-1 rounded-full">
+          <Badge variant="accent">
             Zero LLM API Baseline
           </Badge>
         </div>
@@ -185,13 +189,13 @@ export default function NewProjectScreen() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
           {templates.map(t => (
-            <Card key={t.id} className="bg-[#FAF8F2] border-[#E5DFD4] hover:border-neutral-400 transition-all flex flex-col justify-between group shadow-sm rounded-[24px]">
+            <Card key={t.id} className="bg-white border-[#E5DFD4] hover:border-neutral-400 transition-all flex flex-col justify-between group shadow-xs rounded-[24px] hover:bg-[#FAF8F2]">
               <CardHeader className="p-5 pb-3">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-2xl bg-white border border-[#E5DFD4]">
+                  <div className="p-2.5 rounded-2xl bg-[#FAF8F2] border border-[#E5DFD4]">
                     {templateIcons[t.id] || <Sparkles className="w-6 h-6 text-indigo-600" />}
                   </div>
-                  <Badge variant="secondary" className="text-[10px] uppercase bg-white text-neutral-800 font-bold border border-[#E5DFD4]">
+                  <Badge variant="secondary" className="text-[10px]">
                     {t.theme.style}
                   </Badge>
                 </div>
@@ -214,9 +218,11 @@ export default function NewProjectScreen() {
 
               <div className="p-5 pt-2">
                 <Button
+                  variant="default"
+                  size="sm"
                   onClick={() => handleSelectTemplate(t.id)}
                   disabled={creatingTemplateId === t.id}
-                  className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full h-9 gap-2 shadow"
+                  className="w-full gap-2"
                 >
                   {creatingTemplateId === t.id ? (
                     <>

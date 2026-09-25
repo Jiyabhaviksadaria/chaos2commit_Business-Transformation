@@ -24,13 +24,20 @@ export default function ProjectsDashboard() {
       if (res.ok) {
         const data = await res.json()
         setProjects(data)
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        if (errData.error === "No organization associated" || res.status === 400) {
+          router.push("/onboarding/company")
+          return
+        }
+        toast.error(errData.error || t("loadFailed"))
       }
     } catch {
       toast.error(t("loadFailed"))
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [router, t])
 
   useEffect(() => {
     fetchProjects()
@@ -52,7 +59,30 @@ export default function ProjectsDashboard() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-8 font-sans">
-      {session?.user?.isDemo && <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#FEE895] bg-[#FEE895] px-4 py-3 shadow-sm"><div><p className="text-xs font-extrabold text-neutral-900">✨ {t("demoMode")}</p><p className="mt-0.5 text-[11px] text-neutral-700">{t("demoDescription")}</p></div><div className="flex gap-2"><Link href={`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`} className="rounded-full bg-[#18181C] px-3 py-2 text-[10px] font-extrabold text-white">{t("exploreAnalysis")}</Link><button type="button" onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })} className="rounded-full border border-neutral-900/20 px-3 py-2 text-[10px] font-extrabold text-neutral-900">{t("exitDemo")}</button></div></div>}
+      {session?.user?.isDemo && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#FEE895] bg-[#FEE895] px-4 py-3 shadow-sm">
+          <div>
+            <p className="text-xs font-extrabold text-neutral-900">✨ {t("demoMode")}</p>
+            <p className="mt-0.5 text-[11px] text-neutral-700">{t("demoDescription")}</p>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href={`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`}
+              className="rounded-full bg-[#18181C] px-3 py-2 text-[10px] font-extrabold text-white"
+            >
+              {t("exploreAnalysis")}
+            </Link>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })}
+              className="rounded-full border border-neutral-900/20 px-3 py-2 text-[10px] font-extrabold text-neutral-900"
+            >
+              {t("exitDemo")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner Greeting */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -69,7 +99,11 @@ export default function ProjectsDashboard() {
             disabled={loadingDemo}
             className="flex items-center gap-2 bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm transition-all"
           >
-            {loadingDemo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />}
+            {loadingDemo ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
+            )}
             <span>{t("loadDemo")}</span>
           </button>
           <Link href="/projects/new">
@@ -150,7 +184,7 @@ export default function ProjectsDashboard() {
           </div>
         </div>
 
-        {/* Blue Card: {t("aiProcessing")} */}
+        {/* Blue Card: AI Processing */}
         <div className="bg-[#A3C0E4] rounded-[26px] p-5 text-neutral-900 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
             <div>
@@ -177,7 +211,9 @@ export default function ProjectsDashboard() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-neutral-900">{t("transformationProjects")}</h2>
-            <span className="text-xs font-medium text-neutral-500 hover:text-neutral-900 cursor-pointer">{t("showAll", { count: projects.length })}</span>
+            <span className="text-xs font-medium text-neutral-500 hover:text-neutral-900 cursor-pointer">
+              {t("showAll", { count: projects.length })}
+            </span>
           </div>
 
           {loading ? (

@@ -16,6 +16,8 @@ import {
   Sparkles,
   BarChart3,
   BookOpen,
+  MessageSquare,
+  Building2,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -28,6 +30,7 @@ export function Sidebar({ className }: { className?: string }) {
     { title: t("dashboard"), href: "/dashboard", icon: LayoutDashboard },
     { title: t("projects"), href: "/projects", icon: FolderKanban },
     { title: t("aiAssistant"), href: "/app/ai", icon: Bot },
+    { title: t("teamChat"), href: "/app/team-chat", icon: MessageSquare },
     { title: t("analytics"), href: "/app/analytics", icon: BarChart3 },
     { title: t("knowledgeBase"), href: "/app/documents", icon: BookOpen },
   ]
@@ -108,11 +111,18 @@ export function Sidebar({ className }: { className?: string }) {
           </div>
         </div>
 
-        {/* Footer / Log out */}
-        <div className="pt-4 border-t border-neutral-800">
+        {/* Footer / Switch Company & Log out */}
+        <div className="pt-3 border-t border-neutral-800 space-y-1">
+          <Link
+            href="/onboarding/select-workspace"
+            className="w-full flex items-center gap-3 rounded-full px-4 py-2 text-xs font-medium text-neutral-400 hover:text-white hover:bg-[#27272A] transition-all"
+          >
+            <Building2 className="h-4 w-4 text-neutral-400" />
+            <span>{t("switchCompany")}</span>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })}
-            className="w-full flex items-center gap-3 rounded-full px-4 py-2.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-[#27272A] transition-all"
+            className="w-full flex items-center gap-3 rounded-full px-4 py-2 text-xs font-medium text-neutral-400 hover:text-white hover:bg-[#27272A] transition-all"
           >
             <LogOut className="h-4 w-4 text-neutral-400" />
             <span>{t("logOut")}</span>

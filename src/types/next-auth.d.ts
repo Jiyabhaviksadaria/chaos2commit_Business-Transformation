@@ -11,6 +11,7 @@ declare module "next-auth" {
       isDemo?: boolean
       demoProjectId?: string
       organizationId?: string
+      membershipCount?: number
       name?: string | null
       email?: string | null
       image?: string | null
@@ -24,6 +25,7 @@ declare module "next-auth" {
     isDemo?: boolean
     demoProjectId?: string
     organizationId?: string
+    membershipCount?: number
     emailVerified?: Date | null
   }
 }
@@ -36,5 +38,6 @@ declare module "next-auth/jwt" {
     isDemo?: boolean
     demoProjectId?: string
     organizationId?: string
+    membershipCount?: number
   }
 }
