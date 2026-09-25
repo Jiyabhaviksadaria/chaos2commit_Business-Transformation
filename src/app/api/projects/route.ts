@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/access"
+import { requireUser, requireOrgMember } from "@/lib/access"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
@@ -20,26 +20,57 @@ const ProjectInputSchema = z.object({
   mode: z.enum(["analyze", "build"]).optional(),
 })
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await requireUser()
-    const orgId = user.organizationId
+    const { searchParams } = new URL(req.url)
+    const requestedOrgId = searchParams.get("organizationId")
+
+    let orgId = requestedOrgId || user.organizationId
+
+    if (requestedOrgId) {
+      // Strictly enforce organization tenancy authorization:
+      // A user cannot access another organization's projects simply by changing the ID in the request
+      if (typeof requireOrgMember === "function") {
+        await requireOrgMember(requestedOrgId)
+      }
+      orgId = requestedOrgId
+    } else if (!orgId) {
+      const firstMembership = typeof db.membership?.findFirst === "function"
+        ? await db.membership.findFirst({
+            where: { userId: user.id },
+            select: { organizationId: true },
+            orderBy: { createdAt: "asc" },
+          })
+        : null
+      if (firstMembership) {
+        orgId = firstMembership.organizationId
+      }
+    }
 
     if (!orgId) {
-       return NextResponse.json({ error: "No organization associated" }, { status: 400 })
+      return NextResponse.json({ error: "No organization associated" }, { status: 400 })
+    }
+
+    // Verify authorized membership in target organization
+    if (typeof requireOrgMember === "function") {
+      await requireOrgMember(orgId)
     }
 
     const projects = await db.project.findMany({
       where: {
         workspace: {
-          organizationId: orgId
-        }
+          organizationId: orgId,
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     })
 
     return NextResponse.json(projects)
   } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AccessError") {
+      return NextResponse.json({ error: err.message }, { status: 403 })
+    }
     const status = err instanceof Error && err.name === "AuthError" ? 401 : 503
     return NextResponse.json({ error: err instanceof Error ? err.message : "Unable to load projects." }, { status })
   }
@@ -48,8 +79,24 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser()
-    const orgId = user.organizationId
+    let orgId = user.organizationId
+    if (!orgId) {
+      const firstMembership = typeof db.membership?.findFirst === "function"
+        ? await db.membership.findFirst({
+            where: { userId: user.id },
+            select: { organizationId: true },
+            orderBy: { createdAt: "asc" },
+          })
+        : null
+      if (firstMembership) {
+        orgId = firstMembership.organizationId
+      }
+    }
     if (!orgId) return NextResponse.json({ error: "No organization associated with this account." }, { status: 400 })
+
+    if (typeof requireOrgMember === "function") {
+      await requireOrgMember(orgId, "project:create")
+    }
 
     const body = await req.json().catch(() => ({}))
     const parse = ProjectInputSchema.safeParse(body)
@@ -91,16 +138,15 @@ export async function POST(req: Request) {
       })
 
       if (!firstWorkspace) {
-        let org = await db.organization.findUnique({ where: { id: orgId } })
+        const org = await db.organization.findUnique({ where: { id: orgId } })
         if (!org) {
-          org = await db.organization.create({
-            data: { id: orgId, name: "Default Organization", slug: `org-${Date.now()}` }
-          })
+          return NextResponse.json({ error: "Organization not found." }, { status: 404 })
         }
         firstWorkspace = await db.workspace.create({
           data: {
             organizationId: org.id,
-            name: "Default Workspace"
+            name: `${org.name} Workspace`,
+            description: "Default workspace"
           }
         })
       }

@@ -168,41 +168,236 @@ export function DiscoveryLoop({ projectId, language, onScoreUpdate }: DiscoveryL
   const contradictions = understanding?.contradictions || []
   const processBottlenecks = understanding?.processBottlenecks || []
 
-  return <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
-    <CardHeader className="pb-4 border-b border-[#E5DFD4]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div><CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2"><Sparkles className="w-5 h-5 text-[#F472B6]" /> INTELLY DISCOVERY</CardTitle><CardDescription className="text-xs">Before recommending a solution, INTELLY investigates how your business actually works.</CardDescription></div>
-        <div className="flex items-center gap-2"><Badge variant="outline" className="border-[#E5DFD4] text-[10px]">{statusLabel(discoveryState?.status)}</Badge><Button onClick={() => generate()} disabled={loading} className="bg-[#18181C] text-white text-xs font-bold rounded-full px-5 py-2 gap-2">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CircleHelp className="w-4 h-4 text-[#FEE895]" />} {questions.length ? "Refresh questions" : "Start investigation"}</Button></div>
-      </div>
-    </CardHeader>
-    <CardContent className="pt-6 space-y-5">
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 flex items-center gap-2"><CircleHelp className="h-4 w-4" /> {error}<Button variant="ghost" size="sm" onClick={loadQuestions} className="ml-auto text-xs">Retry</Button><Button variant="ghost" size="sm" onClick={() => setError(null)} className="text-xs">Continue manually</Button></div>}
-      {degradedMode && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-center gap-2"><CircleHelp className="h-4 w-4" /> {notice || "AI provider unavailable. Showing baseline discovery questions."}<Button variant="ghost" size="sm" onClick={() => generate(true)} className="ml-auto text-xs">Retry AI</Button></div>}
-      
-      {contradictions.length > 0 && (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
-            <CircleHelp className="w-4 h-4 text-amber-700" /> Potential Cross-Document Inconsistencies Detected
+  return (
+    <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
+      <CardHeader className="pb-4 border-b border-[#E5DFD4]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#F472B6]" />
+              INTELLY DISCOVERY
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Before recommending a solution, INTELLY investigates how your business actually works.
+            </CardDescription>
           </div>
-          <p className="text-[11px] text-amber-800">
-            The AI detected differing details across your business documents or context:
-          </p>
-          <div className="space-y-1.5 mt-1">
-            {contradictions.map((c, i) => (
-              <p key={i} className="text-xs text-amber-950 bg-white/80 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
-                ⚠️ {c}
-              </p>
-            ))}
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{statusLabel(discoveryState?.status)}</Badge>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => generate()}
+              disabled={loading}
+              className="gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CircleHelp className="w-3.5 h-3.5 text-[#FEE895]" />
+              )}
+              {questions.length ? "Refresh questions" : "Start investigation"}
+            </Button>
           </div>
         </div>
-      )}
+      </CardHeader>
+      <CardContent className="pt-6 space-y-5">
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-800 flex items-center gap-2.5">
+            <CircleHelp className="h-4 w-4 shrink-0 text-red-600" />
+            <span className="flex-1">{error}</span>
+            <Button variant="ghost" size="sm" onClick={loadQuestions} className="text-xs font-bold text-red-900 hover:bg-red-100/60">
+              Retry
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setError(null)} className="text-xs font-bold text-red-900 hover:bg-red-100/60">
+              Continue manually
+            </Button>
+          </div>
+        )}
+        {degradedMode && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 flex items-center gap-2.5">
+            <CircleHelp className="h-4 w-4 shrink-0 text-amber-600" />
+            <span className="flex-1">{notice || "AI provider unavailable. Showing baseline discovery questions."}</span>
+            <Button variant="ghost" size="sm" onClick={() => generate(true)} className="text-xs font-bold text-amber-900 hover:bg-amber-100/60">
+              Retry AI
+            </Button>
+          </div>
+        )}
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-3"><div className="flex-1 min-w-[180px]"><p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">Investigation progress</p><div className="mt-1 flex items-center gap-2"><div className="h-2 flex-1 rounded-full bg-neutral-200 overflow-hidden"><div className="h-full bg-[#18181C] transition-all" style={{ width: `${discoveryState?.progress || 0}%` }} /></div><span className="text-xs font-bold text-neutral-700">{discoveryState?.progress || 0}%</span></div></div>{discoveryState?.confidence !== undefined && <Badge className="bg-[#FEE895] text-neutral-900 border-none text-[10px]">Confidence {discoveryState.confidence}%</Badge>}</div>
-      {(confirmedFacts.length > 0 || currentProcess.length > 0 || observedProblems.length > 0 || rootCauses.length > 0 || processBottlenecks.length > 0 || unknowns.length > 0 || constraints.length > 0) && <div><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-extrabold text-neutral-900">INTELLY UNDERSTANDING</h3><span className="text-[10px] text-neutral-500">Only evidence-backed findings are shown</span></div><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><UnderstandingSection title="Confirmed facts" values={confirmedFacts} tone="confirmed" /><UnderstandingSection title="Current process" values={currentProcess} /><UnderstandingSection title="Observed problems" values={observedProblems} /><UnderstandingSection title="Potential root causes" values={rootCauses} tone="confirmed" /><UnderstandingSection title="Process bottlenecks & handoffs" values={processBottlenecks} tone="unknown" /><UnderstandingSection title="Unknown" values={unknowns} tone="unknown" /><UnderstandingSection title="Constraints" values={constraints} /></div>{evidence.length > 0 && <div className="mt-3 rounded-2xl border border-[#E5DFD4] bg-white p-3"><p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">Evidence collected ({evidence.length} items)</p><div className="mt-2 space-y-1.5">{evidence.map((item, index) => <p key={`${item.statement}-${index}`} className="text-xs text-neutral-700">✓ {item.statement} <span className="text-[10px] text-neutral-400 font-semibold">({item.source})</span></p>)}</div></div>}</div>}
-      {(confirmedFacts.length > 0 || currentProcess.length > 0 || observedProblems.length > 0) && <div className="rounded-2xl border border-[#E5DFD4] bg-white p-4"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-neutral-900">WHAT I UNDERSTAND SO FAR</p><p className="text-xs text-neutral-500 mt-1">Is this understanding correct before INTELLY continues?</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => generate(true)} className="rounded-full border-[#E5DFD4] text-xs">Yes, Continue</Button><Button type="button" variant="outline" onClick={() => document.getElementById("discovery-questions")?.scrollIntoView({ behavior: "smooth" })} className="rounded-full border-[#E5DFD4] text-xs">Correct Something</Button><Button type="button" variant="outline" onClick={() => document.getElementById("discovery-questions")?.scrollIntoView({ behavior: "smooth" })} className="rounded-full border-[#E5DFD4] text-xs">Add Information</Button></div></div></div>}
-      {discoveryState?.readyForAnalysis && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-emerald-900">INTELLY has enough information to analyze your transformation.</p><p className="text-xs text-emerald-800 mt-1">The next step will generate an evidence-backed Business Analysis, not an automatic software recommendation.</p></div><Button onClick={generateAnalysis} disabled={generatingAnalysis} className="bg-[#18181C] text-white rounded-full text-xs font-bold gap-2">{generatingAnalysis ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />} Generate Business Analysis</Button></div>}
-      <div className="rounded-2xl border border-dashed border-[#E5DFD4] bg-white p-4"><div className="flex flex-col sm:flex-row sm:items-end gap-3"><div className="flex-1"><p className="text-xs font-extrabold text-neutral-900">Add information or correct something</p><p className="text-[11px] text-neutral-500 mt-1">Use this when the current understanding is incomplete or incorrect.</p></div><Button type="button" onClick={saveManualNote} disabled={savingNote || !manualNote.trim()} className="bg-[#18181C] text-white rounded-full text-xs font-bold gap-2">{savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Save information</Button></div><Textarea value={manualNote} onChange={(event) => setManualNote(event.target.value)} placeholder="Share a correction, missing fact, or business impact detail..." className="bg-[#FAF8F2] border-[#E5DFD4] text-xs mt-3 min-h-20" /></div>
-      {questions.length === 0 ? <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-8 rounded-2xl text-center"><Lightbulb className="w-8 h-8 text-neutral-400 mx-auto" /><h4 className="text-sm font-extrabold text-neutral-900 mt-3">No open questions</h4><p className="text-xs text-neutral-500 mt-1">Start the investigation or review the current understanding above.</p></div> : <div id="discovery-questions" className="space-y-4">{questions.map((question) => <div key={question.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-2xl space-y-3"><div className="flex items-center justify-between gap-3"><Badge className="bg-[#18181C] text-white border-none text-[10px] font-bold">{question.category}</Badge><span className="text-[10px] font-bold text-neutral-400">{question.priority} priority · {question.informationValue}% information value</span></div><div><h5 className="text-sm font-extrabold text-neutral-900">{question.question}</h5><details className="mt-2 text-xs text-neutral-500"><summary className="cursor-pointer font-semibold">Why is INTELLY asking this?</summary><p className="mt-1 leading-relaxed">{question.rationale || question.whyItMatters || question.reason}</p></details></div>{question.suggestedAnswers.length > 0 && <div className="flex flex-wrap gap-2">{question.suggestedAnswers.map((answer) => <button type="button" key={answer} onClick={() => setAnswers((current) => ({ ...current, [question.id]: answer }))} className={`px-3 py-1 text-xs rounded-full border transition-colors ${answers[question.id] === answer ? "bg-[#18181C] text-white border-black" : "bg-white border-neutral-300 text-neutral-700"}`}>{answer}</button>)}</div>}<Textarea value={answers[question.id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))} placeholder="Type a specific, evidence-based answer..." className="bg-white border-[#E5DFD4] text-xs min-h-20" /></div>)}<Button onClick={submit} disabled={submitting} className="bg-[#18181C] text-white rounded-full text-xs font-bold gap-2">{submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Save answers and continue investigation</Button></div>}
-    </CardContent>
-  </Card>
+        {contradictions.length > 0 && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+            <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
+              <CircleHelp className="w-4 h-4 text-amber-700" /> Potential Cross-Document Inconsistencies Detected
+            </div>
+            <p className="text-[11px] text-amber-800">
+              The AI detected differing details across your business documents or context:
+            </p>
+            <div className="space-y-1.5 mt-1">
+              {contradictions.map((c, i) => (
+                <p key={i} className="text-xs text-amber-950 bg-white/80 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
+                  ⚠️ {c}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-3.5">
+          <div className="flex-1 min-w-[180px]">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">Investigation progress</p>
+            <div className="mt-1.5 flex items-center gap-3">
+              <div className="h-2 flex-1 rounded-full bg-neutral-200 overflow-hidden">
+                <div className="h-full bg-[#18181C] transition-all rounded-full" style={{ width: `${discoveryState?.progress || 0}%` }} />
+              </div>
+              <span className="text-xs font-extrabold text-neutral-800">{discoveryState?.progress || 0}%</span>
+            </div>
+          </div>
+          {discoveryState?.confidence !== undefined && (
+            <Badge variant="accent">Confidence {discoveryState.confidence}%</Badge>
+          )}
+        </div>
+
+        {(confirmedFacts.length > 0 || currentProcess.length > 0 || observedProblems.length > 0 || rootCauses.length > 0 || processBottlenecks.length > 0 || unknowns.length > 0 || constraints.length > 0) && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">INTELLY UNDERSTANDING</h3>
+              <span className="text-[10px] text-neutral-500 font-medium">Only evidence-backed findings are shown</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <UnderstandingSection title="Confirmed facts" values={confirmedFacts} tone="confirmed" />
+              <UnderstandingSection title="Current process" values={currentProcess} />
+              <UnderstandingSection title="Observed problems" values={observedProblems} />
+              <UnderstandingSection title="Potential root causes" values={rootCauses} tone="confirmed" />
+              <UnderstandingSection title="Process bottlenecks & handoffs" values={processBottlenecks} tone="unknown" />
+              <UnderstandingSection title="Unknown" values={unknowns} tone="unknown" />
+              <UnderstandingSection title="Constraints" values={constraints} />
+            </div>
+            {evidence.length > 0 && (
+              <div className="rounded-2xl border border-[#E5DFD4] bg-white p-3.5">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">Evidence collected ({evidence.length} items)</p>
+                <div className="mt-2 space-y-1.5">
+                  {evidence.map((item, index) => (
+                    <p key={`${item.statement}-${index}`} className="text-xs text-neutral-700">
+                      ✓ {item.statement} <span className="text-[10px] text-neutral-400 font-semibold">({item.source})</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(confirmedFacts.length > 0 || currentProcess.length > 0 || observedProblems.length > 0) && (
+          <div className="rounded-2xl border border-[#E5DFD4] bg-white p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">WHAT I UNDERSTAND SO FAR</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Is this understanding correct before INTELLY continues?</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => generate(true)}>
+                  Yes, Continue
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("discovery-questions")?.scrollIntoView({ behavior: "smooth" })}>
+                  Correct Something
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("discovery-questions")?.scrollIntoView({ behavior: "smooth" })}>
+                  Add Information
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {discoveryState?.readyForAnalysis && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-extrabold text-emerald-900">INTELLY has enough information to analyze your transformation.</p>
+              <p className="text-xs text-emerald-800 mt-1">The next step will generate an evidence-backed Business Analysis, not an automatic software recommendation.</p>
+            </div>
+            <Button variant="default" size="sm" onClick={generateAnalysis} disabled={generatingAnalysis} className="gap-2 shrink-0">
+              {generatingAnalysis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+              Generate Business Analysis
+            </Button>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-dashed border-[#E5DFD4] bg-white p-4">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1">
+              <p className="text-xs font-extrabold text-neutral-900">Add information or correct something</p>
+              <p className="text-[11px] text-neutral-500 mt-0.5">Use this when the current understanding is incomplete or incorrect.</p>
+            </div>
+            <Button type="button" variant="default" size="sm" onClick={saveManualNote} disabled={savingNote || !manualNote.trim()} className="gap-2">
+              {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              Save information
+            </Button>
+          </div>
+          <Textarea
+            value={manualNote}
+            onChange={(event) => setManualNote(event.target.value)}
+            placeholder="Share a correction, missing fact, or business impact detail..."
+            className="mt-3 min-h-20"
+          />
+        </div>
+
+        {questions.length === 0 ? (
+          <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-8 rounded-2xl text-center">
+            <Lightbulb className="w-8 h-8 text-neutral-400 mx-auto" />
+            <h4 className="text-sm font-extrabold text-neutral-900 mt-3">No open questions</h4>
+            <p className="text-xs text-neutral-500 mt-1">Start the investigation or review the current understanding above.</p>
+          </div>
+        ) : (
+          <div id="discovery-questions" className="space-y-4">
+            {questions.map((question) => (
+              <div key={question.id} className="bg-[#FAF8F2] border border-[#E5DFD4] p-5 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge variant="default">{question.category}</Badge>
+                  <span className="text-[10px] font-bold text-neutral-400">
+                    {question.priority} priority · {question.informationValue}% information value
+                  </span>
+                </div>
+                <div>
+                  <h5 className="text-sm font-extrabold text-neutral-900">{question.question}</h5>
+                  <details className="mt-2 text-xs text-neutral-500">
+                    <summary className="cursor-pointer font-semibold hover:text-neutral-800">Why is INTELLY asking this?</summary>
+                    <p className="mt-1 leading-relaxed bg-white/70 p-2.5 rounded-xl border border-[#E5DFD4]/60">
+                      {question.rationale || question.whyItMatters || question.reason}
+                    </p>
+                  </details>
+                </div>
+                {question.suggestedAnswers.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {question.suggestedAnswers.map((answer) => (
+                      <button
+                        type="button"
+                        key={answer}
+                        onClick={() => setAnswers((current) => ({ ...current, [question.id]: answer }))}
+                        className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                          answers[question.id] === answer
+                            ? "bg-[#18181C] text-white border-neutral-900 shadow-xs"
+                            : "bg-white border-[#E5DFD4] text-neutral-700 hover:border-neutral-400"
+                        }`}
+                      >
+                        {answer}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Textarea
+                  value={answers[question.id] || ""}
+                  onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+                  placeholder="Type a specific, evidence-based answer..."
+                  className="bg-white min-h-20"
+                />
+              </div>
+            ))}
+            <Button variant="default" size="default" onClick={submit} disabled={submitting} className="gap-2">
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Save answers and continue investigation
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
 }

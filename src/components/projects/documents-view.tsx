@@ -170,22 +170,22 @@ export function DocumentsView({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6 font-sans">
       <Card
-        className="border-dashed border-[#E5DFD4] bg-white rounded-[26px] hover:border-neutral-400 transition-colors"
+        className="border-dashed border-[#E5DFD4] bg-white rounded-[24px] hover:border-neutral-400 transition-colors shadow-xs"
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleDrop}
       >
         <CardContent className="flex flex-col items-center justify-center p-8 text-center">
           <UploadCloud className="h-10 w-10 text-neutral-400 mb-3" />
           <h3 className="text-base font-extrabold text-neutral-900 mb-1">Upload Business Evidence Documents</h3>
-          <p className="text-xs text-neutral-500 mb-4 max-w-lg">
+          <p className="text-xs text-neutral-500 mb-4 max-w-lg leading-relaxed">
             Drag and drop multiple files or click to add supporting business documentation (PDF, DOCX, XLSX, XLS, CSV, PPTX, TXT, MD up to 10MB each).
           </p>
           <div className="flex items-center gap-2 mb-4">
-            <Badge variant="outline" className="border-[#E5DFD4] text-[10px] font-bold">
+            <Badge variant="outline">
               {documents.length}/{MAX_DOCUMENTS_PER_PROJECT} documents added
             </Badge>
             {documents.length > 0 && (
-              <span className="text-[11px] text-neutral-500">
+              <span className="text-[11px] text-neutral-500 font-medium">
                 ({readyDocsCount} ready, {failedDocsCount} failed)
               </span>
             )}
@@ -209,9 +209,11 @@ export function DocumentsView({ projectId }: { projectId: string }) {
           />
 
           <Button
+            variant="default"
+            size="default"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || documents.length >= MAX_DOCUMENTS_PER_PROJECT}
-            className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full px-6 py-2 shadow"
+            className="gap-2"
           >
             {uploading ? "Extracting Evidence..." : "+ Add Supporting Documents"}
           </Button>
@@ -238,13 +240,13 @@ export function DocumentsView({ projectId }: { projectId: string }) {
             <h4 className="font-extrabold text-sm text-neutral-900">
               Project Evidence Documents ({documents.length})
             </h4>
-            <span className="text-[11px] text-neutral-500">
+            <span className="text-[11px] text-neutral-500 font-medium">
               {readyDocsCount} of {documents.length} ready for Business Discovery
             </span>
           </div>
 
           {/* SCROLLABLE DOCUMENT LIST (Supports 10-20 files cleanly) */}
-          <div className="max-h-[460px] overflow-y-auto border border-[#E5DFD4] rounded-2xl divide-y divide-[#E5DFD4] bg-white shadow-sm">
+          <div className="max-h-[460px] overflow-y-auto border border-[#E5DFD4] rounded-[24px] divide-y divide-[#E5DFD4] bg-white shadow-xs overflow-hidden">
             {documents.map((doc) => {
               const meta = (doc.metadata && typeof doc.metadata === "object" ? doc.metadata : {}) as Record<string, unknown>
               const pageCount = typeof meta.pageCount === "number" ? meta.pageCount : null
@@ -265,17 +267,17 @@ export function DocumentsView({ projectId }: { projectId: string }) {
                       <div className="flex items-center gap-2">
                         <h5 className="font-extrabold text-xs text-neutral-900 truncate max-w-md">{doc.filename}</h5>
                         {doc.status === "READY" && (
-                          <Badge className="text-[9px] bg-emerald-100 text-emerald-900 border-none font-bold">
+                          <Badge variant="success">
                             READY
                           </Badge>
                         )}
                         {doc.status === "PENDING" && (
-                          <Badge variant="secondary" className="text-[9px] font-bold">
+                          <Badge variant="secondary">
                             PROCESSING
                           </Badge>
                         )}
                         {doc.status === "FAILED" && (
-                          <Badge className="text-[9px] bg-red-100 text-red-900 border-none font-bold">
+                          <Badge variant="destructive">
                             EXTRACTION FAILED
                           </Badge>
                         )}
@@ -303,7 +305,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleTriggerRetry(doc.id)}
-                        className="border-red-200 text-red-800 hover:bg-red-50 text-xs font-bold rounded-full gap-1"
+                        className="border-red-200 text-red-800 hover:bg-red-50 gap-1"
                       >
                         <RotateCw className="h-3 w-3" /> Retry
                       </Button>
@@ -315,7 +317,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
                           variant="outline"
                           size="sm"
                           onClick={() => setPreviewDoc(doc)}
-                          className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1"
+                          className="gap-1"
                         >
                           <Eye className="h-3.5 w-3.5" /> Preview Evidence
                         </Button>
@@ -323,7 +325,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
                           variant="default"
                           size="sm"
                           onClick={() => router.push(`/projects/${projectId}/documents/${doc.id}`)}
-                          className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-1"
+                          className="gap-1"
                         >
                           <span>Inspect</span>
                           <ArrowRight className="h-3.5 w-3.5" />

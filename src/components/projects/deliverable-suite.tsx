@@ -147,11 +147,11 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
     const activeSpec = DELIVERABLE_SPECS.find(s => s.type === activeType)
     return (
       <div className="space-y-4 font-sans">
-        <div className="flex items-center justify-between bg-white border border-[#E5DFD4] p-4 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between bg-white border border-[#E5DFD4] p-4 rounded-[24px] shadow-xs">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setActiveType(null)}
-            className="border-[#E5DFD4] text-xs font-bold rounded-full"
           >
             ← Back to Deliverable Suite
           </Button>
@@ -160,7 +160,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
               onClick={() => handleExport(activeType, "docx")}
               variant="outline"
               size="sm"
-              className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1"
+              className="gap-1"
             >
               <Download className="h-3.5 w-3.5" /> DOCX
             </Button>
@@ -168,7 +168,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
               onClick={() => handleExport(activeType, "html")}
               variant="outline"
               size="sm"
-              className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1"
+              className="gap-1"
             >
               <Download className="h-3.5 w-3.5" /> HTML
             </Button>
@@ -176,7 +176,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
               onClick={() => handleExport(activeType, "json")}
               variant="outline"
               size="sm"
-              className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1"
+              className="gap-1"
             >
               <Download className="h-3.5 w-3.5" /> JSON
             </Button>
@@ -188,7 +188,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
           type={activeType}
           title={activeSpec?.title || activeType}
           renderer={(content) => (
-            <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-6 rounded-2xl font-mono text-xs whitespace-pre-wrap leading-relaxed overflow-x-auto">
+            <div className="bg-[#FAF8F2] border border-[#E5DFD4] p-6 rounded-[24px] font-mono text-xs whitespace-pre-wrap leading-relaxed overflow-x-auto">
               {typeof content === "object" ? (
                 activeType === "REQUIREMENTS" ? (
                   RequirementsRenderer(content)
@@ -208,7 +208,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
   return (
     <div className="space-y-6 font-sans">
       {/* Top Banner */}
-      <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+      <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
         <CardHeader className="pb-4 border-b border-[#E5DFD4]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -224,7 +224,7 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5">
+                  <Button variant="outline" size="sm" className="gap-1.5">
                     <Download className="h-3.5 w-3.5" />
                     Export Full Suite
                   </Button>
@@ -243,9 +243,11 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
               </DropdownMenu>
 
               <Button
+                variant="default"
+                size="sm"
                 onClick={handleGenerateAll}
                 disabled={generatingAll}
-                className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full px-5 py-2 gap-2"
+                className="gap-2"
               >
                 {generatingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#F472B6]" />}
                 Batch Generate All Deliverables
@@ -270,22 +272,22 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
                 return (
                   <div
                     key={spec.type}
-                    className="bg-[#FAF8F2] border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[22px] transition-all flex flex-col justify-between space-y-4 shadow-sm"
+                    className="bg-white border border-[#E5DFD4] hover:border-neutral-400 p-5 rounded-[24px] transition-all flex flex-col justify-between space-y-4 shadow-xs hover:bg-[#FAF8F2]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-white border border-[#E5DFD4] flex items-center justify-center text-neutral-900 shadow-sm">
+                        <div className="h-10 w-10 rounded-2xl bg-[#FAF8F2] border border-[#E5DFD4] flex items-center justify-center text-neutral-900 shadow-xs">
                           <Icon className="h-5 w-5 text-neutral-800" />
                         </div>
                         <div>
-                          <Badge className="bg-white border-[#E5DFD4] text-neutral-700 text-[10px] font-bold mb-1">
+                          <Badge variant="outline" className="mb-1">
                             {spec.category}
                           </Badge>
                           <h4 className="font-extrabold text-sm text-neutral-900">{spec.title}</h4>
                         </div>
                       </div>
 
-                      <Badge className={isReady ? "bg-emerald-100 text-emerald-900 border-none font-bold" : "bg-neutral-200 text-neutral-700 border-none font-bold"}>
+                      <Badge variant={isReady ? "success" : "secondary"}>
                         {isReady ? "READY" : "NOT GENERATED"}
                       </Badge>
                     </div>
@@ -298,18 +300,20 @@ export function DeliverableSuite({ projectId }: DeliverableSuiteProps) {
                       <div className="flex items-center gap-2">
                         {isReady ? (
                           <Button
-                            onClick={() => setActiveType(spec.type)}
+                            variant="default"
                             size="sm"
-                            className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-1"
+                            onClick={() => setActiveType(spec.type)}
+                            className="gap-1"
                           >
                             <ExternalLink className="h-3.5 w-3.5" /> View & Edit
                           </Button>
                         ) : (
                           <Button
+                            variant="default"
+                            size="sm"
                             onClick={() => handleGenerateOne(spec.type)}
                             disabled={isCurrentlyGenerating}
-                            size="sm"
-                            className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-1"
+                            className="gap-1"
                           >
                             {isCurrentlyGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />}
                             Generate Spec

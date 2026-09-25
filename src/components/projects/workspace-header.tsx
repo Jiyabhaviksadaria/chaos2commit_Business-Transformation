@@ -44,71 +44,71 @@ export function WorkspaceHeader({
   onExport,
 }: ProjectHeaderProps) {
   const router = useRouter()
-  const availableScores = [project.digitalMaturity, project.aiReadiness, project.discoveryCompleteness].filter((value): value is number => typeof value === "number" && value > 0)
-  const readiness = typeof project.readinessScore === "number" && project.readinessScore > 0
-    ? project.readinessScore
-    : availableScores.length > 0 ? Math.round(availableScores.reduce((sum, value) => sum + value, 0) / availableScores.length) : 0
-  const readinessLabel = availableScores.length > 0 || (typeof project.readinessScore === "number" && project.readinessScore > 0) ? `${readiness}%` : "Not assessed"
+  const availableScores = [project.digitalMaturity, project.aiReadiness, project.discoveryCompleteness].filter(
+    (value): value is number => typeof value === "number" && value > 0
+  )
+  const readiness =
+    typeof project.readinessScore === "number" && project.readinessScore > 0
+      ? project.readinessScore
+      : availableScores.length > 0
+      ? Math.round(availableScores.reduce((sum, value) => sum + value, 0) / availableScores.length)
+      : 0
+  const readinessLabel =
+    availableScores.length > 0 || (typeof project.readinessScore === "number" && project.readinessScore > 0)
+      ? `${readiness}%`
+      : "Not assessed"
 
   return (
-    <div className="min-w-0 bg-[#FAF8F2] border border-[#E5DFD4] rounded-[28px] p-5 shadow-sm space-y-4 mb-6">
+    <div className="min-w-0 bg-[#FAF8F2] border border-[#E5DFD4] rounded-[24px] p-5 sm:p-6 shadow-xs space-y-5 mb-6">
       {/* Top Bar: Navigation + Title + Quick Actions */}
-      <div className="flex min-w-0 flex-col justify-between items-start gap-4 border-b border-[#E5DFD4] pb-4 xl:flex-row xl:items-center">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-col justify-between items-start gap-4 border-b border-[#E5DFD4] pb-5 xl:flex-row xl:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-3.5">
           <Button
             variant="outline"
             size="icon"
             onClick={() => router.push("/projects")}
-            className="h-9 w-9 rounded-full bg-white border-[#E5DFD4] hover:bg-neutral-100 text-neutral-700 shadow-sm shrink-0"
+            className="shrink-0"
+            aria-label="Back to projects"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
           <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-2.5 flex-wrap">
-              <h1 className="max-w-full break-words text-2xl font-extrabold text-neutral-900 tracking-tight">
+            <div className="flex min-w-0 items-center gap-2 flex-wrap">
+              <h1 className="max-w-full break-words text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
                 {project.name}
               </h1>
-              <Badge
-                variant="outline"
-                className="bg-white border-[#E5DFD4] text-neutral-800 text-xs font-bold px-2.5 py-0.5 rounded-full"
-              >
+              <Badge variant="outline">
                 {project.industry || "General Enterprise"}
               </Badge>
               {project.lifecycle && (
-                <Badge className="bg-[#FEE895] text-neutral-950 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full">
+                <Badge variant="accent">
                   LIFECYCLE: {project.lifecycle}
                 </Badge>
               )}
-              <Badge
-                className={
-                  project.status === "ACTIVE"
-                    ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full"
-                    : "bg-[#FAF8F2] border border-[#E5DFD4] text-neutral-900 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full"
-                }
-              >
+              <Badge variant={project.status === "ACTIVE" ? "success" : "outline"}>
                 {project.status}
               </Badge>
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-xs text-neutral-500 mt-1">
               Unified AI Solution Builder Workspace • Multi-Tenant Enterprise Spec
             </p>
           </div>
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end">
+        <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-start gap-2 sm:gap-2.5 xl:w-auto xl:justify-end">
           <Button
+            variant="default"
             onClick={onOpenAiCompanion}
-            className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-full shadow gap-2 transition-all"
           >
             <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
             <span>Ask AI</span>
           </Button>
 
           <Button
+            variant="accent"
             onClick={onGenerate}
-            className="bg-[#FEE895] hover:bg-amber-300 text-neutral-900 text-xs font-bold px-4 py-2 rounded-full shadow gap-2 border border-amber-300 transition-all"
           >
             <Zap className="h-3.5 w-3.5 text-neutral-900" />
             <span>Generate</span>
@@ -117,16 +117,14 @@ export function WorkspaceHeader({
           <Button
             variant="outline"
             onClick={onShare}
-            className="bg-white hover:bg-neutral-100 border-[#E5DFD4] text-neutral-800 text-xs font-bold px-3.5 py-2 rounded-full shadow-sm gap-1.5 transition-all"
           >
-            <Share2 className="h-3.5 w-3.5" />
+            <Share2 className="h-3.5 w-3.5 text-neutral-700" />
             <span>Share</span>
           </Button>
 
           <Button
             variant="outline"
             onClick={onExport}
-            className="bg-white hover:bg-neutral-100 border-[#E5DFD4] text-neutral-800 text-xs font-bold px-3.5 py-2 rounded-full shadow-sm gap-1.5 transition-all"
           >
             <Download className="h-3.5 w-3.5 text-neutral-700" />
             <span>Export</span>
@@ -134,10 +132,10 @@ export function WorkspaceHeader({
         </div>
       </div>
 
-      {/* Metrics Row: Transformation Readiness %, Credits, Team Members */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 pt-1">
+      {/* Metrics Row: Transformation Readiness %, Standards, Credits, Team */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 pt-0.5">
         {/* Readiness Metric */}
-        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm space-y-2">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-neutral-600 flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
@@ -145,29 +143,29 @@ export function WorkspaceHeader({
             </span>
             <span className="text-xs font-extrabold text-neutral-900">{readinessLabel}</span>
           </div>
-          <Progress value={readiness} className="h-2 bg-neutral-100" />
+          <Progress value={readiness} className="h-2 bg-neutral-100 mt-2.5" />
         </div>
 
         {/* Industry & Standards */}
-        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-4 shadow-xs flex items-center justify-between">
           <div className="min-w-0 space-y-0.5">
-            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider block">
               Governance Standard
             </span>
-            <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1">
+            <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
               Not configured
             </span>
           </div>
-          <Badge className="bg-[#B8DF9E] text-neutral-900 text-[10px] font-bold border-none">
+          <Badge variant="secondary">
             Review
           </Badge>
         </div>
 
         {/* Credits Metric */}
-        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-4 shadow-xs flex items-center justify-between">
           <div className="min-w-0 space-y-0.5">
-            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider block">
               Workspace Credits
             </span>
             <Link
@@ -178,22 +176,25 @@ export function WorkspaceHeader({
               View billing balance
             </Link>
           </div>
-          <Badge variant="outline" className="text-[10px] font-bold border-amber-300 bg-[#FEE895]">
+          <Badge variant="accent">
             Pay-Per-Gen
           </Badge>
         </div>
 
         {/* Team Members */}
-        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between sm:col-span-2 xl:col-span-1">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-4 shadow-xs flex items-center justify-between sm:col-span-2 xl:col-span-1">
           <div className="min-w-0 space-y-0.5">
-            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider block">
               Team Members
             </span>
-            <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1">
-              <Users className="h-3.5 w-3.5 text-neutral-600" />Team data unavailable
+            <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-neutral-600" />
+              Team data unavailable
             </span>
           </div>
-          <Badge variant="outline" className="text-[10px] text-neutral-600 border-[#E5DFD4]">Not loaded</Badge>
+          <Badge variant="outline">
+            Not loaded
+          </Badge>
         </div>
       </div>
     </div>
