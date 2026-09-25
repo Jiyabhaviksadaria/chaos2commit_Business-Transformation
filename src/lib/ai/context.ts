@@ -158,8 +158,8 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
-      documents: { where: { status: "READY" }, orderBy: { createdAt: "asc" } },
-      intakeSources: { where: { status: "READY" }, orderBy: { createdAt: "asc" } },
+      documents: { orderBy: { createdAt: "asc" } },
+      intakeSources: { orderBy: { createdAt: "asc" } },
       deliverables: {
         include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } },
         orderBy: { updatedAt: "desc" },
@@ -176,6 +176,19 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
   const sourceTypes = Array.from(new Set(sources.map((source) => source.kind)))
   const sourceTextBlocks = sources.map((source) => `SOURCE: ${source.label} [${source.kind}]\n${source.extractedText}`)
   const extractedText = sourceTextBlocks.join("\n\n").trim()
+
+  const allDocuments = Array.isArray(project.documents) ? (project.documents as Array<Record<string, unknown>>) : []
+  const failedDocuments = allDocuments.filter((d) => d.status === "FAILED")
+  const readyDocuments = allDocuments.filter((d) => d.status === "READY")
+  const totalDocs = allDocuments.length
+  const coveragePercentage = totalDocs > 0 ? Math.round((readyDocuments.length / totalDocs) * 100) : 100
+
+  const unavailableNotice = failedDocuments.length > 0
+    ? `\n--- UNAVAILABLE EVIDENCE (${failedDocuments.length} of ${totalDocs} documents failed extraction) ---\n` +
+      failedDocuments.map((d) => `- "${String(d.filename)}": ${String(d.error || "Extraction failed")}`).join("\n") +
+      "\nIMPACT: Business Analysis is based on the available evidence only; areas covered by unavailable documents require validation."
+    : ""
+
   const persistedAnswers = asAnswers(existingContext.answers)
   const answerContext = persistedAnswers.length > 0
     ? `Persisted discovery answers:\n${persistedAnswers.map((answer) => `Q: ${String(answer.question || "")}\nA: ${String(answer.answer || "")}`).join("\n\n")}`
@@ -189,6 +202,7 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
     answerContext,
     project.blueprintData ? `Persisted Master Blueprint:\n${JSON.stringify(project.blueprintData)}` : "",
     extractedText,
+    unavailableNotice,
     serializeDeliverables(project),
   ].filter(Boolean).join("\n\n"))
 
@@ -197,6 +211,10 @@ export async function rebuildProjectContext(projectId: string): Promise<ProjectC
     projectName: project.name || null,
     projectIndustry: project.industry || null,
     sourceCount: sources.length,
+    totalDocuments: totalDocs,
+    readyDocuments: readyDocuments.length,
+    failedDocuments: failedDocuments.length,
+    evidenceCoveragePercentage: coveragePercentage,
     builtAt: new Date().toISOString(),
   }
   const answers = persistedAnswers
