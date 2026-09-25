@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { DeliverableType } from "@prisma/client"
-import { getDeliverableConfig } from "@/modules/registry"
-import { generateStructured } from "@/lib/ai/orchestrator"
+import { generateMultilingualWebsite } from "@/lib/ai/groq-qwen"
 import { buildProjectContext } from "@/lib/ai/context"
 
 export async function GET(
@@ -24,35 +23,33 @@ export async function GET(
       console.warn("DB offline in version GET, returning fallback content:", dbErr)
     }
 
-    // Website Builder keeps its existing compatibility fallback. Transformation
-    // stages must never manufacture a version when persistence is unavailable.
+    // A missing website version is generated only through the dedicated Qwen
+    // service; unrelated transformation stages never manufacture content.
     const delivType = params.type.toUpperCase() as DeliverableType
     if (delivType !== DeliverableType.WEBSITE_SPEC) {
       return NextResponse.json({ error: "Persisted deliverable version not found." }, { status: 404 })
     }
-    const config = getDeliverableConfig(delivType)
     const context = await buildProjectContext(params.projectId)
-    const userPrompt = config?.buildUserPrompt(context) || context
-
-    const aiResult = config ? await generateStructured({
-      task: delivType,
-      system: config.systemPrompt,
-      user: userPrompt,
-      schema: config.outputSchema,
-      language: "en",
+    const primaryLanguage = access.project.primaryLanguage || access.project.language || "en"
+    const supportedLanguages = Array.from(new Set([primaryLanguage, ...(access.project.supportedLanguages || [])]))
+    const websiteResult = await generateMultilingualWebsite({
+      context,
+      primaryLanguage,
+      supportedLanguages,
       userId: access.user.id,
-      organizationId: access.project.workspace.organizationId
-    }) : { ok: false as const, error: { message: "No config" } }
-
-    const content = aiResult.ok ? aiResult.data.data : { title: "Demo Deliverable", description: "Offline Fallback Content" }
+      organizationId: access.project.workspace.organizationId,
+    })
+    if (!websiteResult.ok) {
+      return NextResponse.json({ error: websiteResult.error.message }, { status: websiteResult.error.code === "RATE_LIMITED" ? 429 : 503 })
+    }
 
     return NextResponse.json({
       id: params.versionId,
       versionNumber: 1,
-      content,
+      content: websiteResult.data.data,
       source: "AI",
       createdAt: new Date().toISOString(),
-      note: "Generated Fallback Specification"
+      note: "Generated Qwen multilingual website specification"
     })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Error" }, { status: 500 })

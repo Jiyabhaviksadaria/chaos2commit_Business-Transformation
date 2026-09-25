@@ -21,6 +21,7 @@ export interface ChangeOp {
 export interface ChangeSet {
   id: string
   description: string
+  message?: string
   operations: ChangeOp[]
   aiGenerated: boolean
 }
@@ -43,6 +44,7 @@ export const ChangeOpSchema = z.object({
 export const ChangeSetSchema = z.object({
   id: z.string().min(1),
   description: z.string().min(1),
+  message: z.string().optional(),
   operations: z.array(ChangeOpSchema),
   aiGenerated: z.boolean().default(false)
 })

@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { getDeliverableConfig } from "@/modules/registry"
 import { generateStructured } from "@/lib/ai/orchestrator"
+import { generateMultilingualWebsite } from "@/lib/ai/groq-qwen"
 import { buildProjectContext, getProjectContextSnapshot, updateProjectContextMetadata } from "@/lib/ai/context"
 import { DeliverableType, VersionSource } from "@prisma/client"
 
@@ -128,29 +129,54 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
 
     const context = await buildProjectContext(params.projectId)
-    const aiResult = await generateStructured({
-      task: type,
-      system: config.systemPrompt,
-      user: config.buildUserPrompt(context, instructions),
-      schema: config.outputSchema,
-      language,
-      mockFixture: config.mockFixture,
-      userId: access.user.id,
-      organizationId: access.project.workspace.organizationId,
-    })
-    if (!aiResult.ok) return NextResponse.json({ error: aiResult.error.message }, { status: 502 })
-
-    const rawContent = aiResult.data.data as Record<string, unknown>
+    let rawContent: Record<string, unknown>
     let snapshotMetadata: Record<string, unknown> | undefined
-    if (type === DeliverableType.INTAKE_ANALYSIS) {
-      try {
-        const ctxModule = await import("@/lib/ai/context")
-        if (typeof ctxModule.getProjectContextSnapshot === "function") {
-          const snapshot = await ctxModule.getProjectContextSnapshot(params.projectId)
-          snapshotMetadata = snapshot?.metadata as Record<string, unknown> | undefined
+
+    if (type === DeliverableType.WEBSITE_SPEC) {
+      const proj = access.project as unknown as { primaryLanguage?: string; language?: string; supportedLanguages?: string[] }
+      const primaryLanguage = proj.primaryLanguage || proj.language || language
+      const supportedLanguages = Array.from(new Set([
+        primaryLanguage,
+        language,
+        ...(proj.supportedLanguages || []),
+      ]))
+      const websiteResult = await generateMultilingualWebsite({
+        context,
+        primaryLanguage,
+        supportedLanguages,
+        instructions,
+        userId: access.user.id,
+        organizationId: access.project.workspace.organizationId,
+      })
+      if (!websiteResult.ok) {
+        const status = websiteResult.error.code === "RATE_LIMITED" ? 429 : websiteResult.error.code.startsWith("OPENROUTER_") ? 503 : 502
+        return NextResponse.json({ error: websiteResult.error.message }, { status })
+      }
+      rawContent = websiteResult.data.data as Record<string, unknown>
+    } else {
+      const aiResult = await generateStructured({
+        task: type,
+        system: config.systemPrompt,
+        user: config.buildUserPrompt(context, instructions),
+        schema: config.outputSchema,
+        language,
+        mockFixture: config.mockFixture,
+        userId: access.user.id,
+        organizationId: access.project.workspace.organizationId,
+      })
+      if (!aiResult.ok) return NextResponse.json({ error: aiResult.error.message }, { status: 502 })
+      rawContent = aiResult.data.data as Record<string, unknown>
+
+      if (type === DeliverableType.INTAKE_ANALYSIS) {
+        try {
+          const ctxModule = await import("@/lib/ai/context")
+          if (typeof ctxModule.getProjectContextSnapshot === "function") {
+            const snapshot = await ctxModule.getProjectContextSnapshot(params.projectId)
+            snapshotMetadata = snapshot?.metadata as Record<string, unknown> | undefined
+          }
+        } catch {
+          // Fallback gracefully
         }
-      } catch {
-        // Fallback gracefully
       }
     }
     const content = type === DeliverableType.INTAKE_ANALYSIS
@@ -158,8 +184,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       : type === DeliverableType.SOLUTION_RECOMMENDATION
         ? normalizeSolutions(rawContent)
         : rawContent
-    // generateStructured validates provider output against the same schema;
-    // keep the normalized object as the persisted source of truth.
+    // Both the Qwen website service and the existing deliverable service validate
+    // provider output against the registered schema before persistence.
     const persistedContent = content as unknown as import("@prisma/client").Prisma.InputJsonValue
 
     const updatedDeliverable = await db.$transaction(async (tx) => {

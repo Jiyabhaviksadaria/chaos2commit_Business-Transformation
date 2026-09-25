@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { getDeliverableConfig } from "@/modules/registry"
-import { generateStructured } from "@/lib/ai/orchestrator"
+import { generateMultilingualWebsite } from "@/lib/ai/groq-qwen"
 import { buildProjectContext } from "@/lib/ai/context"
 import { DeliverableType, VersionSource } from "@prisma/client"
 import { z } from "zod"
@@ -38,16 +38,19 @@ export async function GET(_req: NextRequest, { params }: { params: { projectId: 
     const config = getDeliverableConfig(type)
     if (!config) return NextResponse.json(null)
     const context = await buildProjectContext(params.projectId)
-    const aiResult = await generateStructured({
-      task: type,
-      system: config.systemPrompt,
-      user: config.buildUserPrompt(context),
-      schema: config.outputSchema,
-      language: "en",
+    const primaryLanguage = access.project.primaryLanguage || access.project.language || "en"
+    const supportedLanguages = Array.from(new Set([primaryLanguage, ...(access.project.supportedLanguages || [])]))
+    const websiteResult = await generateMultilingualWebsite({
+      context,
+      primaryLanguage,
+      supportedLanguages,
       userId: access.user.id,
       organizationId: access.project.workspace.organizationId,
     })
-    const content = aiResult.ok ? aiResult.data.data : {}
+    if (!websiteResult.ok) {
+      return NextResponse.json({ error: websiteResult.error.message }, { status: websiteResult.error.code === "RATE_LIMITED" ? 429 : 503 })
+    }
+    const content = websiteResult.data.data
     return NextResponse.json({
       id: `deliv-${type}-fallback`,
       projectId: params.projectId,

@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import {
   LayoutDashboard,
   FolderKanban,
@@ -20,20 +21,21 @@ import {
 import { cn } from "@/lib/utils"
 
 export function Sidebar({ className }: { className?: string }) {
+  const t = useTranslations("Sidebar")
   const pathname = usePathname()
 
   const generalItems = [
-    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Projects", href: "/projects", icon: FolderKanban },
-    { title: "AI Assistant", href: "/app/ai", icon: Bot },
-    { title: "Analytics", href: "/app/analytics", icon: BarChart3 },
-    { title: "Knowledge Base", href: "/app/documents", icon: BookOpen },
+    { title: t("dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { title: t("projects"), href: "/projects", icon: FolderKanban },
+    { title: t("aiAssistant"), href: "/app/ai", icon: Bot },
+    { title: t("analytics"), href: "/app/analytics", icon: BarChart3 },
+    { title: t("knowledgeBase"), href: "/app/documents", icon: BookOpen },
   ]
 
   const toolsItems = [
-    { title: "Documents", href: "/app/documents", icon: FileText },
-    { title: "Billing & Credits", href: "/app/billing", icon: CreditCard },
-    { title: "Settings", href: "/admin", icon: Settings },
+    { title: t("documents"), href: "/app/documents", icon: FileText },
+    { title: t("billingCredits"), href: "/app/billing", icon: CreditCard },
+    { title: t("settings"), href: "/admin", icon: Settings },
   ]
 
   return (
@@ -55,7 +57,7 @@ export function Sidebar({ className }: { className?: string }) {
           {/* General Section */}
           <div className="space-y-1.5">
             <p className="px-3 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">
-              General
+              {t("general")}
             </p>
             {generalItems.map((item) => {
               const isActive =
@@ -83,7 +85,7 @@ export function Sidebar({ className }: { className?: string }) {
           {/* Tools Section */}
           <div className="space-y-1.5">
             <p className="px-3 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">
-              Tools
+              {t("tools")}
             </p>
             {toolsItems.map((item) => {
               const isActive = pathname.startsWith(item.href)
@@ -113,7 +115,7 @@ export function Sidebar({ className }: { className?: string }) {
             className="w-full flex items-center gap-3 rounded-full px-4 py-2.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-[#27272A] transition-all"
           >
             <LogOut className="h-4 w-4 text-neutral-400" />
-            <span>Log out</span>
+            <span>{t("logOut")}</span>
           </button>
         </div>
       </div>
