@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { chatMessageSchema, chatSessionIdSchema } from "@/lib/validation/chat"
 import { chatStream } from "@/lib/ai/orchestrator"
 import { DEFAULT_CHAT_TITLE, generateChatTitle } from "@/lib/ai/chat-title"
+import { BUSINESS_COPILOT_SYSTEM_PROMPT } from "@/lib/ai/prompts/business-copilot"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -62,6 +63,7 @@ type StreamGenerationInput = {
   userId: string
   userMessage: MessageRecord
   providerMessages: { role: string; content: string }[]
+  system: string
   request: Request
   requestId?: string
 }
@@ -75,10 +77,8 @@ function serializeMessage(message: MessageRecord) {
   }
 }
 
-function providerRole(role: ChatRole): string {
-  if (role === ChatRole.ASSISTANT) return "assistant"
-  if (role === ChatRole.SYSTEM) return "system"
-  return "user"
+function providerRole(role: ChatRole): "user" | "assistant" {
+  return role === ChatRole.ASSISTANT ? "assistant" : "user"
 }
 
 function authenticationError() {
@@ -127,11 +127,13 @@ async function collectAssistantResponse(
   messages: { role: string; content: string }[],
   userId: string,
   signal?: AbortSignal,
+  system = BUSINESS_COPILOT_SYSTEM_PROMPT,
 ) {
   let content = ""
 
   try {
     for await (const chunk of chatStream({
+      system,
       messages,
       userId,
       ...(signal ? { signal } : {}),
@@ -160,7 +162,7 @@ function sseFrame(type: string, payload: Record<string, unknown>): string {
 }
 
 function createStreamingResponse(input: StreamGenerationInput): Response {
-  const { request, requestId, session, userId, userMessage, providerMessages } = input
+  const { request, requestId, session, userId, userMessage, providerMessages, system } = input
   const encoder = new TextEncoder()
   const abortController = new AbortController()
   const onRequestAbort = () => abortController.abort()
@@ -189,6 +191,7 @@ function createStreamingResponse(input: StreamGenerationInput): Response {
 
         let content = ""
         for await (const chunk of chatStream({
+          system,
           messages: providerMessages,
           userId,
           signal: abortController.signal,
@@ -360,10 +363,12 @@ export async function POST(req: Request, { params }: { params: { sessionId: stri
     )
 
     const providerMessages = [
-      ...historyMessages.map((message) => ({
-        role: providerRole(message.role),
-        content: message.content,
-      })),
+      ...historyMessages
+        .filter((message) => message.role === ChatRole.USER || message.role === ChatRole.ASSISTANT)
+        .map((message) => ({
+          role: providerRole(message.role),
+          content: message.content,
+        })),
       { role: "user", content: userMessage.content },
     ]
 
@@ -374,6 +379,7 @@ export async function POST(req: Request, { params }: { params: { sessionId: stri
         userId: user.id,
         userMessage,
         providerMessages,
+        system: BUSINESS_COPILOT_SYSTEM_PROMPT,
         request: req,
         requestId: requestIdFrom(req),
       })
@@ -382,7 +388,12 @@ export async function POST(req: Request, { params }: { params: { sessionId: stri
     let assistantContent: string
     try {
       // Keep the legacy JSON response for existing clients and Phase 1 tests.
-      assistantContent = await collectAssistantResponse(providerMessages, user.id)
+      assistantContent = await collectAssistantResponse(
+        providerMessages,
+        user.id,
+        undefined,
+        BUSINESS_COPILOT_SYSTEM_PROMPT,
+      )
     } catch (error: unknown) {
       if (error instanceof ChatGenerationError && error.rateLimited) {
         return NextResponse.json(

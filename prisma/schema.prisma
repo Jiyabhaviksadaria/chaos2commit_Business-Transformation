@@ -249,17 +249,19 @@ model Document {
 
 model ChatSession {
   id        String          @id @default(cuid())
-  projectId String
+  projectId String?
   userId    String
   kind      ChatSessionKind
+  title     String          @default("New chat")
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
   messages  ChatMessage[]
-  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([userId])
+  @@index([userId, kind, updatedAt])
 }
 
 model ChatMessage {

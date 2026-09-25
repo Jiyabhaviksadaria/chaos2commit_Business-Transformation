@@ -74,6 +74,7 @@ import {
 } from "@/app/api/ai/chats/[sessionId]/route"
 import { POST as sendMessage } from "@/app/api/ai/chats/[sessionId]/messages/route"
 import { DEFAULT_CHAT_TITLE, generateChatTitle } from "@/lib/ai/chat-title"
+import { BUSINESS_COPILOT_SYSTEM_PROMPT } from "@/lib/ai/prompts/business-copilot"
 
 function request(body?: unknown, method = "POST"): Request {
   return new Request("http://localhost/api/ai/chats", {
@@ -397,6 +398,7 @@ describe("global AI chat API", () => {
     expect(body.assistantMessage).toEqual(expect.objectContaining({ role: ChatRole.ASSISTANT, content: "CRM analysis" }))
     expect(mocks.messages.filter((message) => message.sessionId === session.id)).toHaveLength(3)
     expect(mocks.chatStream).toHaveBeenCalledWith({
+      system: BUSINESS_COPILOT_SYSTEM_PROMPT,
       userId: "user-a",
       messages: [
         { role: "assistant", content: "Earlier answer" },
@@ -404,6 +406,61 @@ describe("global AI chat API", () => {
       ],
     })
     expect(session.title).toBe("CRM Lead Management")
+  })
+
+  it("constructs ordered multi-turn context for a natural follow-up", async () => {
+    const session = seedSession({ id: "follow-up-context" })
+    mocks.chatStream.mockImplementation(async function* () {
+      yield "Inventory analysis"
+    })
+
+    await sendMessage(request({ content: "Analyze our inventory problem" }), context(session.id))
+    await sendMessage(request({ content: "What about the technical side?" }), context(session.id))
+
+    expect(mocks.chatStream).toHaveBeenLastCalledWith(expect.objectContaining({
+      system: BUSINESS_COPILOT_SYSTEM_PROMPT,
+      messages: [
+        { role: "user", content: "Analyze our inventory problem" },
+        { role: "assistant", content: "Inventory analysis" },
+        { role: "user", content: "What about the technical side?" },
+      ],
+    }))
+  })
+
+  it.each([
+    "Our retail store has inventory problems because the website and physical store do not share stock.",
+    "Inventory problem kya hai?",
+    "Inventory ni problem su che?",
+    "Aa problem nu technical solution shu hase?",
+    "Can you explain this in Hindi?",
+    "Isko thoda simple Gujarati ma samjhao",
+    "Isko thoda simple language mein samjhao",
+  ])("accepts a free-form multilingual prompt: %s", async (content) => {
+    const session = seedSession()
+    const response = await sendMessage(request({ content }), context(session.id))
+
+    expect(response.status).toBe(200)
+    expect(mocks.chatStream).toHaveBeenCalledWith(expect.objectContaining({
+      system: BUSINESS_COPILOT_SYSTEM_PROMPT,
+      messages: [{ role: "user", content }],
+    }))
+  })
+
+  it("passes the system prompt without persisting it as a ChatMessage", async () => {
+    const session = seedSession({ id: "system-prompt-chat" })
+
+    const response = await sendMessage(streamRequest({ content: "Explain the problem" }), context(session.id))
+    await response.text()
+
+    expect(response.status).toBe(200)
+    expect(mocks.chatStream).toHaveBeenCalledWith(expect.objectContaining({
+      system: BUSINESS_COPILOT_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: "Explain the problem" }],
+    }))
+    expect(mocks.messages.filter((message) => message.sessionId === session.id).map((message) => message.role)).toEqual([
+      ChatRole.USER,
+      ChatRole.ASSISTANT,
+    ])
   })
 
   it("streams chunks and persists exactly one assistant message", async () => {
@@ -498,6 +555,7 @@ describe("global AI chat API", () => {
     expect(mocks.messages.filter((message) => message.sessionId === session.id && message.role === ChatRole.USER)).toHaveLength(1)
     expect(mocks.messages.filter((message) => message.sessionId === session.id && message.role === ChatRole.ASSISTANT)).toHaveLength(1)
     expect(mocks.chatStream).toHaveBeenCalledWith({
+      system: BUSINESS_COPILOT_SYSTEM_PROMPT,
       userId: "user-a",
       messages: [{ role: "user", content: "Retry this question" }],
       signal: expect.any(AbortSignal),
@@ -614,7 +672,17 @@ describe("global AI chat API", () => {
     expect(generateChatTitle("  Analyze\n\t the bottlenecks in our CRM   lead management process  ")).toBe("CRM Lead Management")
     expect(generateChatTitle("My email is alice@example.com and my password is hunter2")).not.toContain("alice@example.com")
     expect(generateChatTitle("My email is alice@example.com and my password is hunter2")).not.toContain("hunter2")
+    expect(generateChatTitle("The key is gsk_1234567890abcdef")).not.toContain("gsk_1234567890abcdef")
     expect(generateChatTitle("hello")).toBe(DEFAULT_CHAT_TITLE)
     expect(generateChatTitle("word ".repeat(100)).length).toBeLessThanOrEqual(80)
+  })
+
+  it("keeps useful titles for free-form English, Hindi, and Gujarati prompts", () => {
+    expect(generateChatTitle("Our retail store keeps overselling products because inventory isn't synchronized.")).toContain("Retail")
+    expect(generateChatTitle("Inventory problem kya hai?")).toContain("Inventory")
+    expect(generateChatTitle("Inventory ni problem su che?")).toContain("Inventory")
+    expect(generateChatTitle("Meri website aur physical store stock same nahi hota.")).toContain("Website")
+    expect(generateChatTitle("इन्वेंटरी समस्या क्या है?")).toContain("इन्वेंटरी")
+    expect(generateChatTitle("ઇન્વેન્ટરીની સમસ્યા શું છે?")).toContain("ઇન્વેન્ટરી")
   })
 })

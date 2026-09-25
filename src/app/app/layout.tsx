@@ -23,7 +23,7 @@ export default async function AppLayout({
 
           <div className="flex min-w-0 min-h-0 flex-1 flex-col lg:pl-64">
             <Topbar locale={locale} />
-            <main className="workspace-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-12">
+            <main className="workspace-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-12 has-[[data-chat-shell]]:overflow-hidden has-[[data-chat-shell]]:pb-0">
               {children}
             </main>
           </div>

@@ -107,7 +107,7 @@ export default function AIAssistantPage() {
   const [deleting, setDeleting] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const messageRequestIds = useRef<Record<string, number>>({})
   const chatListRequestIds = useRef(0)
   const deletedChatIds = useRef(new Set<string>())
@@ -620,8 +620,11 @@ export default function AIAssistantPage() {
   const quickPromptDisabled = creatingChat || (activeChatId ? activeSending || activeGenerating : false)
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-[1500px] flex-col gap-4 p-4 font-sans sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-[#E5DFD4] pb-4 sm:flex-row sm:items-center">
+    <div
+      data-chat-shell="true"
+      className="mx-auto flex h-full min-h-0 w-full max-w-[1500px] flex-col gap-3 p-3 font-sans overflow-hidden sm:gap-4 sm:p-6"
+    >
+      <header className="flex shrink-0 flex-col justify-between gap-3 border-b border-[#E5DFD4] pb-3 sm:flex-row sm:items-center sm:gap-4 sm:pb-4">
         <div className="flex items-center gap-3">
           <Link href="/projects" aria-label="Back to projects">
             <button
@@ -647,7 +650,7 @@ export default function AIAssistantPage() {
         </Link>
       </header>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-1 custom-chat-scrollbar">
         <span className="shrink-0 text-xs font-bold text-neutral-400">Prompts:</span>
         {quickPrompts.map((prompt) => (
           <button
@@ -662,8 +665,8 @@ export default function AIAssistantPage() {
         ))}
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
-        <div className="hidden w-[260px] shrink-0 lg:block">
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+        <div className="hidden w-[260px] shrink-0 lg:flex lg:h-full lg:min-h-0 flex-col">
           <ChatSidebar
             chats={chats}
             activeChatId={activeChatId}
@@ -701,7 +704,7 @@ export default function AIAssistantPage() {
       </div>
 
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-        <SheetContent side="left" className="w-[86vw] max-w-xs border-none bg-transparent p-3 sm:max-w-xs">
+        <SheetContent side="left" className="h-full w-[86vw] max-w-xs border-r border-[#E5DFD4] bg-[#FAF8F2] p-3 shadow-lg sm:max-w-xs">
           <SheetHeader className="sr-only">
             <SheetTitle>AI chat history</SheetTitle>
             <SheetDescription>Select a saved conversation or start a new one.</SheetDescription>
@@ -718,7 +721,7 @@ export default function AIAssistantPage() {
             onDeleteChat={openDeleteDialog}
             onRetry={() => void refreshChats(true)}
             newChatDisabled={creatingChat}
-            className="h-full"
+            className="h-full border-none shadow-none bg-transparent"
           />
         </SheetContent>
       </Sheet>

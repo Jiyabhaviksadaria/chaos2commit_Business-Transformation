@@ -122,6 +122,8 @@ export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Resu
 }
 
 export type ChatStreamOptions = {
+  /** Provider-level instructions; these are never persisted as chat messages. */
+  system?: string
   messages: { role: string; content: string }[]
   userId?: string
   signal?: AbortSignal
@@ -167,7 +169,10 @@ export async function* chatStream(opts: ChatStreamOptions): AsyncIterable<string
           }
         }
       } else if (provider === "groq") {
-        for await (const chunk of groqChatStream(opts.messages, controller.signal)) {
+        const stream = opts.system === undefined
+          ? groqChatStream(opts.messages, controller.signal)
+          : groqChatStream(opts.messages, controller.signal, opts.system)
+        for await (const chunk of stream) {
           if (opts.signal?.aborted) throw createAbortError()
           if (chunk) {
             emittedChunk = true
@@ -175,7 +180,10 @@ export async function* chatStream(opts: ChatStreamOptions): AsyncIterable<string
           }
         }
       } else if (provider === "gemini") {
-        for await (const chunk of geminiChatStream(opts.messages, controller.signal)) {
+        const stream = opts.system === undefined
+          ? geminiChatStream(opts.messages, controller.signal)
+          : geminiChatStream(opts.messages, controller.signal, opts.system)
+        for await (const chunk of stream) {
           if (opts.signal?.aborted) throw createAbortError()
           if (chunk) {
             emittedChunk = true

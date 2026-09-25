@@ -84,6 +84,60 @@ body {
   border-radius: 999px;
 }
 
+/* ─── AI Chat Layout & Scrollbars ─────────────────────────────────────── */
+/* Ensure the outer application main container stays fixed when the chat shell is active */
+main:has([data-chat-shell]) {
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+}
+
+/* Subtle, unobtrusive custom scrollbar matching cream & pink aesthetic */
+.custom-chat-scrollbar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #D4CFC5 transparent;
+  overscroll-behavior: contain;
+}
+.custom-chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-thumb {
+  background: #D4CFC5;
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+}
+.custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #B8B3A8;
+}
+
+/* ─── Chat Message Transitions ────────────────────────────────────────── */
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-message-in {
+  animation: messageIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-message-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* ─── Utility Classes ───────────────────────────────────────────────── */
 @layer utilities {
   .text-balance {
