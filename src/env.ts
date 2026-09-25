@@ -4,9 +4,17 @@ const isServer = typeof window === "undefined";
 const isProduction = process.env.NODE_ENV === "production";
 
 function inferAuthUrl(): string {
-  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const vercelEnv = process.env.VERCEL_ENV;
+  const vercelBranchUrl = process.env.VERCEL_BRANCH_URL;
   const vercelUrl = process.env.VERCEL_URL;
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   const renderHostname = process.env.RENDER_EXTERNAL_HOSTNAME;
+
+  // On Vercel Preview, stay on the preview domain — never default to production domain
+  if (vercelEnv === "preview") {
+    if (vercelBranchUrl) return `https://${vercelBranchUrl}`;
+    if (vercelUrl) return `https://${vercelUrl}`;
+  }
 
   if (vercelProductionUrl) return `https://${vercelProductionUrl}`;
   if (vercelUrl) return `https://${vercelUrl}`;
@@ -48,7 +56,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().optional(),
-  APP_URL: z.string().optional().default("http://localhost:3000"),
+  APP_URL: z.string().optional().default(inferredAuthUrl),
 });
 
 const parsed = envSchema.safeParse(process.env);

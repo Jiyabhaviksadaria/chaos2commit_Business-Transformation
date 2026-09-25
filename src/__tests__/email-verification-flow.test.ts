@@ -72,6 +72,52 @@ describe("Email Verification and Auth Flow Suite", () => {
       process.env.NEXTAUTH_URL = originalNextAuthUrl
       delete process.env.VERCEL_URL
     })
+
+    it("stays on preview domain in Vercel Preview (never jumps to production)", () => {
+      const originalVercelEnv = process.env.VERCEL_ENV
+      const originalVercelUrl = process.env.VERCEL_URL
+      const originalProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+      const originalAppUrl = process.env.APP_URL
+
+      delete process.env.APP_URL
+      process.env.VERCEL_ENV = "preview"
+      process.env.VERCEL_URL = "intelly-git-khushi-acme.vercel.app"
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = "intelly-production.vercel.app"
+
+      expect(getAppBaseUrl()).toBe("https://intelly-git-khushi-acme.vercel.app")
+
+      process.env.VERCEL_ENV = originalVercelEnv
+      process.env.VERCEL_URL = originalVercelUrl
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = originalProdUrl
+      process.env.APP_URL = originalAppUrl
+    })
+
+    it("rejects localhost on Vercel deployments and falls back to Vercel URL", () => {
+      const originalVercel = process.env.VERCEL
+      const originalAppUrl = process.env.APP_URL
+      const originalProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+
+      process.env.VERCEL = "1"
+      process.env.APP_URL = "http://localhost:3000"
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = "intelly-production.vercel.app"
+
+      expect(getAppBaseUrl()).toBe("https://intelly-production.vercel.app")
+
+      process.env.VERCEL = originalVercel
+      process.env.APP_URL = originalAppUrl
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = originalProdUrl
+    })
+
+    it("derives origin from request x-forwarded-host if provided", () => {
+      const req = new NextRequest("http://internal-server:3000/api/auth/register", {
+        headers: {
+          "x-forwarded-host": "intelly-pr-42.vercel.app",
+          "x-forwarded-proto": "https",
+        },
+      })
+
+      expect(getAppBaseUrl(req)).toBe("https://intelly-pr-42.vercel.app")
+    })
   })
 
   describe("GET /api/auth/verify-email (Safe Token Inspection)", () => {
@@ -264,7 +310,12 @@ describe("Email Verification and Auth Flow Suite", () => {
       expect(mocks.db.emailVerificationToken.deleteMany).toHaveBeenCalledWith({
         where: { userId: "user-1", usedAt: null },
       })
-      expect(mocks.sendVerificationEmail).toHaveBeenCalledWith("Test User", "test@example.com", expect.any(String))
+      expect(mocks.sendVerificationEmail).toHaveBeenCalledWith(
+        "Test User",
+        "test@example.com",
+        expect.any(String),
+        expect.anything()
+      )
     })
 
     it("applies cooldown and rejects repeated resend requests with 429", async () => {

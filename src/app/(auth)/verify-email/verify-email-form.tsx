@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   CheckCircle2,
   AlertCircle,
@@ -39,8 +39,13 @@ interface VerifyEmailFormProps {
 
 export function VerifyEmailForm({ initialToken = "" }: VerifyEmailFormProps) {
   const router = useRouter()
-  const [token] = React.useState(initialToken.trim())
-  const [state, setState] = React.useState<VerifyState>(() => (initialToken.trim() ? "checking" : "missing_token"))
+  const searchParams = useSearchParams()
+  const queryToken = searchParams?.get("token") || ""
+  const token = (initialToken || queryToken).trim()
+
+  const [state, setState] = React.useState<VerifyState>(() =>
+    initialToken.trim() || queryToken.trim() ? "checking" : "missing_token"
+  )
   const [userEmail, setUserEmail] = React.useState("")
   const [userName, setUserName] = React.useState("")
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)

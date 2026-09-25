@@ -5,9 +5,10 @@ import { getAppBaseUrl } from "@/lib/auth-tokens"
 export async function sendPasswordResetEmail(
   name: string,
   email: string,
-  rawToken: string
+  rawToken: string,
+  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined> } | string | null
 ): Promise<boolean> {
-  const appUrl = getAppBaseUrl()
+  const appUrl = getAppBaseUrl(requestOrBaseUrl)
   const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(rawToken)}`
   const displayName = name || "there"
   const safeDisplayName = escapeHtml(displayName)

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       return { user }
     })
 
-    const emailSent = await sendVerificationEmail(name, email, rawToken)
+    const emailSent = await sendVerificationEmail(name, email, rawToken, req)
     let autoVerified = false
     if (!emailSent) {
       await db.user.update({
