@@ -102,8 +102,8 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
 
   return <div className="container mx-auto min-w-0 py-6 px-4 max-w-7xl font-sans bg-[#F7F4EB] min-h-screen">
     <WorkspaceHeader project={project} onOpenAiCompanion={() => setAiDrawerOpen(true)} onGenerate={handleGenerate} onShare={handleShare} onExport={handleExport} />
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
-      <div className="overflow-x-auto pb-2 scrollbar-none bg-[#FAF8F2] border border-[#E5DFD4] rounded-[22px] p-1.5 shadow-sm"><TabsList className="min-w-max bg-transparent space-x-1 h-auto p-0">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full min-w-0 space-y-4">
+      <div className="max-w-full overflow-x-auto overscroll-x-contain pb-2 bg-[#FAF8F2] border border-[#E5DFD4] rounded-[22px] p-1.5 shadow-sm"><TabsList className="min-w-max bg-transparent space-x-1 h-auto p-0">
         {[['overview','Overview'],['discovery','Discovery'],['business-analysis','Business Analysis'],['requirements','Requirements'],['blueprint','Blueprint'],['solutions','Solutions'],['architecture','Architecture'],['processes','Processes'],['ux','UX'],['database','Database'],['apis','APIs'],['planning','Planning'],['roadmap','Roadmap'],['build','Build'],['collaboration','Collaboration'],['versions','Versions'],['exports','Exports']].map(([value, label]) => <TabsTrigger key={value} value={value} className="data-[state=active]:bg-[#18181C] data-[state=active]:text-white text-xs font-extrabold rounded-full px-4 py-2 transition-all">{label}</TabsTrigger>)}
       </TabsList></div>
       <TabsContent value="overview"><OverviewTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>

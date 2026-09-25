@@ -2,14 +2,20 @@ import { OrgPlan, OrgRole, PlatformRole, Prisma, ProjectLifecycle, ProjectStatus
 import { db } from "@/lib/db"
 import { DEMO_PROJECT_ID, demoBusinessData } from "@/lib/demo-business-data"
 
-export const DEMO_USER_ID = "demo-user-intelly"
-export const DEMO_USER_EMAIL = "demo@intelly.app"
+export const DEMO_USER_ID = "demo-user"
+export const DEMO_USER_EMAIL = "demo@intelly.local"
+export const LEGACY_DEMO_USER_ID = "demo-user-intelly"
+export const LEGACY_DEMO_USER_EMAIL = "demo@intelly.app"
 export const DEMO_ORGANIZATION_ID = "demo-org-intelly"
 export const DEMO_WORKSPACE_ID = "demo-workspace-intelly"
 export const DEMO_MODE_RESTRICTION_MESSAGE = "This action isn't available in Demo Mode. Sign in with a real account to continue."
 
 export function isDemoIdentity(value: { id?: string | null; email?: string | null } | null | undefined): boolean {
-  return value?.id === DEMO_USER_ID || value?.email?.toLowerCase() === DEMO_USER_EMAIL
+  const email = value?.email?.toLowerCase()
+  return value?.id === DEMO_USER_ID ||
+    value?.id === LEGACY_DEMO_USER_ID ||
+    email === DEMO_USER_EMAIL ||
+    email === LEGACY_DEMO_USER_EMAIL
 }
 
 function demoMetadata() {
@@ -56,6 +62,7 @@ export async function ensureDemoAccount() {
     update: {
       email: DEMO_USER_EMAIL,
       name: "Intelly Demo User",
+      companyRole: "Business Analyst",
       role: PlatformRole.USER,
       passwordHash: null,
       emailVerified: new Date(),
@@ -64,6 +71,7 @@ export async function ensureDemoAccount() {
       id: DEMO_USER_ID,
       email: DEMO_USER_EMAIL,
       name: "Intelly Demo User",
+      companyRole: "Business Analyst",
       role: PlatformRole.USER,
       passwordHash: null,
       emailVerified: new Date(),

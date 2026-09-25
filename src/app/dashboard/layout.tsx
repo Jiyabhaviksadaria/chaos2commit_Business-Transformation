@@ -4,11 +4,7 @@ import { getMessages, getLocale } from "next-intl/server"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const messages = await getMessages()
   const locale = await getLocale()
 
@@ -16,7 +12,6 @@ export default async function AppLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="flex h-dvh min-h-0 w-full flex-col bg-[#F7F4EB]">
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          {/* Desktop Sidebar */}
           <aside className="hidden h-dvh w-64 flex-col fixed inset-y-0 z-20 lg:flex">
             <Sidebar />
           </aside>

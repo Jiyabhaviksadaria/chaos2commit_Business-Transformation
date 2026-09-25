@@ -23,6 +23,7 @@ model User {
   /// Optional user-selected role in the user's company. Kept separate from
   /// the platform authorization role above for backward compatibility.
   companyRole   String?
+  isDemo        Boolean   @default(false)
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

@@ -207,7 +207,7 @@ export function DocumentsView({ projectId }: { projectId: string }) {
             )}
             <div>
               <h4 className="font-extrabold text-neutral-900 mb-2">Raw Extracted Text</h4>
-              <div className="whitespace-pre-wrap font-mono text-[11px] bg-[#18181C] text-neutral-200 p-4 rounded-xl max-h-[300px] overflow-y-auto">
+              <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] font-mono text-[11px] bg-[#18181C] text-neutral-200 p-4 rounded-xl max-h-[300px] overflow-y-auto">
                 {previewDoc?.extractedText}
               </div>
             </div>

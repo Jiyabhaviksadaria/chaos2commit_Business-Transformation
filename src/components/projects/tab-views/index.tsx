@@ -104,14 +104,14 @@ export function OverviewTabView({ projectId, project, onOpenAi, onScoreUpdate }:
             <CardDescription className="text-xs">Primary strategic goal registered during intake.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-[#FAF8F2] p-4 rounded-2xl border border-[#E5DFD4] text-xs font-medium text-neutral-800 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-[#FAF8F2] p-4 rounded-2xl border border-[#E5DFD4] text-xs font-medium text-neutral-800 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
               {project.businessGoal}
             </div>
 
             {project.businessContext && (
               <div>
                 <h4 className="font-extrabold text-xs text-neutral-700 mb-1.5 uppercase tracking-wider">Context & Parameters</h4>
-                <div className="bg-[#FAF8F2] p-4 rounded-2xl border border-[#E5DFD4] text-xs font-medium text-neutral-800 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-[#FAF8F2] p-4 rounded-2xl border border-[#E5DFD4] text-xs font-medium text-neutral-800 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                   {project.businessContext}
                 </div>
               </div>

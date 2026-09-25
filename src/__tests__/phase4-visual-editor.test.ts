@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest"
 import { ConfigStore } from "@/lib/config-engine/config-store"
 import { buildWebsiteSpecFromTemplate } from "@/lib/templates/template-registry"

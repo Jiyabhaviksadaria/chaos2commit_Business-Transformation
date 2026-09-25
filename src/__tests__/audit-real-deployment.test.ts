@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect } from "vitest"
 import { VercelDeploymentProvider, RenderDeploymentProvider, DeploymentManager } from "@/lib/deployment/deployment-provider"
 import { LocalGitProvider, VersionMetadataSystem } from "@/lib/versioning/git-versioning"

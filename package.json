@@ -16,6 +16,7 @@
     "db:deploy": "prisma db push --skip-generate",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
+    "user:ensure": "prisma db seed",
     "db:studio": "prisma studio"
   },
   "dependencies": {

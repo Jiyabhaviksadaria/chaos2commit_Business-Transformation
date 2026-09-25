@@ -29,7 +29,14 @@ This is the foundational setup for Business Transformation AI — an AI consulti
    npm run db:migrate
    ```
 
-5. **Start Development Server**
+5. **Optionally provision the normal account**
+   Set the server-only `JIYA_SADARIA_INITIAL_PASSWORD` environment variable, then run:
+   ```bash
+   npm run db:seed
+   ```
+   The seed hashes the password with bcrypt and upserts `jiyasadaria@gmail.com`; the password is never stored in source or exposed to the browser.
+
+6. **Start Development Server**
    ```bash
    npm run dev
    ```

@@ -23,7 +23,7 @@ export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname()
 
   const generalItems = [
-    { title: "Dashboard", href: "/app", icon: LayoutDashboard },
+    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "Projects", href: "/projects", icon: FolderKanban },
     { title: "AI Assistant", href: "/app/ai", icon: Bot },
     { title: "Analytics", href: "/app/analytics", icon: BarChart3 },
@@ -38,8 +38,8 @@ export function Sidebar({ className }: { className?: string }) {
 
   return (
     <div className={cn("h-full py-3 pl-3 pr-1", className)}>
-      <div className="h-[calc(100vh-1.5rem)] w-full bg-[#18181C] text-white rounded-[28px] flex flex-col justify-between p-4 shadow-xl">
-        <div className="space-y-6 overflow-y-auto">
+      <div className="h-[calc(100dvh-1.5rem)] w-full bg-[#18181C] text-white rounded-[28px] flex flex-col justify-between p-4 shadow-xl">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
           {/* Logo Header */}
           <div className="flex items-center justify-between px-2 pt-2 pb-1">
             <div className="flex items-center gap-2">
@@ -60,7 +60,8 @@ export function Sidebar({ className }: { className?: string }) {
             {generalItems.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href !== "/app" && pathname.startsWith(item.href))
+                (item.href === "/dashboard" && pathname === "/app") ||
+                (item.href !== "/app" && pathname !== "/dashboard" && pathname.startsWith(item.href))
               return (
                 <Link
                   key={item.title}

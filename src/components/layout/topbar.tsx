@@ -26,7 +26,7 @@ export function Topbar({ locale }: { locale: string }) {
       {/* Mobile Sidebar Trigger */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button size="icon" variant="ghost" className="sm:hidden text-neutral-800">
+          <Button size="icon" variant="ghost" className="lg:hidden text-neutral-800">
             <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle Menu</span>
           </Button>
@@ -37,17 +37,17 @@ export function Topbar({ locale }: { locale: string }) {
       </Sheet>
 
       {/* Search Bar */}
-      <div className="flex min-w-0 flex-1 max-w-xl mx-4">
-        <div className="flex items-center gap-2 bg-[#FAF8F2] border border-[#E6E0D2] rounded-full px-3 py-1.5 shadow-sm">
+      <div className="flex min-w-0 flex-1 max-w-xl mx-2 sm:mx-4">
+        <div className="flex min-w-0 w-full items-center gap-2 bg-[#FAF8F2] border border-[#E6E0D2] rounded-full px-3 py-1.5 shadow-sm">
           <div className="bg-[#F472B6] text-white p-1.5 rounded-full flex items-center justify-center shrink-0">
             <Search className="h-3.5 w-3.5" />
           </div>
           <input
             type="text"
             placeholder="Search projects, deliverables, specs..."
-            className="w-28 sm:w-40 bg-transparent text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none"
+            className="min-w-0 w-full flex-1 bg-transparent text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none"
           />
-          <div className="hidden md:flex items-center gap-1 text-[11px] text-neutral-500 ml-auto border-l border-[#E6E0D2] pl-2">
+          <div className="hidden xl:flex items-center gap-1 text-[11px] text-neutral-500 ml-auto border-l border-[#E6E0D2] pl-2">
             <span>In:</span>
             <span className="bg-[#EFEAE0] hover:bg-[#E5DFD4] text-neutral-700 px-2 py-0.5 rounded-full cursor-pointer transition-colors">Projects</span>
             <span className="bg-[#EFEAE0] hover:bg-[#E5DFD4] text-neutral-700 px-2 py-0.5 rounded-full cursor-pointer transition-colors">Specs</span>
@@ -58,7 +58,7 @@ export function Topbar({ locale }: { locale: string }) {
 
       {/* Right Actions & Pay-Per-Generation Credit Balance Badge */}
       <div className="flex shrink-0 items-center gap-2">
-        {session?.user?.isDemo && <details className="relative"><summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#FEE895] bg-[#FEE895] px-3 py-1.5 text-[10px] font-extrabold tracking-wider text-neutral-900 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />DEMO MODE</summary><div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#E5DFD4] bg-white p-3 text-xs shadow-xl"><p className="font-extrabold text-neutral-900">Demo Account</p><p className="mt-1 leading-relaxed text-neutral-600">You&apos;re exploring Intelly using a demonstration account. All business data shown in this workspace is illustrative demo data.</p></div></details>}
+        {session?.user?.isDemo && <details className="relative"><summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#FEE895] bg-[#FEE895] px-3 py-1.5 text-[10px] font-extrabold tracking-wider text-neutral-900 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />✨ DEMO MODE</summary><div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#E5DFD4] bg-white p-3 text-xs shadow-xl"><p className="font-extrabold text-neutral-900">Demo Account</p><p className="mt-1 leading-relaxed text-neutral-600">You&apos;re exploring Intelly using a demonstration account. All business data shown in this workspace is illustrative demo data.</p></div></details>}
 
         {/* Credit Monetization Badge */}
         {!session?.user?.isDemo && <Link href="/app/billing">

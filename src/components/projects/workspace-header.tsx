@@ -135,7 +135,7 @@ export function WorkspaceHeader({
       </div>
 
       {/* Metrics Row: Transformation Readiness %, Credits, Team Members */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 pt-1">
         {/* Readiness Metric */}
         <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm space-y-2">
           <div className="flex items-center justify-between">
@@ -184,7 +184,7 @@ export function WorkspaceHeader({
         </div>
 
         {/* Team Members */}
-        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between sm:col-span-3 lg:col-span-1">
+        <div className="min-w-0 bg-white border border-[#E5DFD4] rounded-2xl p-3.5 shadow-sm flex items-center justify-between sm:col-span-2 xl:col-span-1">
           <div className="min-w-0 space-y-0.5">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
               Team Members

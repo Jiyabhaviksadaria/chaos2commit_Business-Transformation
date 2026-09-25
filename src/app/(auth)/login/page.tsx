@@ -31,7 +31,7 @@ export default function LoginPage() {
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState<string | null>(null)
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/projects"
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
   const justSignedOut = searchParams.get("signedOut") === "1"
   const passwordResetSuccess = searchParams.get("passwordReset") === "1"
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
         setShowUnverifiedHelp(true)
         setError("Your email address has not been verified yet.")
       } else {
-        setError("Incorrect email or password. Please try again.")
+        setError("Invalid email or password. Please try again.")
       }
     } else {
       router.push(callbackUrl)
@@ -74,12 +74,12 @@ export default function LoginPage() {
     setDemoError(null)
     setDemoLoading(true)
     try {
-      const result = await signIn("demo", { redirect: false, callbackUrl: "/projects" })
+      const result = await signIn("demo", { redirect: false, callbackUrl: "/dashboard" })
       if (!result || result.error) {
         setDemoError("Demo Mode could not be started. Please try again.")
         return
       }
-      router.push("/projects")
+      router.push("/dashboard")
       router.refresh()
     } catch {
       setDemoError("Demo Mode could not be started. Please try again.")
@@ -115,9 +115,9 @@ export default function LoginPage() {
     <Card className="w-full max-w-md border-[#E5DFD4] bg-white shadow-sm">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">
-          Welcome back
+          Welcome Back
         </CardTitle>
-        <CardDescription>Sign in to continue your transformation workspace.</CardDescription>
+        <CardDescription>Sign in to your account</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -190,7 +190,7 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col space-y-4">
           <Button
             type="submit"
-            className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all"
+            className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all font-bold"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -199,18 +199,16 @@ export default function LoginPage() {
                 Signing in…
               </span>
             ) : (
-              "Sign in"
+              "Sign In"
             )}
           </Button>
 
           <div className="flex items-center gap-3 py-1"><div className="h-px flex-1 bg-[#E5DFD4]" /><span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400">OR</span><div className="h-px flex-1 bg-[#E5DFD4]" /></div>
           <div className="rounded-2xl border border-[#E5DFD4] bg-[#FAF8F2] p-4 text-center">
-            <p className="text-sm font-extrabold text-neutral-900">✨ Explore Intelly</p>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">Explore Intelly instantly with a preloaded demo workspace. No login required.</p>
-            <Button type="button" onClick={onDemoMode} disabled={demoLoading} className="mt-4 w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all text-xs font-bold">
-              {demoLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing Demo Workspace...</> : <><Sparkles className="h-4 w-4 text-[#FEE895]" /> Try Demo Mode</>}
+            <Button type="button" onClick={onDemoMode} disabled={demoLoading} className="w-full rounded-full bg-[#18181C] text-white hover:bg-neutral-800 transition-all text-xs font-bold">
+              {demoLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing Demo Workspace...</> : <><Sparkles className="h-4 w-4 text-[#FEE895]" /> Continue with Demo</>}
             </Button>
-            <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-400">DEMO • NO PASSWORD REQUIRED</p>
+            <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-400">No email • No password • Instant access</p>
             {demoError && <p className="mt-3 text-xs font-semibold text-red-600" role="alert">{demoError}</p>}
           </div>
 

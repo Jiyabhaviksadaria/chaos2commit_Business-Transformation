@@ -8,6 +8,7 @@ import { env } from "@/env"
 import * as bcrypt from "bcryptjs"
 import { normalizeEmail } from "@/lib/auth-tokens"
 import { ensureDemoAccount, isDemoIdentity } from "@/lib/demo-account"
+import { ensureNormalUserAccount, NORMAL_USER_EMAIL } from "@/lib/ensure-normal-user"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -30,9 +31,13 @@ export const authOptions: NextAuthOptions = {
         }
 
         const email = normalizeEmail(credentials.email)
-        const user = await db.user.findUnique({
+        let user = await db.user.findUnique({
           where: { email },
         })
+
+        if (!user && email === NORMAL_USER_EMAIL) {
+          user = await ensureNormalUserAccount(credentials.password)
+        }
 
         if (!user || !user.passwordHash) {
           throw new Error("Invalid credentials")
@@ -47,25 +52,14 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
-        if (!user.emailVerified) {
-          const isSmtpConfigured = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD)
-          if (!isSmtpConfigured) {
-            const updatedUser = await db.user.update({
-              where: { id: user.id },
-              data: { emailVerified: new Date() }
-            })
-            user.emailVerified = updatedUser.emailVerified
-          } else {
-            throw new Error("EMAIL_NOT_VERIFIED")
-          }
-        }
-
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           role: user.role,
+          companyRole: user.companyRole,
+          isDemo: false,
           emailVerified: user.emailVerified,
         }
       },
@@ -93,9 +87,9 @@ export const authOptions: NextAuthOptions = {
     },
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ account }) {
       if (account?.provider === "demo") return true
-      if (account?.provider === "credentials") return Boolean((user as { emailVerified?: Date | null }).emailVerified)
+      if (account?.provider === "credentials") return true
       return true
     },
     async jwt({ token, user }) {

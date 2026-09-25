@@ -31,7 +31,7 @@ function StructuredValue({ value, depth = 0 }: { value: unknown; depth?: number 
     return (
       <div className="space-y-2">
         {value.map((item, index) => (
-          <div key={index} className="rounded-xl border border-[#E5DFD4] bg-[#FAF8F2] p-3 text-xs text-neutral-700 whitespace-pre-wrap">
+          <div key={index} className="rounded-xl border border-[#E5DFD4] bg-[#FAF8F2] p-3 text-xs text-neutral-700 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
             {isRecord(item) ? (
               <div className="space-y-1">
                 {Object.entries(item).map(([key, nested]) => (
@@ -61,7 +61,7 @@ function StructuredValue({ value, depth = 0 }: { value: unknown; depth?: number 
     )
   }
 
-  return <span className="text-xs text-neutral-700 whitespace-pre-wrap">{displayValue(value)}</span>
+  return <span className="text-xs text-neutral-700 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{displayValue(value)}</span>
 }
 
 export function StageDeliverableView({ projectId, type, title, description, onOpenAi }: StageViewProps) {

@@ -22,9 +22,9 @@ describe("authenticated user session", () => {
     const sessionCallback = authOptions.callbacks?.session
     const token = await jwtCallback!({
       token: {},
-      user: { id: "demo-user-intelly", email: "demo@intelly.app", role: PlatformRole.USER, companyRole: "Business Analyst", isDemo: true },
+      user: { id: "demo-user", email: "demo@intelly.local", role: PlatformRole.USER, companyRole: "Business Analyst", isDemo: true },
     } as never)
-    const session = await sessionCallback!({ session: { user: { id: "demo-user-intelly", role: PlatformRole.USER }, expires: "" }, token } as never)
+    const session = await sessionCallback!({ session: { user: { id: "demo-user", role: PlatformRole.USER }, expires: "" }, token } as never)
     expect((session as unknown as { user: { isDemo?: boolean } }).user.isDemo).toBe(true)
   })
 
@@ -44,8 +44,9 @@ describe("authenticated user session", () => {
       token,
     } as never)
 
-    const sessionUser = (session as unknown as { user: { companyRole?: string | null } }).user
+    const sessionUser = (session as unknown as { user: { companyRole?: string | null; isDemo?: boolean } }).user
     expect(sessionUser.companyRole).toBe("Founder / Co-Founder")
+    expect(sessionUser.isDemo).toBe(false)
     expect(sessionUser).not.toHaveProperty("passwordHash")
     expect(sessionUser).not.toHaveProperty("emailVerificationTokens")
     expect(sessionUser).not.toHaveProperty("passwordResetTokens")
