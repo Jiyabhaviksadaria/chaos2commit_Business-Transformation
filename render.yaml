@@ -25,10 +25,14 @@ services:
         value: 24.15.0
       - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
       - key: GROQ_MODEL
+        value: "openai/gpt-oss-120b"
+      - key: GROQ_QWEN_API_KEY
         sync: false
+      - key: GROQ_WEBSITE_MODEL
+        value: "qwen/qwen3.8-27b"
+      - key: GROQ_ASSISTANT_MODEL
+        value: "qwen/qwen3.8-27b"
       - key: GEMINI_MODEL
         sync: false
       - key: AI_MOCK

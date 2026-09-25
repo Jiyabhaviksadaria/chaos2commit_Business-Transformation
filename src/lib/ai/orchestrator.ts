@@ -219,7 +219,7 @@ async function fetchFromProvider<T>(provider: string, system: string, user: stri
 
 function getModelNameFor(provider: string): string {
   if (provider === "mock") return "mock-model"
-  if (provider === "groq") return env.GROQ_MODEL || "llama3-70b-8192"
+  if (provider === "groq") return env.GROQ_MODEL || "openai/gpt-oss-120b"
   if (provider === "gemini") return env.GEMINI_MODEL || "gemini-1.5-flash"
   return "unknown"
 }

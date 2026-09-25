@@ -1035,7 +1035,7 @@ export default function VisualEditorPage() {
             }`}
           >
             {selectedLocaleReady ? (
-              <SiteRenderer spec={activeSpec || spec} initialLocale={selectedLanguage} />
+              <SiteRenderer spec={activeSpec || spec} initialLocale={selectedLanguage} preview={true} />
             ) : (
               <div className="flex min-h-[360px] w-full max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[#D8D0C2] bg-[#FAF8F2] p-8 text-center">
                 <Sparkles className="h-7 w-7 text-pink-500" />

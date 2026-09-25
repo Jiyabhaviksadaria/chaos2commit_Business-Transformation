@@ -27,7 +27,6 @@ export function SiteRenderer({ spec, preview = false, initialLocale }: { spec: W
 
   return (
     <div className="w-full">
-      {preview && supportedLocales.length > 1 && <div className="mb-3 flex justify-end"><WebsiteLanguageSwitcher supportedLocales={supportedLocales} currentLocale={resolvedSpec.language || "en"} onLocaleChange={setSiteLocale} locales={supportedLocales} /></div>}
       {preview && (
         <div className="flex items-center justify-between gap-2 mb-4 p-2 bg-muted/40 rounded-lg border">
           <div className="text-xs text-muted-foreground font-medium px-2">
@@ -61,7 +60,7 @@ export function SiteRenderer({ spec, preview = false, initialLocale }: { spec: W
             maxWidth: "100%"
           }}
         >
-          <SiteContent spec={resolvedSpec} />
+          <SiteContent spec={resolvedSpec} supportedLocales={supportedLocales} currentLocale={siteLocale} onLocaleChange={setSiteLocale} preview={preview} />
         </div>
       </div>
     </div>
@@ -72,7 +71,19 @@ function safeColor(value: unknown, fallback: string): string {
   return typeof value === "string" && /^#[0-9a-f]{3,8}$/i.test(value) ? value : fallback
 }
 
-function SiteContent({ spec }: { spec: WebsiteSpecData }) {
+function SiteContent({
+  spec,
+  supportedLocales = [],
+  currentLocale = "en",
+  onLocaleChange,
+  preview = false,
+}: {
+  spec: WebsiteSpecData
+  supportedLocales?: string[]
+  currentLocale?: string
+  onLocaleChange?: (locale: any) => void
+  preview?: boolean
+}) {
   const theme = spec.theme || { primary: "#3B82F6", style: "MODERN" }
   const primary = safeColor(theme.primaryColor || theme.primary, "#3B82F6")
   const secondary = safeColor(theme.secondaryColor, "#8B5CF6")
@@ -105,14 +116,24 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
   return (
     <div lang={spec.language || "en"} dir={isRTL ? "rtl" : "ltr"} className={containerClasses} style={{ backgroundColor: bg, color: text, fontFamily: '"Noto Sans Devanagari", "Noto Sans Gujarati", var(--font-geist-sans), system-ui, sans-serif' }}>
       {/* Navbar */}
-      <nav className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b px-6 py-4 flex items-center justify-between shadow-sm">
+      <nav className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b px-6 py-4 flex items-center justify-between gap-4 shadow-sm">
         <span className="font-bold text-xl tracking-tight" style={{ color: primary }}>{spec.siteName}</span>
-        <div className="hidden sm:flex gap-6">
-          {(spec.nav || ["Home", "About", "Services", "Contact"]).map((item, idx) => (
-            <a key={idx} href={`#${navTarget(item, idx)}`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              {item}
-            </a>
-          ))}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex gap-6">
+            {(spec.nav || ["Home", "About", "Services", "Contact"]).map((item, idx) => (
+              <a key={idx} href={`#${navTarget(item, idx)}`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                {item}
+              </a>
+            ))}
+          </div>
+          {!preview && onLocaleChange && supportedLocales.length > 0 && (
+            <WebsiteLanguageSwitcher
+              supportedLocales={supportedLocales}
+              currentLocale={currentLocale}
+              onLocaleChange={onLocaleChange}
+              locales={supportedLocales}
+            />
+          )}
         </div>
       </nav>
 

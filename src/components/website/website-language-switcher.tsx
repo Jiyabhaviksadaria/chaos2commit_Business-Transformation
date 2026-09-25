@@ -3,6 +3,7 @@
 import { LOCALE_CONFIG, ENABLED_LOCALES, isAppLocale, type AppLocale } from "@/i18n/locales"
 
 export function WebsiteLanguageSwitcher({
+  supportedLocales,
   currentLocale,
   onLocaleChange,
   locales = ENABLED_LOCALES,
@@ -13,7 +14,8 @@ export function WebsiteLanguageSwitcher({
   locales?: readonly string[]
 }) {
   const current = isAppLocale(currentLocale) ? currentLocale : "en"
-  const visibleLocales = locales.filter(isAppLocale)
+  const activeList = supportedLocales?.length ? supportedLocales : (locales || ENABLED_LOCALES)
+  const visibleLocales = activeList.filter((l): l is AppLocale => isAppLocale(l))
 
   return (
     <div

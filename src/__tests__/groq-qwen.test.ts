@@ -5,7 +5,9 @@ import {
   DESIGN_ASSISTANT_SYSTEM_PROMPT,
   generateMultilingualWebsite,
   generateMultilingualWebsiteTranslation,
+  groqAssistantModel,
   groqQwenModel,
+  groqWebsiteModel,
   MULTILINGUAL_WEBSITE_SYSTEM_PROMPT,
   runAIDesignAssistant,
 } from "@/lib/ai/groq-qwen"
@@ -13,8 +15,11 @@ import {
 vi.mock("@/env", () => ({
   env: {
     APP_URL: "http://localhost:3000",
-    GROQ_API_KEY: "test-groq-key",
-    GROQ_MODEL: "qwen/qwen3.8-27b",
+    GROQ_API_KEY: "test-general-key",
+    GROQ_MODEL: "openai/gpt-oss-120b",
+    GROQ_QWEN_API_KEY: "test-qwen-key",
+    GROQ_WEBSITE_MODEL: "qwen/qwen3.8-27b",
+    GROQ_ASSISTANT_MODEL: "qwen/qwen3.8-27b",
   },
 }))
 
@@ -52,11 +57,13 @@ describe("Groq Qwen multilingual service (active provider)", () => {
     global.fetch = originalFetch
   })
 
-  it("resolves the model from GROQ_MODEL and defaults to the Qwen model", () => {
+  it("resolves purpose-specific models for website generation and AI assistant", () => {
+    expect(groqWebsiteModel()).toBe("qwen/qwen3.8-27b")
+    expect(groqAssistantModel()).toBe("qwen/qwen3.8-27b")
     expect(groqQwenModel()).toBe("qwen/qwen3.8-27b")
   })
 
-  it("calls the Groq endpoint with the server-side key and Qwen model", async () => {
+  it("calls the Groq endpoint with GROQ_QWEN_API_KEY and Qwen model", async () => {
     const template = buildWebsiteSpecFromTemplate("clinic", "Clinic Practice")
     vi.mocked(global.fetch).mockResolvedValueOnce(responseWith(template))
 
@@ -76,7 +83,7 @@ describe("Groq Qwen multilingual service (active provider)", () => {
     const request = vi.mocked(global.fetch).mock.calls[0][1]
     const body = JSON.parse(String(request?.body))
     expect(body.model).toBe("qwen/qwen3.8-27b")
-    expect(request?.headers).toMatchObject({ Authorization: "Bearer test-groq-key" })
+    expect(request?.headers).toMatchObject({ Authorization: "Bearer test-qwen-key" })
     expect(body.messages[0].content).toBe(MULTILINGUAL_WEBSITE_SYSTEM_PROMPT)
     expect(body.messages[0].content).not.toBe(DESIGN_ASSISTANT_SYSTEM_PROMPT)
   })
@@ -267,9 +274,17 @@ describe("Groq Qwen multilingual service (active provider)", () => {
 
   it("reports a missing key as a configuration error, never as content", async () => {
     const { env } = await import("@/env")
-    const originalKey = env.GROQ_API_KEY
-    // Temporarily unset the optional key to exercise the config-error path.
+    const originalKey = env.GROQ_QWEN_API_KEY
+    const originalGroqKey = env.GROQ_API_KEY
+    const originalEnvQwen = process.env.GROQ_QWEN_API_KEY
+    const originalEnvGroq = process.env.GROQ_API_KEY
+
+    // Temporarily unset keys to exercise the config-error path.
+    env.GROQ_QWEN_API_KEY = undefined
     env.GROQ_API_KEY = undefined
+    delete process.env.GROQ_QWEN_API_KEY
+    delete process.env.GROQ_API_KEY
+
     try {
       const template = buildWebsiteSpecFromTemplate("clinic", "Clinic Practice")
       const result = await generateMultilingualWebsiteTranslation({
@@ -278,10 +293,13 @@ describe("Groq Qwen multilingual service (active provider)", () => {
         targetLanguage: "gu",
       })
       expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.error.code).toBe("GROQ_NOT_CONFIGURED")
+      if (!result.ok) expect(result.error.code).toBe("GROQ_QWEN_NOT_CONFIGURED")
     } finally {
-      // Restore the key for the remaining cases.
-      env.GROQ_API_KEY = originalKey
+      // Restore the keys for remaining cases.
+      env.GROQ_QWEN_API_KEY = originalKey
+      env.GROQ_API_KEY = originalGroqKey
+      if (originalEnvQwen) process.env.GROQ_QWEN_API_KEY = originalEnvQwen
+      if (originalEnvGroq) process.env.GROQ_API_KEY = originalEnvGroq
     }
   })
 })

@@ -10,6 +10,8 @@ import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import type { IntakeAnalysisData } from "@/modules/deliverables/intake-analysis"
 import { DemoBusinessAnalysisDashboard } from "@/components/projects/demo-business-analysis-dashboard"
+import { AarohanDocumentUpload } from "@/components/projects/aarohan-document-upload"
+import { normalizeOutputLanguage, type AarohanOutputLanguage, type AnalysisDataset } from "@/data/aarohan-business-analysis"
 
 interface BusinessAnalysisViewProps { projectId: string; language?: string | null; digitalMaturity?: number; aiReadiness?: number; discoveryCompleteness?: number; onScoreUpdate?: () => void; onOpenAi?: () => void }
 interface GapData { title?: string; currentState?: string; futureState?: string; gapItems?: Array<{ id?: string; area?: string; currentDeficiency?: string; desiredTarget?: string; gapSeverity?: string; recommendedAction?: string }>; stakeholderImpact?: Array<{ stakeholderGroup?: string; impactDescription?: string; readinessLevel?: string }>; digitalMaturityScore?: number; disclaimer?: string }
@@ -68,6 +70,19 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [isLoadingDemo, setIsLoadingDemo] = useState(false)
+  // Hackathon demo: recognized document + selected output language.
+  const [aarohanAnalysis, setAarohanAnalysis] = useState<AnalysisDataset | null>(null)
+  const [outputLanguage, setOutputLanguage] = useState<AarohanOutputLanguage>("en")
+
+  // Restore the selected output language across a page refresh.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("intelly.aarohan.outputLanguage")
+      if (stored) setOutputLanguage(normalizeOutputLanguage(stored))
+    } catch {
+      /* storage unavailable - default to English */
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -186,6 +201,8 @@ export function BusinessAnalysisView({ projectId, language, digitalMaturity, aiR
   if (loading) return <div className="space-y-6"><div className="flex justify-end"><Button onClick={loadDemo} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2"><Sparkles className="w-3.5 h-3.5" /> Load Demo Data</Button></div><DemoLoadingState /></div>
 
   return <div className="space-y-6">
+    <AarohanDocumentUpload projectId={projectId} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onAnalysisReady={setAarohanAnalysis} />
+    {aarohanAnalysis && <DemoBusinessAnalysisDashboard onReset={() => setAarohanAnalysis(null)} dataset={aarohanAnalysis} />}
     {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 flex items-center gap-2 text-xs text-red-800"><AlertCircle className="w-4 h-4" /> {error}<Button variant="ghost" size="sm" onClick={load} className="ml-auto">Retry</Button><Button variant="ghost" size="sm" onClick={() => setError(null)}>Continue manually</Button></div>}
     <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm"><CardHeader className="pb-3 border-b border-[#E5DFD4]"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><CardTitle className="text-base font-extrabold text-neutral-900">Business Analysis</CardTitle><CardDescription className="text-xs">Evidence-backed understanding of the business before transformation design.</CardDescription></div><div className="flex flex-wrap gap-2"><Button onClick={loadDemo} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2"><Sparkles className="w-3.5 h-3.5" /> Load Demo Data</Button><Button onClick={() => generateAnalysis()} disabled={generating} variant="outline" className="border-[#E5DFD4] text-xs font-bold rounded-full gap-2">{generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} {analysis ? "Re-analyze" : "Generate analysis"}</Button><Button onClick={recalculate} disabled={recalculating} className="bg-[#18181C] text-white text-xs font-bold rounded-full gap-2">{recalculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Recalculate readiness</Button></div></div></CardHeader><CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">{[["Digital Maturity", scores.digitalMaturity], ["AI & Cloud Readiness", scores.aiReadiness], ["Discovery Completeness", scores.discoveryCompleteness]].map(([label, value]) => <div key={String(label)} className="bg-[#FAF8F2] border border-[#E5DFD4] p-4 rounded-2xl"><div className="flex justify-between text-xs font-extrabold text-neutral-900"><span>{label}</span><span>{scoreText(value)}</span></div><Progress value={typeof value === "number" ? value : 0} className="h-2 bg-neutral-200 mt-2" /></div>)}</CardContent></Card>
 

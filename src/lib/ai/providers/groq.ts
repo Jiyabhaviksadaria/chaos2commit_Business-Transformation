@@ -1,7 +1,7 @@
 import { env } from "@/env"
 
 export async function generateGroqContent(system: string, user: string, abortSignal: AbortSignal): Promise<string> {
-  const modelId = env.GROQ_MODEL || "llama3-70b-8192" // Check Groq model list for currently active models
+  const modelId = env.GROQ_MODEL || "openai/gpt-oss-120b"
   const apiKey = env.GROQ_API_KEY
   if (!apiKey) throw new Error("GROQ_API_KEY is not set")
 
@@ -51,7 +51,7 @@ export async function* groqChatStream(
     ? typeof messagesOrSystem === "string" ? messagesOrSystem : undefined
     : typeof systemOrAbortSignal === "string" ? systemOrAbortSignal : undefined
 
-  const modelId = env.GROQ_MODEL || "llama3-70b-8192"
+  const modelId = env.GROQ_MODEL || "openai/gpt-oss-120b"
   const apiKey = env.GROQ_API_KEY
   if (!apiKey) throw new Error("GROQ_API_KEY is not set")
 

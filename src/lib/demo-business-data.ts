@@ -4,6 +4,8 @@ export type DemoHealthDimension = {
   label: string
   value: number
   tone: "positive" | "attention" | "neutral"
+  /** Stable identifier so lookups survive label localization. */
+  key?: string
 }
 
 export type DemoFinancialYear = {

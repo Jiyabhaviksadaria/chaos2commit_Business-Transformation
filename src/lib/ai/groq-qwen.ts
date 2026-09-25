@@ -26,12 +26,21 @@ import {
   WEBSITE_TRANSLATION_SYSTEM_PROMPT,
 } from "@/lib/ai/openrouter"
 
-// Re-exported so callers and tests can assert the exact prompts in use.
 export { DESIGN_ASSISTANT_SYSTEM_PROMPT, MULTILINGUAL_WEBSITE_SYSTEM_PROMPT, WEBSITE_TRANSLATION_SYSTEM_PROMPT }
 
-/** Active model. Resolved from GROQ_MODEL so the existing config stays authoritative. */
+/** Active model for website multilingual generation & translation. */
+export function groqWebsiteModel(): string {
+  return env.GROQ_WEBSITE_MODEL?.trim() || "qwen/qwen3.8-27b"
+}
+
+/** Active model for AI Design Assistant. */
+export function groqAssistantModel(): string {
+  return env.GROQ_ASSISTANT_MODEL?.trim() || "qwen/qwen3.8-27b"
+}
+
+/** Legacy alias for backwards compatibility. */
 export function groqQwenModel(): string {
-  return env.GROQ_MODEL?.trim() || "qwen/qwen3.8-27b"
+  return groqWebsiteModel()
 }
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -119,41 +128,49 @@ async function requestOnce(body: string, apiKey: string, timeoutMs: number): Pro
   }
 }
 
-const groqQwenTransport: StructuredTransport = async ({ system, user, timeoutMs }) => {
-  // Server-side only. The key is never returned to the browser.
-  const apiKey = env.GROQ_API_KEY?.trim()
-  if (!apiKey) throw new ProviderRequestError("GROQ_NOT_CONFIGURED", "Groq is not configured.")
+function createGroqQwenTransport(model: string): StructuredTransport {
+  return async ({ system, user, timeoutMs }) => {
+    // Server-side only. GROQ_QWEN_API_KEY is never returned to the browser.
+    const apiKey = (
+      env.GROQ_QWEN_API_KEY ||
+      process.env.GROQ_QWEN_API_KEY ||
+      env.GROQ_API_KEY ||
+      process.env.GROQ_API_KEY
+    )?.trim()
+    if (!apiKey) throw new ProviderRequestError("GROQ_QWEN_NOT_CONFIGURED", "GROQ_QWEN_API_KEY or GROQ_API_KEY is missing.")
 
-  const body = JSON.stringify({
-    model: groqQwenModel(),
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.2,
-  })
+    const body = JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    })
 
-  let attempt = await requestOnce(body, apiKey, timeoutMs)
+    let attempt = await requestOnce(body, apiKey, timeoutMs)
 
-  if (!attempt.ok && attempt.status === 429) {
-    await sleep(attempt.waitMs)
-    attempt = await requestOnce(body, apiKey, timeoutMs)
+    if (!attempt.ok && attempt.status === 429) {
+      await sleep(attempt.waitMs)
+      attempt = await requestOnce(body, apiKey, timeoutMs)
+    }
+
+    if (!attempt.ok) {
+      if (attempt.status === 408) throw new ProviderRequestError("GROQ_TIMEOUT", "Groq request timed out.")
+      const safe = safeProviderError(attempt.status)
+      throw new ProviderRequestError(safe.code, safe.message)
+    }
+    if (!attempt.content) throw new ProviderRequestError("EMPTY_RESPONSE", "Groq returned an empty response.")
+    return attempt.content
   }
-
-  if (!attempt.ok) {
-    if (attempt.status === 408) throw new ProviderRequestError("GROQ_TIMEOUT", "Groq request timed out.")
-    const safe = safeProviderError(attempt.status)
-    throw new ProviderRequestError(safe.code, safe.message)
-  }
-  if (!attempt.content) throw new ProviderRequestError("EMPTY_RESPONSE", "Groq returned an empty response.")
-  return attempt.content
 }
 
 function generateStructuredWithGroqQwen<T>(request: {
   task: string
   system: string
   user: string
+  model: string
   schema: ZodType<T>
   userId?: string
   organizationId?: string
@@ -161,8 +178,8 @@ function generateStructuredWithGroqQwen<T>(request: {
 }): Promise<GroqQwenResult<T>> {
   return runStructuredGeneration<T>({
     provider: "groq",
-    model: groqQwenModel(),
-    transport: groqQwenTransport,
+    model: request.model,
+    transport: createGroqQwenTransport(request.model),
     request,
   })
 }
@@ -193,6 +210,7 @@ export async function generateMultilingualWebsite(input: GenerateMultilingualWeb
     task: "WEBSITE_MULTILINGUAL_GENERATION",
     system: MULTILINGUAL_WEBSITE_SYSTEM_PROMPT,
     user,
+    model: groqWebsiteModel(),
     schema: WebsiteSpecSchema,
     userId: input.userId,
     organizationId: input.organizationId,
@@ -219,6 +237,7 @@ export async function generateMultilingualWebsiteTranslation(input: GenerateMult
     task: "WEBSITE_MULTILINGUAL_TRANSLATION",
     system: WEBSITE_TRANSLATION_SYSTEM_PROMPT,
     user,
+    model: groqWebsiteModel(),
     schema: WebsiteLocaleContentSchema,
     userId: input.userId,
     organizationId: input.organizationId,
@@ -254,6 +273,7 @@ export async function runAIDesignAssistant(input: RunAIDesignAssistantInput): Pr
     task: "EDITOR_DESIGN_ASSISTANT",
     system: DESIGN_ASSISTANT_SYSTEM_PROMPT,
     user: JSON.stringify(context),
+    model: groqAssistantModel(),
     schema: ChangeSetSchema,
     userId: input.userId,
     organizationId: input.organizationId,

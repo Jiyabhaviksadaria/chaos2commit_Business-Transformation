@@ -20,9 +20,11 @@ npm start
 | DATABASE_URL | ✅ | PostgreSQL connection string |
 | NEXTAUTH_SECRET | ✅ | Random 32+ char string (generate with `openssl rand -base64 32`) |
 | NEXTAUTH_URL | ✅ | Your app URL e.g. https://yourapp.vercel.app |
-| GROQ_API_KEY | Optional | Groq LLM API key (get from console.groq.com) |
-| GEMINI_API_KEY | Optional | Google Gemini API key |
-| GROQ_MODEL | Optional | Default: llama3-70b-8192 |
+| GROQ_API_KEY | Optional | General Groq API key (get from console.groq.com) |
+| GROQ_MODEL | Optional | General Groq AI model (Default: openai/gpt-oss-120b) |
+| GROQ_QWEN_API_KEY | Optional | Groq API key dedicated to Qwen tasks |
+| GROQ_WEBSITE_MODEL | Optional | Multilingual website generation model (Default: qwen/qwen3.8-27b) |
+| GROQ_ASSISTANT_MODEL | Optional | AI Design Assistant model (Default: qwen/qwen3.8-27b) |
 | GEMINI_MODEL | Optional | Default: gemini-1.5-flash |
 | AI_MOCK | Optional | Set "true" for mock AI (demo/dev mode) |
 
