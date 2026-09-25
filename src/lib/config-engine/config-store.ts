@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { WebsiteSpecData } from "@/modules/deliverables/website-spec"
+import { syncPrimaryWebsiteContent } from "@/lib/website/localized-spec"
 import { getTemplateById, buildWebsiteSpecFromTemplate } from "@/lib/templates/template-registry"
 
 export interface ProjectConfigState {
@@ -74,6 +75,13 @@ export class ConfigStore {
     return this.state.spec
   }
 
+  public replaceWebsiteSpec(spec: WebsiteSpecData): void {
+    this.state.spec = syncPrimaryWebsiteContent(spec)
+    this.state.business.name = this.state.spec.siteName
+    this.state.navigation.logoText = this.state.spec.siteName
+    this.state.navigation.items = [...this.state.spec.nav]
+  }
+
   /**
    * Deterministically updates business properties (Name, Phone, Email, Address, etc.)
    */
@@ -91,9 +99,10 @@ export class ConfigStore {
     const contactSection = this.state.spec.sections.find(s => s.id === "contact")
     if (contactSection) {
       const b = this.state.business
-      ;(contactSection as any).body = `${b.address || ""} | Phone: ${b.phone || ""} | Email: ${b.email || ""}`
+      ;(contactSection as any).body = [b.address, b.phone, b.email].filter(Boolean).join(" | ")
     }
 
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 
@@ -109,8 +118,10 @@ export class ConfigStore {
       backgroundColor: this.state.theme.backgroundColor,
       textColor: this.state.theme.textColor,
       accentColor: this.state.theme.accentColor,
+      fontFamily: this.state.theme.font,
       style: this.state.theme.style
     }
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 
@@ -120,6 +131,7 @@ export class ConfigStore {
   public updateNavigation(items: string[]): WebsiteSpecData {
     this.state.navigation.items = items
     this.state.spec.nav = items
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 
@@ -131,6 +143,7 @@ export class ConfigStore {
     if (section) {
       section.visible = visible !== undefined ? visible : !section.visible
     }
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 
@@ -153,6 +166,7 @@ export class ConfigStore {
     // Append remaining
     sectionMap.forEach(s => newSections.push(s))
     this.state.spec.sections = newSections
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 
@@ -167,6 +181,7 @@ export class ConfigStore {
         ...updates
       }
     }
+    this.state.spec = syncPrimaryWebsiteContent(this.state.spec)
     return this.state.spec
   }
 }

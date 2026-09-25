@@ -3,6 +3,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { requireProjectAccess } from "@/lib/access"
 import { generateStructured } from "@/lib/ai/orchestrator"
+import { generateMultilingualWebsite } from "@/lib/ai/groq-qwen"
 import { buildProjectContext } from "@/lib/ai/context"
 import { getDeliverableConfig } from "@/modules/registry"
 import { DeliverableType, VersionSource, OrgPlan } from "@prisma/client"
@@ -126,20 +127,19 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       results.SYSTEM_SPEC = "failed"
     }
 
-    // Phase 2: Build WEBSITE_SPEC
+    // Phase 2: Build WEBSITE_SPEC through the dedicated Qwen website service.
     try {
-      const config = getDeliverableConfig(DeliverableType.WEBSITE_SPEC)!
-      const aiResult = await generateStructured({
-        task: "WEBSITE_SPEC",
-        system: config.systemPrompt,
-        user: config.buildUserPrompt(context),
-        schema: config.outputSchema,
-        language,
+      const primaryLanguage = access.project.primaryLanguage || access.project.language || language
+      const supportedLanguages = Array.from(new Set([primaryLanguage, language, ...(access.project.supportedLanguages || [])]))
+      const websiteResult = await generateMultilingualWebsite({
+        context,
+        primaryLanguage,
+        supportedLanguages,
         userId: access.user.id,
-        organizationId: orgId
+        organizationId: orgId,
       })
-
-      const websiteData = aiResult.ok ? aiResult.data.data : config.mockFixture
+      if (!websiteResult.ok) throw new Error(websiteResult.error.message)
+      const websiteData = websiteResult.data.data
       await db.$transaction(async (tx) => {
         await upsertDeliverable(tx, params.projectId, DeliverableType.WEBSITE_SPEC, websiteData, language, access.user.id)
       })

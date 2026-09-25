@@ -1,10 +1,12 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import type { WebsiteSpecData } from "@/modules/deliverables/website-spec"
 import { Monitor, Tablet, Smartphone, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { WebsiteLanguageSwitcher } from "@/components/website/website-language-switcher"
+import { getSupportedWebsiteLocales, resolveWebsiteLocale } from "@/lib/website/localized-spec"
 
 type DeviceMode = "desktop" | "tablet" | "mobile"
 
@@ -14,11 +16,18 @@ const deviceWidths: Record<DeviceMode, string> = {
   mobile: "375px"
 }
 
-export function SiteRenderer({ spec, preview = false }: { spec: WebsiteSpecData; preview?: boolean }) {
+export function SiteRenderer({ spec, preview = false, initialLocale }: { spec: WebsiteSpecData; preview?: boolean; initialLocale?: string }) {
   const [device, setDevice] = useState<DeviceMode>("desktop")
+  const supportedLocales = getSupportedWebsiteLocales(spec)
+  const [siteLocale, setSiteLocale] = useState(initialLocale || spec.primaryLanguage || spec.language || "en")
+  useEffect(() => {
+    if (initialLocale) setSiteLocale(initialLocale)
+  }, [initialLocale])
+  const resolvedSpec = resolveWebsiteLocale(spec, siteLocale)
 
   return (
     <div className="w-full">
+      {preview && supportedLocales.length > 1 && <div className="mb-3 flex justify-end"><WebsiteLanguageSwitcher supportedLocales={supportedLocales} currentLocale={resolvedSpec.language || "en"} onLocaleChange={setSiteLocale} locales={supportedLocales} /></div>}
       {preview && (
         <div className="flex items-center justify-between gap-2 mb-4 p-2 bg-muted/40 rounded-lg border">
           <div className="text-xs text-muted-foreground font-medium px-2">
@@ -52,23 +61,37 @@ export function SiteRenderer({ spec, preview = false }: { spec: WebsiteSpecData;
             maxWidth: "100%"
           }}
         >
-          <SiteContent spec={spec} />
+          <SiteContent spec={resolvedSpec} />
         </div>
       </div>
     </div>
   )
 }
 
+function safeColor(value: unknown, fallback: string): string {
+  return typeof value === "string" && /^#[0-9a-f]{3,8}$/i.test(value) ? value : fallback
+}
+
 function SiteContent({ spec }: { spec: WebsiteSpecData }) {
   const theme = spec.theme || { primary: "#3B82F6", style: "MODERN" }
-  const primary = theme.primaryColor || theme.primary || "#3B82F6"
-  const secondary = theme.secondaryColor || "#8B5CF6"
-  const bg = theme.backgroundColor || "#FFFFFF"
-  const text = theme.textColor || "#111827"
+  const primary = safeColor(theme.primaryColor || theme.primary, "#3B82F6")
+  const secondary = safeColor(theme.secondaryColor, "#8B5CF6")
+  const bg = safeColor(theme.backgroundColor, "#FFFFFF")
+  const text = safeColor(theme.textColor, "#111827")
   const stylePreset = theme.style || "MODERN"
-  const isRTL = spec.dir === "rtl" || spec.language === "ar"
+  const isRTL = spec.dir === "rtl"
 
   // Filter visible sections & sort by order if provided
+  const navAnchors = (spec.sections || [])
+    .filter(section => section.visible !== false && section.type !== "footer")
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map(section => section.id || section.type)
+  const navTarget = (item: string, index: number) => {
+    const normalized = item.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+    const aliases: Record<string, string> = { home: "home", about: "about", services: "services", contact: "contact" }
+    return aliases[normalized] || navAnchors[index] || normalized || "home"
+  }
+
   const visibleSections = (spec.sections || [])
     .filter(s => s.visible !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -80,13 +103,13 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
     : "font-sans min-h-screen"
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className={containerClasses} style={{ backgroundColor: bg, color: text }}>
+    <div lang={spec.language || "en"} dir={isRTL ? "rtl" : "ltr"} className={containerClasses} style={{ backgroundColor: bg, color: text, fontFamily: '"Noto Sans Devanagari", "Noto Sans Gujarati", var(--font-geist-sans), system-ui, sans-serif' }}>
       {/* Navbar */}
       <nav className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b px-6 py-4 flex items-center justify-between shadow-sm">
         <span className="font-bold text-xl tracking-tight" style={{ color: primary }}>{spec.siteName}</span>
         <div className="hidden sm:flex gap-6">
           {(spec.nav || ["Home", "About", "Services", "Contact"]).map((item, idx) => (
-            <a key={idx} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <a key={idx} href={`#${navTarget(item, idx)}`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
               {item}
             </a>
           ))}
@@ -98,7 +121,15 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
         const section = sec as any
         const secId = section.id || `sec_${i}`
         switch (section.type) {
-          case "hero":
+          case "hero": {
+            const heroFontSize = section.fontSize === "small"
+              ? "clamp(2rem, 4vw, 3rem)"
+              : section.fontSize === "large"
+              ? "clamp(3rem, 6vw, 4.5rem)"
+              : section.fontSize === "x-large"
+              ? "clamp(3.5rem, 7vw, 5.5rem)"
+              : undefined
+            const ctaColor = safeColor(section.ctaColor, primary)
             return (
               <section
                 key={secId}
@@ -111,7 +142,7 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
                   color: stylePreset === "BOLD" ? "#FFFFFF" : text
                 }}
               >
-                <h1 className="text-4xl sm:text-6xl font-extrabold mb-6 leading-tight max-w-4xl mx-auto">
+                <h1 className="text-4xl sm:text-6xl font-extrabold mb-6 leading-tight max-w-4xl mx-auto" style={heroFontSize ? { fontSize: heroFontSize } : undefined}>
                   {section.headline}
                 </h1>
                 <p className="text-lg sm:text-xl mb-8 max-w-2xl mx-auto opacity-90">
@@ -121,8 +152,8 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
                   <button
                     className="px-8 py-3.5 rounded-full font-semibold text-lg shadow-lg hover:opacity-90 transition-all transform hover:-translate-y-0.5"
                     style={{
-                      backgroundColor: stylePreset === "BOLD" ? "#FFFFFF" : primary,
-                      color: stylePreset === "BOLD" ? primary : "#FFFFFF"
+                      backgroundColor: ctaColor,
+                      color: stylePreset === "BOLD" && ctaColor === primary ? "#FFFFFF" : stylePreset === "BOLD" ? primary : "#FFFFFF"
                     }}
                   >
                     {section.ctaLabel}
@@ -130,6 +161,7 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
                 )}
               </section>
             )
+          }
 
           case "about":
             return (
@@ -211,7 +243,7 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
 
           case "contact":
             return (
-              <ContactSection key={secId} title={section.title || "Contact Us"} body={section.body || "Get in touch with our team."} primary={primary} />
+              <ContactSection key={secId} title={section.title || "Contact Us"} body={section.body || "Get in touch with our team."} primary={primary} ui={spec.ui} />
             )
 
           case "footer":
@@ -237,7 +269,7 @@ function SiteContent({ spec }: { spec: WebsiteSpecData }) {
   )
 }
 
-function ContactSection({ title, body, primary }: { title: string; body: string; primary: string }) {
+function ContactSection({ title, body, primary, ui }: { title: string; body: string; primary: string; ui?: { namePlaceholder?: string; emailPlaceholder?: string; messagePlaceholder?: string; submitLabel?: string; successMessage?: string; requiredMessage?: string } }) {
   const [submitted, setSubmitted] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -254,7 +286,7 @@ function ContactSection({ title, body, primary }: { title: string; body: string;
     return (
       <section id="contact" className="py-16 px-6 text-center border-b" style={{ backgroundColor: primary + "10" }}>
         <h2 className="text-3xl font-bold mb-4" style={{ color: primary }}>{title}</h2>
-        <p className="text-green-600 font-semibold text-lg">Thank you! We&apos;ll be in touch soon.</p>
+        <p className="text-green-600 font-semibold text-lg">{ui?.successMessage || "Thank you! We'll be in touch soon."}</p>
       </section>
     )
   }
@@ -266,11 +298,11 @@ function ContactSection({ title, body, primary }: { title: string; body: string;
         <p className="text-gray-600 text-center mb-8">{body}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} aria-hidden="true" className="hidden" />
-          <input value={name} onChange={e => setName(e.target.value)} required placeholder="Your name" className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-white" />
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email address" className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-white" />
-          <textarea value={message} onChange={e => setMessage(e.target.value)} required placeholder="Your message" rows={4} className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-none bg-white" />
+          <input value={name} onChange={e => setName(e.target.value)} required placeholder={ui?.namePlaceholder || "Your name"} className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-white" />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={ui?.emailPlaceholder || "Email address"} className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-white" />
+          <textarea value={message} onChange={e => setMessage(e.target.value)} required placeholder={ui?.messagePlaceholder || "Your message"} rows={4} className="w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-none bg-white" />
           <button type="submit" className="w-full py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity" style={{ backgroundColor: primary }}>
-            Send Message
+            {ui?.submitLabel || "Send Message"}
           </button>
         </form>
       </div>

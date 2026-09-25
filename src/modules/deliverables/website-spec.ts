@@ -13,7 +13,9 @@ const HeroSection = z.object({
   type: z.literal("hero"),
   headline: z.string(),
   subheadline: z.string(),
-  ctaLabel: z.string()
+  ctaLabel: z.string(),
+  ctaColor: z.string().optional(),
+  fontSize: z.enum(["small", "medium", "large", "x-large"]).optional()
 })
 
 const AboutSection = z.object({
@@ -64,9 +66,11 @@ const FooterSection = z.object({
   text: z.string()
 })
 
+const KNOWN_SECTION_TYPES = new Set(["hero", "about", "services", "process", "testimonials", "faq", "contact", "footer"])
+
 const GenericSection = z.object({
   ...BaseSectionFields,
-  type: z.string(),
+  type: z.string().refine((value) => !KNOWN_SECTION_TYPES.has(value), "Known section types must match their complete schema"),
   title: z.string().optional(),
   body: z.string().optional(),
   items: z.array(z.any()).optional()
@@ -95,20 +99,45 @@ export const WebsiteThemeSchema = z.object({
 
 export type WebsiteThemeData = z.infer<typeof WebsiteThemeSchema>
 
+const WebsiteUiSchema = z.object({
+  namePlaceholder: z.string().optional(),
+  emailPlaceholder: z.string().optional(),
+  messagePlaceholder: z.string().optional(),
+  submitLabel: z.string().optional(),
+  successMessage: z.string().optional(),
+  requiredMessage: z.string().optional()
+})
+
+const WebsiteSeoSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  keywords: z.array(z.string()).optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional()
+})
+
+export const WebsiteLocaleContentSchema = z.object({
+  siteName: z.string().min(1),
+  nav: z.array(z.string()).min(1),
+  sections: z.array(SectionSchema).min(1),
+  theme: WebsiteThemeSchema.optional(),
+  seo: WebsiteSeoSchema,
+  ui: WebsiteUiSchema.optional()
+})
+
 export const WebsiteSpecSchema = z.object({
   siteName: z.string(),
   language: z.string().optional(),
+  primaryLanguage: z.string().optional(),
+  supportedLanguages: z.array(z.string()).optional(),
+  translationStatus: z.record(z.string(), z.enum(["ready", "generating", "translationPending", "error"])).optional(),
+  localizedContent: z.record(z.string(), WebsiteLocaleContentSchema.partial()).optional(),
   dir: z.enum(["ltr", "rtl"]).optional(),
   theme: WebsiteThemeSchema,
   nav: z.array(z.string()),
   sections: z.array(SectionSchema),
-  seo: z.object({
-    title: z.string(),
-    description: z.string(),
-    keywords: z.array(z.string()).optional(),
-    ogTitle: z.string().optional(),
-    ogDescription: z.string().optional()
-  })
+  seo: WebsiteSeoSchema,
+  ui: WebsiteUiSchema.optional()
 })
 
 export type WebsiteSpecData = z.infer<typeof WebsiteSpecSchema>
@@ -119,7 +148,9 @@ export function initWebsiteSpecModule() {
     i18nTitleKey: "deliverables.website_spec.title",
     dependsOn: [DeliverableType.INTAKE_ANALYSIS],
     systemPrompt: `You are an expert web designer and copywriter. Generate a professional website spec as JSON.
-Generate all text content in the specified output language.
+Return primaryLanguage, supportedLanguages, and localizedContent keyed by locale when multiple languages are requested.
+Keep theme, section IDs, order, visibility, and design structure consistent across locales.
+Translate all user-facing website content naturally for every requested locale; never mix languages within a locale.
 Sections can be: hero, about, services, process, testimonials, faq, contact, footer.
 Include a compelling hero with CTA, at least 3 services, and contact section.
 Make content specific to the business — no generic placeholders.`,

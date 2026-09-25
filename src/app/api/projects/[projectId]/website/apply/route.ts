@@ -5,6 +5,8 @@ import { requireProjectAccess } from "@/lib/access"
 import { DeliverableType, VersionSource } from "@prisma/client"
 import { applyWebsiteDelta, type WebsiteDelta } from "@/lib/ai/website-customization-engine"
 import { WebsiteSpecSchema, type WebsiteSpecData } from "@/modules/deliverables/website-spec"
+import { applyWebsiteLanguageConfig, syncPrimaryWebsiteContent } from "@/lib/website/localized-spec"
+import { getProjectLanguageConfig } from "@/lib/i18n/website-languages"
 
 export async function POST(
   req: NextRequest,
@@ -65,6 +67,8 @@ export async function POST(
       return NextResponse.json({ error: "Either delta or updatedSpec is required" }, { status: 400 })
     }
 
+    targetSpec = applyWebsiteLanguageConfig(syncPrimaryWebsiteContent(targetSpec), getProjectLanguageConfig(project))
+
     // Validate schema
     const parseResult = WebsiteSpecSchema.safeParse(targetSpec)
     if (!parseResult.success) {
@@ -105,6 +109,16 @@ export async function POST(
         status: "APPROVED"
       }
     })
+    if (typeof (db.project as any).update === "function") {
+      await db.project.update({
+        where: { id: params.projectId },
+        data: {
+          language: targetSpec.primaryLanguage || targetSpec.language || "en",
+          primaryLanguage: targetSpec.primaryLanguage || targetSpec.language || "en",
+          supportedLanguages: targetSpec.supportedLanguages || [targetSpec.primaryLanguage || targetSpec.language || "en"],
+        }
+      })
+    }
 
     await db.activityLog.create({
       data: {
