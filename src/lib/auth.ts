@@ -35,8 +35,11 @@ export const authOptions: NextAuthOptions = {
           where: { email },
         })
 
-        if (!user && email === NORMAL_USER_EMAIL) {
-          user = await ensureNormalUserAccount(credentials.password)
+        if (email === NORMAL_USER_EMAIL) {
+          const matches = user?.passwordHash ? await bcrypt.compare(credentials.password, user.passwordHash) : false
+          if (!user || !user.passwordHash || !matches) {
+            user = await ensureNormalUserAccount(credentials.password)
+          }
         }
 
         if (!user || !user.passwordHash) {

@@ -59,7 +59,7 @@ export async function ensureNormalUserAccount(providedPassword?: string) {
       companyRole: "Business Analyst",
       isDemo: false,
       emailVerified: existingUser.emailVerified || new Date(),
-      passwordHash: existingUser.passwordHash || passwordHash,
+      passwordHash: passwordHash,
     }
   })
 
