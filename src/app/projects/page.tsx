@@ -34,6 +34,7 @@ export default function ProjectsDashboard() {
 
   useEffect(() => {
     fetchProjects()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchProjects = async () => {
@@ -42,6 +43,13 @@ export default function ProjectsDashboard() {
       if (res.ok) {
         const data = await res.json()
         setProjects(data)
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        if (errData.error === "No organization associated" || res.status === 400) {
+          router.push("/onboarding/company")
+          return
+        }
+        toast.error(errData.error || "Failed to load projects")
       }
     } catch {
       toast.error("Failed to load projects")

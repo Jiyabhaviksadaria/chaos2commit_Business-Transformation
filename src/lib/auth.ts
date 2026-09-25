@@ -55,6 +55,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
+        if (!user.emailVerified && !isDemoIdentity(user)) {
+          throw new Error("EMAIL_NOT_VERIFIED")
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -95,7 +99,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "credentials") return true
       return true
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
         token.role = user.role
@@ -103,17 +107,71 @@ export const authOptions: NextAuthOptions = {
         token.isDemo = isDemoIdentity({ id: user.id, email: user.email }) || Boolean((user as { isDemo?: boolean }).isDemo)
         token.demoProjectId = (user as { demoProjectId?: string }).demoProjectId
 
-        const firstMembership = await db.membership.findFirst({
-          where: { userId: user.id },
-          select: { organizationId: true },
-        })
+        let memberships: Array<{ organizationId: string }> = []
+        if (typeof db.membership?.findMany === "function") {
+          memberships = await db.membership.findMany({
+            where: { userId: user.id },
+            select: { organizationId: true },
+            orderBy: { createdAt: "asc" },
+          })
+        } else if (typeof db.membership?.findFirst === "function") {
+          const first = await db.membership.findFirst({
+            where: { userId: user.id },
+            select: { organizationId: true },
+          })
+          if (first) memberships = [first]
+        }
 
-        if (firstMembership) {
-          token.organizationId = firstMembership.organizationId
+        token.membershipCount = memberships.length
+
+        if (memberships.length === 1) {
+          token.organizationId = memberships[0].organizationId
         } else if (user.organizationId) {
           token.organizationId = user.organizationId
+        } else if (memberships.length > 1) {
+          token.organizationId = memberships[0].organizationId
+        } else {
+          token.organizationId = undefined
         }
       }
+
+      if (trigger === "update") {
+        if (session?.organizationId && token.id && typeof db.membership?.findUnique === "function") {
+          const valid = await db.membership.findUnique({
+            where: { userId_organizationId: { userId: token.id, organizationId: session.organizationId } },
+          })
+          if (valid) {
+            token.organizationId = session.organizationId
+          }
+        }
+        if (token.id) {
+          if (typeof db.membership?.count === "function") {
+            token.membershipCount = await db.membership.count({ where: { userId: token.id } })
+          }
+          if (!token.organizationId && typeof db.membership?.findFirst === "function") {
+            const first = await db.membership.findFirst({
+              where: { userId: token.id },
+              select: { organizationId: true },
+              orderBy: { createdAt: "asc" },
+            })
+            if (first) token.organizationId = first.organizationId
+          }
+        }
+      }
+
+      // If token has no organizationId but user exists, check if membership was created (e.g. after onboarding)
+      if (!token.organizationId && token.id && typeof db.membership?.findMany === "function") {
+        const memberships = await db.membership.findMany({
+          where: { userId: token.id },
+          select: { organizationId: true },
+          orderBy: { createdAt: "asc" },
+        })
+        token.membershipCount = memberships.length
+        if (memberships.length > 0) {
+          token.organizationId = memberships[0].organizationId
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
@@ -122,6 +180,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role
         session.user.companyRole = token.companyRole
         session.user.organizationId = token.organizationId
+        session.user.membershipCount = token.membershipCount ?? 0
         session.user.isDemo = Boolean(token.isDemo)
         session.user.demoProjectId = token.demoProjectId
       }

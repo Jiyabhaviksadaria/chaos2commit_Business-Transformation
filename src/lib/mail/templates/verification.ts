@@ -1,12 +1,13 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
+import { getAppBaseUrl } from "@/lib/auth-tokens"
 
 export async function sendVerificationEmail(
   name: string,
   email: string,
   rawToken: string
 ): Promise<boolean> {
-  const appUrl = process.env.APP_URL || "http://localhost:3000"
+  const appUrl = getAppBaseUrl()
   // Construct the verification URL on the server — frontend never builds token URLs
   const verifyUrl = `${appUrl}/verify-email?token=${encodeURIComponent(rawToken)}`
 

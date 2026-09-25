@@ -13,7 +13,10 @@ const mocks = vi.hoisted(() => ({
   projectFindMany: vi.fn(),
 }))
 
-vi.mock("@/lib/access", () => ({ requireUser: vi.fn().mockResolvedValue(mocks.user) }))
+vi.mock("@/lib/access", () => ({
+  requireUser: vi.fn().mockResolvedValue(mocks.user),
+  requireOrgMember: vi.fn().mockResolvedValue({ user: mocks.user, orgRole: "OWNER" }),
+}))
 vi.mock("@/lib/db", () => ({
   db: {
     workspace: { findFirst: mocks.workspaceFindFirst, create: mocks.workspaceCreate },

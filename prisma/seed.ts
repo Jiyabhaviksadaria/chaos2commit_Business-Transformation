@@ -1,11 +1,17 @@
 import { PrismaClient, PlatformRole, OrgRole, ProjectStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
+import { ensureSeededCompanies } from '../src/lib/companies/seed-companies'
+
 const prisma = new PrismaClient()
 
 const NORMAL_USER_EMAIL = 'jiyasadaria@gmail.com'
 
 async function main() {
+  console.log('Seeding predefined demo companies (Intelly Technologies, UrbanNest Home, DemoCorp)...')
+  await ensureSeededCompanies(prisma)
+  console.log('Seeded predefined demo companies successfully.')
+
   // Passwords are read only from server-side environment variables. Never put
   // a real password in this file, a client bundle, or a committed environment file.
   const normalPassword = process.env.JIYA_SADARIA_INITIAL_PASSWORD || '8264364507'

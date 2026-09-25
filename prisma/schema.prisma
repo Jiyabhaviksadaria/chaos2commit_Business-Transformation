@@ -22,6 +22,7 @@ model User {
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   isDemo                  Boolean                  @default(false)
+  department              String?
   accounts                Account[]
   activityLogs            ActivityLog[]
   aiUsages                AiUsage[]
@@ -29,12 +30,16 @@ model User {
   approvalsReviewed       Approval[]               @relation("Reviewer")
   chatSessions            ChatSession[]
   comments                Comment[]
+  createdTeamConversations TeamConversation[]      @relation("CreatedTeamConversations")
   deliverableVersions     DeliverableVersion[]
   emailVerificationTokens EmailVerificationToken[]
   memberships             Membership[]
   notifications           Notification[]
   passwordResetTokens     PasswordResetToken[]
+  sentTeamMessages        TeamMessage[]            @relation("SentTeamMessages")
   sessions                Session[]
+  teamConversationMemberships TeamConversationMember[] @relation("TeamConversationMemberships")
+  teamMessageReactions    TeamMessageReaction[]    @relation("TeamMessageReactions")
 
   @@index([email])
 }
@@ -157,8 +162,9 @@ model Workspace {
   description    String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  projects       Project[]
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects          Project[]
+  teamConversations TeamConversation[]
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
 }
@@ -205,6 +211,7 @@ model Project {
   workspace             Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   projectContext        ProjectContext?
   recommendations       Recommendation[]
+  teamConversations     TeamConversation[]
 
   @@index([workspaceId])
 }
@@ -630,4 +637,90 @@ enum BlueprintChangeStatus {
   REJECTED
   APPLIED
   FAILED
+}
+
+enum TeamConversationType {
+  CHANNEL
+  DIRECT_MESSAGE
+  GROUP
+}
+
+enum TeamMemberRole {
+  ADMIN
+  MEMBER
+}
+
+model TeamConversation {
+  id            String                 @id @default(cuid())
+  workspaceId   String
+  projectId     String?
+  type          TeamConversationType   @default(CHANNEL)
+  name          String?
+  description   String?
+  isPrivate     Boolean                @default(false)
+  createdById   String?
+  lastMessageAt DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  workspace     Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project       Project?               @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy     User?                  @relation("CreatedTeamConversations", fields: [createdById], references: [id], onDelete: SetNull)
+  members       TeamConversationMember[]
+  messages      TeamMessage[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, type])
+  @@index([projectId])
+  @@index([lastMessageAt])
+}
+
+model TeamConversationMember {
+  id             String           @id @default(cuid())
+  conversationId String
+  userId         String
+  role           TeamMemberRole   @default(MEMBER)
+  lastReadAt     DateTime         @default(now())
+  joinedAt       DateTime         @default(now())
+
+  conversation   TeamConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User             @relation("TeamConversationMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model TeamMessage {
+  id             String                @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String                @db.Text
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  conversation   TeamConversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User                  @relation("SentTeamMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  reactions      TeamMessageReaction[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model TeamMessageReaction {
+  id        String      @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime    @default(now())
+
+  message   TeamMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User        @relation("TeamMessageReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
 }

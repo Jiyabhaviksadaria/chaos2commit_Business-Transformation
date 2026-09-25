@@ -24,3 +24,26 @@ export function tokenExpiry(ttlMs: number): Date {
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
+
+/**
+ * Returns the canonical base URL of the application, normalizing environment variables
+ * and inferring Vercel/Render hostnames to prevent broken localhost links in production.
+ */
+export function getAppBaseUrl(): string {
+  const explicit = process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.AUTH_URL
+  if (explicit && explicit.trim()) {
+    return explicit.trim().replace(/\/+$/, "")
+  }
+
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/+$/, "")
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, "")
+  }
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+    return `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`.replace(/\/+$/, "")
+  }
+
+  return "http://localhost:3000"
+}
