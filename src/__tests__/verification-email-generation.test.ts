@@ -5,7 +5,7 @@ const mailMocks = vi.hoisted(() => ({ sendMail: vi.fn() }))
 vi.mock("@/lib/mail/mailer", () => ({ sendMail: mailMocks.sendMail }))
 
 import { sendVerificationEmail } from "@/lib/mail/templates/verification"
-import { getAppBaseUrl, isLocalhostUrl, isVercelEnvironment } from "@/lib/auth-tokens"
+import { getAppBaseUrl, isLocalhostUrl } from "@/lib/auth-tokens"
 
 describe("Verification Email URL Generation & Environment Resolution", () => {
   const originalEnv = { ...process.env }

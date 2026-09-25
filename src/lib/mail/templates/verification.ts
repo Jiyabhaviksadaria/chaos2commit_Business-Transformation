@@ -1,6 +1,6 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
-import { getAppBaseUrl, getSafeDatabaseHost, hashToken, logAuthDiagnostics } from "@/lib/auth-tokens"
+import { getAppBaseUrl, logAuthDiagnostics } from "@/lib/auth-tokens"
 
 export async function sendVerificationEmail(
   name: string,
