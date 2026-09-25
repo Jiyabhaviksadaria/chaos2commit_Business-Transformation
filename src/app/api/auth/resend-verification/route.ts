@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         })
       })
 
-      const sent = await sendVerificationEmail(user.name || "there", email, rawToken)
+      const sent = await sendVerificationEmail(user.name || "there", email, rawToken, req)
       if (!sent) {
         return NextResponse.json({
           success: true,

@@ -1,13 +1,15 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
-import { getAppBaseUrl } from "@/lib/auth-tokens"
+import { getAppBaseUrl, logAuthDiagnostics } from "@/lib/auth-tokens"
 
 export async function sendPasswordResetEmail(
   name: string,
   email: string,
-  rawToken: string
+  rawToken: string,
+  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined>; url?: string } | string | null
 ): Promise<boolean> {
-  const appUrl = getAppBaseUrl()
+  const appUrl = getAppBaseUrl(requestOrBaseUrl)
+  logAuthDiagnostics(requestOrBaseUrl, appUrl)
   const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(rawToken)}`
   const displayName = name || "there"
   const safeDisplayName = escapeHtml(displayName)

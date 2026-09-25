@@ -1,15 +1,19 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
-import { getAppBaseUrl } from "@/lib/auth-tokens"
+import { getAppBaseUrl, getSafeDatabaseHost, hashToken, logAuthDiagnostics } from "@/lib/auth-tokens"
 
 export async function sendVerificationEmail(
   name: string,
   email: string,
-  rawToken: string
+  rawToken: string,
+  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined>; url?: string } | string | null
 ): Promise<boolean> {
-  const appUrl = getAppBaseUrl()
+  const appUrl = getAppBaseUrl(requestOrBaseUrl)
   // Construct the verification URL on the server — frontend never builds token URLs
   const verifyUrl = `${appUrl}/verify-email?token=${encodeURIComponent(rawToken)}`
+
+  // Safe server-side diagnostic logging (Section 4 format)
+  logAuthDiagnostics(requestOrBaseUrl, appUrl)
 
   const displayName = name || "there"
   const safeDisplayName = escapeHtml(displayName)

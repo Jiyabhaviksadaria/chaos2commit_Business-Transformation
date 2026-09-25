@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         await tx.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } })
         await tx.passwordResetToken.create({ data: { userId: user.id, tokenHash: hashToken(rawToken), expiresAt: tokenExpiry(PASSWORD_RESET_TOKEN_TTL_MS) } })
       })
-      await sendPasswordResetEmail(user.name || "there", email, rawToken)
+      await sendPasswordResetEmail(user.name || "there", email, rawToken, req)
     }
 
     // Deliberately generic to avoid account enumeration.

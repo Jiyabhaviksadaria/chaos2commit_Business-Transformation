@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { hashToken } from "@/lib/auth-tokens"
+import { hashToken, getSafeDatabaseHost } from "@/lib/auth-tokens"
 
 /**
  * GET /api/auth/verify-email?token=...
@@ -29,6 +29,25 @@ export async function GET(request: NextRequest) {
       where: { tokenHash },
       include: { user: true },
     })
+
+    // Safe server-side diagnostic logging (never prints raw token, passwords, or connection strings)
+    try {
+      console.log(
+        "[AUTH_DIAGNOSTICS] Verification token inspection (GET):",
+        JSON.stringify({
+          env: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+          requestHost: request.headers.get("x-forwarded-host") || request.headers.get("host") || "unknown",
+          dbHost: getSafeDatabaseHost(),
+          tokenHashPrefix: tokenHash.slice(0, 8),
+          found: Boolean(record),
+          expired: record ? record.expiresAt <= new Date() : false,
+          consumed: Boolean(record?.usedAt),
+          userAlreadyVerified: Boolean(record?.user?.emailVerified),
+        })
+      )
+    } catch {
+      // Non-blocking
+    }
 
     if (!record) {
       return NextResponse.json(
@@ -132,6 +151,23 @@ export async function POST(request: NextRequest) {
       where: { tokenHash },
       include: { user: true },
     })
+
+    // Safe server-side diagnostic logging (never prints raw token, passwords, or connection strings)
+    try {
+      console.log(
+        "[AUTH_DIAGNOSTICS] Verification token claim (POST):",
+        JSON.stringify({
+          env: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+          requestHost: request.headers.get("x-forwarded-host") || request.headers.get("host") || "unknown",
+          dbHost: getSafeDatabaseHost(),
+          tokenHashPrefix: tokenHash.slice(0, 8),
+          found: Boolean(record),
+          action: record?.usedAt || record?.user?.emailVerified ? "ALREADY_VERIFIED" : "CLAIM_PENDING",
+        })
+      )
+    } catch {
+      // Non-blocking
+    }
 
     if (!record) {
       return NextResponse.json(
