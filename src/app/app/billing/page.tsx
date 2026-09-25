@@ -33,9 +33,9 @@ export default function BillingPage() {
   }
 
   const plans = [
-    { name: "FREE", credits: 30, maxSystems: 2, price: "$0", bg: "bg-white", border: "border-[#E5DFD4]" },
-    { name: "PRO", credits: 500, maxSystems: 8, price: "$49/mo", bg: "bg-[#FEE895]", border: "border-amber-300" },
-    { name: "ENTERPRISE", credits: 5000, maxSystems: "Unlimited", price: "$199/mo", bg: "bg-[#F8B4D9]", border: "border-pink-300" }
+    { name: "FREE", credits: 30, maxSystems: 2, price: "₹0", bg: "bg-white", border: "border-[#E5DFD4]" },
+    { name: "PRO", credits: 500, maxSystems: 8, price: "₹999/mo", bg: "bg-[#FEE895]", border: "border-amber-300" },
+    { name: "ENTERPRISE", credits: 5000, maxSystems: "Unlimited", price: "₹1,999/mo", bg: "bg-[#F8B4D9]", border: "border-pink-300" }
   ]
 
   return (

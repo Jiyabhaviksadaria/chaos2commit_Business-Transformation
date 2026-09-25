@@ -1,5 +1,11 @@
 import { OrgPlan } from "@prisma/client"
 
+export const PLAN_PRICES = {
+  [OrgPlan.FREE]: { amount: 0, currency: "INR", display: "₹0" },
+  [OrgPlan.PRO]: { amount: 999, currency: "INR", display: "₹999/mo" },
+  [OrgPlan.ENTERPRISE]: { amount: 1999, currency: "INR", display: "₹1,999/mo" }
+} as const
+
 export const PLAN_LIMITS = {
   [OrgPlan.FREE]: { credits: 30, maxWorkableSystems: 2 },
   [OrgPlan.PRO]: { credits: 500, maxWorkableSystems: 8 },
