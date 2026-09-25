@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -28,6 +28,7 @@ import {
   ExportsTabView,
 } from "@/components/projects/tab-views"
 import { BlueprintView } from "@/components/projects/blueprint-view"
+import { ProjectNavTabs } from "@/components/projects/project-nav-tabs"
 
 export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
   const params = useParams()
@@ -100,12 +101,17 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
   if (loading) return <div className="container mx-auto py-8 flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-neutral-800" /></div>
   if (!project) return <div className="container mx-auto py-8 text-center pt-20"><h2 className="text-2xl font-bold mb-4 text-neutral-900">Project Not Found</h2><Button onClick={() => router.push("/projects")} className="bg-[#18181C] text-white rounded-full">Back to Projects</Button></div>
 
-  return <div className="container mx-auto min-w-0 py-6 px-4 max-w-7xl font-sans bg-[#F7F4EB] min-h-screen">
-    <WorkspaceHeader project={project} onOpenAiCompanion={() => setAiDrawerOpen(true)} onGenerate={handleGenerate} onShare={handleShare} onExport={handleExport} />
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full min-w-0 space-y-4">
-      <div className="max-w-full overflow-x-auto overscroll-x-contain pb-2 bg-[#FAF8F2] border border-[#E5DFD4] rounded-[22px] p-1.5 shadow-sm"><TabsList className="min-w-max bg-transparent space-x-1 h-auto p-0">
-        {[['overview','Overview'],['discovery','Discovery'],['business-analysis','Business Analysis'],['requirements','Requirements'],['blueprint','Blueprint'],['solutions','Solutions'],['architecture','Architecture'],['processes','Processes'],['ux','UX'],['database','Database'],['apis','APIs'],['planning','Planning'],['roadmap','Roadmap'],['build','Build'],['collaboration','Collaboration'],['versions','Versions'],['exports','Exports']].map(([value, label]) => <TabsTrigger key={value} value={value} className="data-[state=active]:bg-[#18181C] data-[state=active]:text-white text-xs font-extrabold rounded-full px-4 py-2 transition-all">{label}</TabsTrigger>)}
-      </TabsList></div>
+  return (
+    <div className="w-full min-w-0 py-6 px-4 sm:px-6 max-w-[1400px] mx-auto font-sans">
+      <WorkspaceHeader
+        project={project}
+        onOpenAiCompanion={() => setAiDrawerOpen(true)}
+        onGenerate={handleGenerate}
+        onShare={handleShare}
+        onExport={handleExport}
+      />
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full min-w-0 space-y-6">
+        <ProjectNavTabs activeTab={activeTab} onTabChange={handleTabChange} />
       <TabsContent value="overview"><OverviewTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
       <TabsContent value="discovery"><DiscoveryTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
       <TabsContent value="business-analysis"><BusinessAnalysisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
@@ -126,4 +132,5 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
     </Tabs>
     <AiCompanionDrawer open={aiDrawerOpen} onOpenChange={setAiDrawerOpen} projectId={projectId} projectName={project.name} activeTab={activeTab} />
   </div>
+  )
 }

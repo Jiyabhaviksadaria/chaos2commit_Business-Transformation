@@ -2,12 +2,28 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, ArrowRight, Sparkles, Loader2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, Clock, CheckCircle2, FileCode } from "lucide-react"
+import {
+  Plus,
+  ArrowRight,
+  Sparkles,
+  Loader2,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
+  Clock,
+  CheckCircle2,
+  FileCode,
+  FolderKanban,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { DEMO_PROJECT_ID } from "@/lib/demo-business-data"
 import { toast } from "sonner"
 import type { Project } from "@prisma/client"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/shared/empty-state"
 
 export default function ProjectsDashboard() {
   const { data: session } = useSession()
@@ -49,53 +65,83 @@ export default function ProjectsDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-8 font-sans">
-      {session?.user?.isDemo && <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#FEE895] bg-[#FEE895] px-4 py-3 shadow-sm"><div><p className="text-xs font-extrabold text-neutral-900">✨ You&apos;re in Demo Mode</p><p className="mt-0.5 text-[11px] text-neutral-700">Explore Intelly using a preloaded NovaCart business workspace.</p></div><div className="flex gap-2"><Link href={`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`} className="rounded-full bg-[#18181C] px-3 py-2 text-[10px] font-extrabold text-white">Explore Business Analysis</Link><button type="button" onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })} className="rounded-full border border-neutral-900/20 px-3 py-2 text-[10px] font-extrabold text-neutral-900">Exit Demo</button></div></div>}
+    <div className="w-full min-w-0 py-6 px-4 sm:px-6 max-w-[1400px] mx-auto space-y-8 font-sans">
+      {session?.user?.isDemo && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-300/80 bg-[#FEE895] px-5 py-3.5 shadow-xs">
+          <div>
+            <p className="text-xs font-extrabold text-neutral-900">✨ You&apos;re in Demo Mode</p>
+            <p className="mt-0.5 text-[11px] text-neutral-700">Explore Intelly using a preloaded NovaCart business workspace.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href={`/projects/${session.user.demoProjectId || DEMO_PROJECT_ID}/business-analysis`}>
+              <Button size="sm" variant="default" className="text-[10px]">
+                Explore Business Analysis
+              </Button>
+            </Link>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => signOut({ callbackUrl: "/login?signedOut=1" })}
+              className="text-[10px] border-neutral-900/20 bg-transparent text-neutral-900 hover:bg-black/5"
+            >
+              Exit Demo
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner Greeting */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">
             Good morning, Lead Architect
           </h1>
-          <p className="text-xs text-neutral-500 mt-1 max-w-xl">
+          <p className="text-xs text-neutral-500 mt-1 max-w-xl leading-relaxed">
             Intelly AI wishes you a productive day. You have {projects.length} active transformation projects and pending AI deliverable reviews today.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <Button
+            variant="secondary"
             onClick={loadDemo}
             disabled={loadingDemo}
-            className="flex items-center gap-2 bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm transition-all"
           >
-            {loadingDemo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />}
+            {loadingDemo ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5 text-[#F472B6]" />
+            )}
             <span>Load Demo Workspace</span>
-          </button>
+          </Button>
           <Link href="/projects/new">
-            <button className="flex items-center gap-2 bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm transition-all">
+            <Button variant="default">
               <Plus className="h-3.5 w-3.5" />
               <span>Create Project</span>
-            </button>
+            </Button>
           </Link>
         </div>
       </div>
 
       {/* 4 Signature Pastel Summary Cards (Intelly Theme) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Yellow Card: Workspaces */}
-        <div className="bg-[#FEE895] rounded-[26px] p-5 text-neutral-900 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-[#FEE895] rounded-[24px] p-5 text-neutral-900 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:shadow-sm transition-all border border-amber-300/60">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 opacity-80">Projects Overview</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 opacity-80">
+                Projects Overview
+              </p>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-extrabold">{projects.length} active</span>
-                <span className="text-xs font-medium text-neutral-700">2 pending</span>
+                <span className="text-2xl font-extrabold tracking-tight">{projects.length} active</span>
+                <span className="text-xs font-semibold text-neutral-700">2 pending</span>
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-yellow-300/60 flex items-center justify-center">
               <Activity className="h-4 w-4 text-neutral-800" />
             </div>
           </div>
-          <div className="mt-6 flex items-end gap-1.5 h-12">
+          <div className="mt-6 flex items-end gap-1.5 h-10">
             <div className="bg-neutral-900/80 w-3 rounded-t-sm h-[40%]" />
             <div className="bg-neutral-900/80 w-3 rounded-t-sm h-[70%]" />
             <div className="bg-neutral-900/80 w-3 rounded-t-sm h-[50%]" />
@@ -107,13 +153,15 @@ export default function ProjectsDashboard() {
         </div>
 
         {/* Pink Card: Specs & Analysis */}
-        <div className="bg-[#F8B4D9] rounded-[26px] p-5 text-neutral-900 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-[#F8B4D9] rounded-[24px] p-5 text-neutral-900 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:shadow-sm transition-all border border-pink-300/60">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 opacity-80">Specs Summary</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 opacity-80">
+                Specs Summary
+              </p>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-extrabold">14 Specs</span>
-                <span className="text-xs font-medium text-neutral-700">generated</span>
+                <span className="text-2xl font-extrabold tracking-tight">14 Specs</span>
+                <span className="text-xs font-semibold text-neutral-700">generated</span>
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-pink-300/60 flex items-center justify-center">
@@ -128,13 +176,15 @@ export default function ProjectsDashboard() {
         </div>
 
         {/* Green Card: System Status */}
-        <div className="bg-[#B8DF9E] rounded-[26px] p-5 text-neutral-900 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-[#B8DF9E] rounded-[24px] p-5 text-neutral-900 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:shadow-sm transition-all border border-emerald-300/60">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 opacity-80">Deliverables</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 opacity-80">
+                Deliverables
+              </p>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-extrabold">100% Ready</span>
-                <span className="text-xs font-medium text-neutral-700">Verified</span>
+                <span className="text-2xl font-extrabold tracking-tight">100% Ready</span>
+                <span className="text-xs font-semibold text-neutral-700">Verified</span>
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-green-300/60 flex items-center justify-center">
@@ -142,20 +192,22 @@ export default function ProjectsDashboard() {
             </div>
           </div>
           <div className="mt-6 flex items-center gap-2 text-xs font-semibold text-neutral-800">
-            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full">Intake</span>
-            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full">CRM</span>
-            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full">Website</span>
+            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full text-[11px] font-bold">Intake</span>
+            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full text-[11px] font-bold">CRM</span>
+            <span className="bg-neutral-900/10 px-2.5 py-1 rounded-full text-[11px] font-bold">Website</span>
           </div>
         </div>
 
         {/* Blue Card: AI Processing */}
-        <div className="bg-[#A3C0E4] rounded-[26px] p-5 text-neutral-900 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-[#A3C0E4] rounded-[24px] p-5 text-neutral-900 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:shadow-sm transition-all border border-blue-300/60">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 opacity-80">AI Processing</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 opacity-80">
+                AI Processing
+              </p>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-extrabold">0.4s avg</span>
-                <span className="text-xs font-medium text-neutral-700">latency</span>
+                <span className="text-2xl font-extrabold tracking-tight">0.4s avg</span>
+                <span className="text-xs font-semibold text-neutral-700">latency</span>
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-blue-300/60 flex items-center justify-center">
@@ -172,10 +224,14 @@ export default function ProjectsDashboard() {
       {/* Main Content Layout: Project List (Left) + Calendar & Agenda Sidebar (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left 2 Columns: Project Queue */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-neutral-900">Transformation Projects</h2>
-            <span className="text-xs font-medium text-neutral-500 hover:text-neutral-900 cursor-pointer">Show all ({projects.length})</span>
+            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900">
+              Transformation Projects
+            </h2>
+            <span className="text-xs font-bold text-neutral-500 hover:text-neutral-900 cursor-pointer">
+              Total ({projects.length})
+            </span>
           </div>
 
           {loading ? (
@@ -185,21 +241,17 @@ export default function ProjectsDashboard() {
               ))}
             </div>
           ) : projects.length === 0 ? (
-            <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[26px] p-10 text-center space-y-4">
-              <div className="h-12 w-12 rounded-full bg-[#FEE895] text-neutral-900 flex items-center justify-center mx-auto">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-neutral-900">No projects in your workspace</h3>
-              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                Click below to auto-generate a sample project or create a brand new workspace.
-              </p>
-              <button
-                onClick={loadDemo}
-                className="bg-[#18181C] text-white text-xs font-bold px-5 py-2.5 rounded-full shadow hover:bg-neutral-800 transition-all"
-              >
-                Load Sample HR Consultancy Project
-              </button>
-            </div>
+            <EmptyState
+              icon={FolderKanban}
+              title="No projects in your workspace"
+              description="Click below to auto-generate a sample project or create a brand new workspace from scratch."
+              action={
+                <Button variant="default" onClick={loadDemo}>
+                  <Sparkles className="h-3.5 w-3.5 text-[#FEE895]" />
+                  Load Sample Project
+                </Button>
+              }
+            />
           ) : (
             <div className="space-y-3">
               {projects.map((project, idx) => {
@@ -214,27 +266,31 @@ export default function ProjectsDashboard() {
                 return (
                   <div
                     key={project.id}
-                    className="bg-[#FAF8F2] hover:bg-white border border-[#E5DFD4] hover:border-neutral-300 rounded-[22px] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-sm group"
+                    className="bg-[#FAF8F2] hover:bg-white border border-[#E5DFD4] hover:border-neutral-400 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-xs group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-xl ${accentClass} flex items-center justify-center font-bold text-sm shrink-0`}>
-                        {project.name.charAt(0)}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className={`h-10 w-10 rounded-xl ${accentClass} flex items-center justify-center font-extrabold text-sm shrink-0 border border-black/5`}>
+                        {project.name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-neutral-900 group-hover:text-black">{project.name}</h4>
-                        <p className="text-xs text-neutral-500 line-clamp-1">{project.industry || "Enterprise Architecture"}</p>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-extrabold text-neutral-900 group-hover:text-black truncate">
+                          {project.name}
+                        </h4>
+                        <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">
+                          {project.industry || "Enterprise Architecture"}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                      <span className="bg-[#EFEAE0] text-neutral-700 text-[11px] font-semibold px-3 py-1 rounded-full">
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                      <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
                         {project.status || "ACTIVE"}
-                      </span>
+                      </Badge>
                       <Link href={`/projects/${project.id}`}>
-                        <button className="flex items-center gap-1.5 bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-semibold px-4 py-2 rounded-full transition-all">
+                        <Button size="sm" variant="default" className="gap-1.5">
                           <span>Open</span>
                           <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </Link>
                     </div>
                   </div>
@@ -246,7 +302,7 @@ export default function ProjectsDashboard() {
 
         {/* Right 1 Column: Calendar & Timeline Agenda Widget */}
         <div className="space-y-6">
-          <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[28px] p-5 space-y-5 shadow-sm">
+          <div className="bg-[#FAF8F2] border border-[#E5DFD4] rounded-[24px] p-5 sm:p-6 space-y-5 shadow-xs">
             {/* Calendar Header */}
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-neutral-800 bg-[#EFEAE0] px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -254,12 +310,24 @@ export default function ProjectsDashboard() {
                 September 2026
               </span>
               <div className="flex items-center gap-1 text-neutral-600">
-                <button className="p-1 rounded-full hover:bg-neutral-200/60"><ChevronLeft className="h-4 w-4" /></button>
-                <button className="p-1 rounded-full hover:bg-neutral-200/60"><ChevronRight className="h-4 w-4" /></button>
+                <button
+                  type="button"
+                  aria-label="Previous month"
+                  className="p-1.5 rounded-full hover:bg-neutral-200/60 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next month"
+                  className="p-1.5 rounded-full hover:bg-neutral-200/60 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
-            {/* Calendar Grid (Reference Style) */}
+            {/* Calendar Grid */}
             <div className="grid grid-cols-7 text-center text-[10px] font-bold text-neutral-400 gap-y-2">
               <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
               <span className="text-neutral-400">26</span><span className="text-neutral-400">27</span><span className="text-neutral-400">28</span><span className="text-neutral-400">29</span><span className="text-neutral-400">30</span>
@@ -272,36 +340,41 @@ export default function ProjectsDashboard() {
               <span className="text-neutral-800">20</span><span className="text-neutral-800">21</span>
             </div>
 
-            <button
+            <Button
+              variant="default"
               onClick={loadDemo}
-              className="w-full bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold py-2.5 rounded-full shadow transition-all flex items-center justify-center gap-2"
+              className="w-full gap-2"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Quick Add Transformation Task</span>
-            </button>
+            </Button>
 
             {/* Today's Agenda */}
             <div className="pt-2 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-neutral-900">Today&apos;s Timeline</span>
-                <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-200/60 px-2 py-0.5 rounded-full">Live</span>
+                <span className="text-[10px] font-bold text-neutral-500 bg-neutral-200/60 px-2 py-0.5 rounded-full">Live</span>
               </div>
 
               <div className="space-y-2.5">
-                <div className="bg-[#FDE8F3] rounded-2xl p-3 flex items-center justify-between text-xs">
+                <div className="bg-[#FDE8F3] rounded-2xl p-3 flex items-center justify-between text-xs border border-pink-200/60">
                   <div>
-                    <p className="font-bold text-pink-950">Intake Analysis Sync</p>
+                    <p className="font-extrabold text-pink-950">Intake Analysis Sync</p>
                     <p className="text-[11px] text-pink-700">09:15 AM • Automated</p>
                   </div>
-                  <span className="text-[10px] font-bold bg-white text-pink-700 px-2 py-1 rounded-full">Completed</span>
+                  <Badge variant="outline" className="border-pink-300 bg-white text-pink-700">
+                    Completed
+                  </Badge>
                 </div>
 
-                <div className="bg-[#DBEAFE] rounded-2xl p-3 flex items-center justify-between text-xs">
+                <div className="bg-[#DBEAFE] rounded-2xl p-3 flex items-center justify-between text-xs border border-blue-200/60">
                   <div>
-                    <p className="font-bold text-blue-950">System Architecture Spec</p>
+                    <p className="font-extrabold text-blue-950">System Architecture Spec</p>
                     <p className="text-[11px] text-blue-700">11:30 AM • System Review</p>
                   </div>
-                  <span className="text-[10px] font-bold bg-white text-blue-700 px-2 py-1 rounded-full">In Progress</span>
+                  <Badge variant="outline" className="border-blue-300 bg-white text-blue-700">
+                    In Progress
+                  </Badge>
                 </div>
               </div>
             </div>

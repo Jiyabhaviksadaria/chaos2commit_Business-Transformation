@@ -174,7 +174,7 @@ export default function DocumentDetailPage() {
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl font-sans space-y-6">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#E5DFD4] p-5 rounded-[26px] shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#E5DFD4] p-5 rounded-[24px] shadow-xs">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -187,7 +187,7 @@ export default function DocumentDetailPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-extrabold text-neutral-900">{doc.filename}</h1>
-              <Badge className={doc.status === "READY" ? "bg-emerald-100 text-emerald-900 border-none font-bold" : "bg-red-100 text-red-900 border-none font-bold"}>
+              <Badge variant={doc.status === "READY" ? "success" : "destructive"}>
                 {doc.status}
               </Badge>
             </div>
@@ -202,9 +202,10 @@ export default function DocumentDetailPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            size="sm"
             onClick={handleDelete}
             disabled={deleting}
-            className="border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold rounded-full gap-1.5"
+            className="border-red-200 text-red-700 hover:bg-red-50 gap-1.5"
           >
             {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
             Delete Document
@@ -217,14 +218,14 @@ export default function DocumentDetailPage() {
         {/* Left 2 Columns: Summary, Entities, Raw Text */}
         <div className="lg:col-span-2 space-y-6">
           {/* Executive AI Summary Card */}
-          <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+          <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#F472B6]" />
                   Executive AI Summary
                 </span>
-                <Badge className="bg-[#FEE895] text-neutral-900 border-none font-bold text-[10px]">Document Analysis</Badge>
+                <Badge variant="accent">Document Analysis</Badge>
               </CardTitle>
               <CardDescription className="text-xs">Synthesized key takeaways and business purpose.</CardDescription>
             </CardHeader>
@@ -237,7 +238,7 @@ export default function DocumentDetailPage() {
 
           {/* Extracted Entities & Metadata */}
           {entityList.length > 0 && (
-            <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+            <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2">
                   <Tag className="h-4 w-4 text-neutral-700" />
@@ -247,7 +248,7 @@ export default function DocumentDetailPage() {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {entityList.map((ent, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-[#FAF8F2] border-[#E5DFD4] text-neutral-800 text-xs py-1 px-3 rounded-full font-bold">
+                    <Badge key={idx} variant="secondary">
                       {ent}
                     </Badge>
                   ))}
@@ -257,7 +258,7 @@ export default function DocumentDetailPage() {
           )}
 
           {/* Extracted Raw Text Viewer */}
-          <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm">
+          <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2">
@@ -266,7 +267,7 @@ export default function DocumentDetailPage() {
                 </CardTitle>
                 <CardDescription className="text-xs">Full text extracted by server parsing engine.</CardDescription>
               </div>
-              <Button onClick={handleCopyText} variant="outline" size="sm" className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5">
+              <Button onClick={handleCopyText} variant="outline" size="sm" className="gap-1.5">
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                 Copy Text
               </Button>
@@ -281,7 +282,7 @@ export default function DocumentDetailPage() {
 
         {/* Right 1 Column: Interactive Document AI Q&A Panel */}
         <div className="space-y-6">
-          <Card className="bg-white border-[#E5DFD4] rounded-[26px] shadow-sm h-[650px] flex flex-col justify-between">
+          <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs h-[650px] flex flex-col justify-between overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5DFD4]">
               <CardTitle className="text-base font-extrabold text-neutral-900 flex items-center gap-2">
                 <Bot className="h-5 w-5 text-neutral-900" />
@@ -319,7 +320,7 @@ export default function DocumentDetailPage() {
             </CardContent>
 
             {/* Quick Prompt Suggestions + Input */}
-            <div className="p-4 border-t border-[#E5DFD4] bg-[#FAF8F2] rounded-b-[26px] space-y-3">
+            <div className="p-4 border-t border-[#E5DFD4] bg-[#FAF8F2] space-y-3">
               <div className="flex flex-wrap gap-1.5">
                 {[
                   "What are the main risks?",
@@ -349,12 +350,14 @@ export default function DocumentDetailPage() {
                   onChange={(e) => setInputQuestion(e.target.value)}
                   placeholder="Ask a question about this doc..."
                   disabled={asking}
-                  className="bg-white border-[#E5DFD4] text-xs rounded-full"
+                  className="bg-white text-xs rounded-full"
                 />
                 <Button
                   type="submit"
+                  variant="default"
+                  size="icon"
                   disabled={asking || !inputQuestion.trim()}
-                  className="bg-[#18181C] hover:bg-neutral-800 text-white rounded-full px-4 shrink-0"
+                  className="h-9 w-9 shrink-0"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </Button>

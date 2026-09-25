@@ -128,8 +128,8 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
   }
 
   return (
-    <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-sm">
-      <CardHeader className="border-b border-[#E5DFD4]">
+    <Card className="bg-white border-[#E5DFD4] rounded-[24px] shadow-xs">
+      <CardHeader className="border-b border-[#E5DFD4] pb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
             <CardTitle className="text-lg font-extrabold text-neutral-900 flex items-center gap-2">
@@ -139,8 +139,18 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
             <CardDescription className="text-xs mt-1">{description}</CardDescription>
           </div>
           <div className="flex gap-2 shrink-0">
-            {onOpenAi && <Button variant="outline" size="sm" onClick={onOpenAi} className="border-[#E5DFD4] text-xs font-bold rounded-full gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#F472B6]" /> Ask AI</Button>}
-            <Button size="sm" onClick={generate} disabled={generating} className="bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-1.5">
+            {onOpenAi && (
+              <Button variant="outline" size="sm" onClick={onOpenAi} className="gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#F472B6]" /> Ask AI
+              </Button>
+            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={generate}
+              disabled={generating}
+              className="gap-1.5"
+            >
               {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               {generating ? "Generating..." : hasData ? "Regenerate" : "Generate"}
             </Button>
@@ -149,25 +159,48 @@ export function StageDeliverableView({ projectId, type, title, description, onOp
       </CardHeader>
       <CardContent className="pt-6">
         {loading ? (
-          <div className="flex items-center justify-center min-h-40 gap-2 text-xs text-neutral-500"><Loader2 className="w-5 h-5 animate-spin" /> Loading persisted project data...</div>
+          <div className="flex items-center justify-center min-h-40 gap-2 text-xs text-neutral-500">
+            <Loader2 className="w-5 h-5 animate-spin" /> Loading persisted project data...
+          </div>
         ) : error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-            <div className="flex-1"><p className="text-xs font-bold text-red-900">This stage could not be loaded.</p><p className="text-xs text-red-800 mt-1">{error}</p><Button variant="outline" size="sm" onClick={load} className="mt-3 border-red-200 text-xs rounded-full gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> Retry</Button></div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-red-900">This stage could not be loaded.</p>
+              <p className="text-xs text-red-800 mt-1">{error}</p>
+              <Button variant="outline" size="sm" onClick={load} className="mt-3 border-red-200 text-xs rounded-full gap-1.5 text-red-900 hover:bg-red-100/60">
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </Button>
+            </div>
           </div>
         ) : hasData ? (
           <div className="space-y-4">
-            {stale && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Project context changed after this output was generated. Review the evidence and regenerate when ready.</div>}
-             <Badge variant="outline" className="border-[#E5DFD4] text-[10px] font-bold">Persisted structured output</Badge>
+            {stale && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 font-medium">
+                ⚠️ Project context changed after this output was generated. Review the evidence and regenerate when ready.
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <Badge variant="outline">Persisted structured output</Badge>
+            </div>
             <StructuredValue value={content} />
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#E5DFD4] bg-[#FAF8F2] p-10 text-center">
             <FileJson className="w-10 h-10 text-neutral-400 mx-auto" />
             <h3 className="text-sm font-extrabold text-neutral-900 mt-3">No {title.toLowerCase()} generated yet</h3>
-            <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">Generate this stage from the persisted Project Context and the previous transformation outputs.</p>
-            <Button onClick={generate} disabled={generating} className="mt-5 bg-[#18181C] hover:bg-neutral-800 text-white text-xs font-bold rounded-full gap-2">
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Generate from project data
+            <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">
+              Generate this stage from the persisted Project Context and the previous transformation outputs.
+            </p>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={generate}
+              disabled={generating}
+              className="mt-5 gap-2"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#FEE895]" />}
+              Generate from project data
             </Button>
           </div>
         )}

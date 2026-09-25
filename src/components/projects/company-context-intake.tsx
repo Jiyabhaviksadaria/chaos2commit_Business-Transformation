@@ -289,7 +289,7 @@ export function CompanyContextIntake({ onBack }: { onBack: () => void }) {
         </Card>
       )}
 
-      <Card className="shadow-sm border-[#E5DFD4] bg-white rounded-[26px]">
+      <Card className="shadow-xs border-[#E5DFD4] bg-white rounded-[24px]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-extrabold text-neutral-900">Company context & evidence</CardTitle>
           <CardDescription className="text-xs">
@@ -564,7 +564,7 @@ export function CompanyContextIntake({ onBack }: { onBack: () => void }) {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px]">
+                          <Badge variant="success">
                             Ready for analysis
                           </Badge>
                           <Button
@@ -588,21 +588,22 @@ export function CompanyContextIntake({ onBack }: { onBack: () => void }) {
             <div className="pt-5 border-t border-[#E5DFD4] flex flex-col sm:flex-row gap-4 justify-between items-center bg-[#FAF8F2] p-4 rounded-2xl">
               <div className="text-xs text-neutral-500">
                 <p className="font-bold text-neutral-800">Production Business Analysis Pipeline</p>
-                <p>INTELLY will synthesize your business details and all supporting documents into traceable evidence.</p>
+                <p className="mt-0.5">INTELLY will synthesize your business details and all supporting documents into traceable evidence.</p>
               </div>
               <Button
                 type="submit"
+                variant="default"
                 size="lg"
                 disabled={submitting}
-                className="w-full sm:w-auto text-xs font-bold px-7 h-11 bg-[#18181C] hover:bg-neutral-800 text-white rounded-full shadow"
+                className="w-full sm:w-auto gap-2"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing pipeline...
+                    <Loader2 className="w-4 h-4 animate-spin" /> Processing pipeline...
                   </>
                 ) : (
                   <>
-                    Start AI Discovery <ArrowRight className="w-4 h-4 ml-2" />
+                    Start AI Discovery <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </Button>
