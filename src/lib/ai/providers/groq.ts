@@ -56,27 +56,52 @@ export async function* groqChatStream(messages: {role: string, content: string}[
     throw new Error(`Groq API error ${response.status}`)
   }
 
-  // Very basic stream reader
   if (!response.body) return
   const reader = response.body.getReader()
   const decoder = new TextDecoder("utf-8")
+  let buffer = ""
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const chunk = decoder.decode(value, { stream: true })
-    const lines = chunk.split("\n").filter(l => l.trim() !== "")
-    for (const line of lines) {
-      if (line === "data: [DONE]") return
-      if (line.startsWith("data: ")) {
-        try {
-          const data = JSON.parse(line.slice(6))
-          const content = data.choices[0]?.delta?.content
-          if (content) yield content
-        } catch {
-          // ignore parse errors mid-stream
+  const parseLine = (line: string): { done: boolean; content?: string } | null => {
+    const trimmed = line.trim()
+    if (!trimmed) return null
+    if (trimmed === "data: [DONE]") return { done: true }
+    if (!trimmed.startsWith("data:")) return null
+
+    const rawData = trimmed.slice(5).trimStart()
+    try {
+      const data = JSON.parse(rawData) as { choices?: Array<{ delta?: { content?: string } }> }
+      const content = data.choices?.[0]?.delta?.content
+      return content ? { done: false, content } : null
+    } catch {
+      // A complete JSON event can still be malformed; ignore it like the
+      // previous implementation did rather than failing a healthy stream.
+      return null
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+      const lines = buffer.split(/\r?\n/)
+      buffer = done ? "" : lines.pop() ?? ""
+
+      for (const line of lines) {
+        const result = parseLine(line)
+        if (result?.done) return
+        if (result?.content) yield result.content
+      }
+
+      if (done) {
+        if (buffer.trim()) {
+          const result = parseLine(buffer)
+          if (result?.done) return
+          if (result?.content) yield result.content
         }
+        break
       }
     }
+  } finally {
+    reader.releaseLock()
   }
 }

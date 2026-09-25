@@ -35,6 +35,88 @@ export async function generateGeminiContent(system: string, user: string, abortS
   return data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 }
 
+type JsonRecord = Record<string, unknown>
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null
+}
+
+function extractGeminiText(value: unknown, output: string[] = []): string[] {
+  if (Array.isArray(value)) {
+    for (const item of value) extractGeminiText(item, output)
+    return output
+  }
+  if (!isRecord(value)) return output
+
+  const candidates = value.candidates
+  if (Array.isArray(candidates)) {
+    for (const candidate of candidates) extractGeminiText(candidate, output)
+  }
+
+  const content = value.content
+  if (isRecord(content) && Array.isArray(content.parts)) {
+    for (const part of content.parts) {
+      if (isRecord(part) && typeof part.text === "string") output.push(part.text)
+    }
+  }
+  return output
+}
+
+function findJsonEnd(buffer: string, start: number): number {
+  let depth = 0
+  let inString = false
+  let escaped = false
+
+  for (let index = start; index < buffer.length; index += 1) {
+    const character = buffer[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (character === "\\") escaped = true
+      else if (character === '"') inString = false
+      continue
+    }
+
+    if (character === '"') {
+      inString = true
+      continue
+    }
+    if (character === "{" || character === "[") depth += 1
+    if (character === "}" || character === "]") {
+      depth -= 1
+      if (depth === 0) return index
+    }
+  }
+  return -1
+}
+
+function consumeGeminiJson(buffer: string): { texts: string[]; rest: string } {
+  const texts: string[] = []
+  let cursor = 0
+
+  while (cursor < buffer.length) {
+    while (cursor < buffer.length && /\s/.test(buffer[cursor])) cursor += 1
+    if (buffer.startsWith("data:", cursor)) {
+      cursor += 5
+      while (cursor < buffer.length && buffer[cursor] === " ") cursor += 1
+    }
+    if (cursor >= buffer.length) return { texts, rest: "" }
+    if (buffer[cursor] !== "{" && buffer[cursor] !== "[") {
+      return { texts, rest: buffer.slice(cursor) }
+    }
+
+    const end = findJsonEnd(buffer, cursor)
+    if (end === -1) return { texts, rest: buffer.slice(cursor) }
+    try {
+      texts.push(...extractGeminiText(JSON.parse(buffer.slice(cursor, end + 1)) as unknown))
+    } catch {
+      // Ignore malformed provider frames and continue with the next complete frame.
+    }
+    cursor = end + 1
+  }
+
+  return { texts, rest: "" }
+}
+
 export async function* geminiChatStream(messages: {role: string, content: string}[], abortSignal: AbortSignal): AsyncIterable<string> {
   const modelId = env.GEMINI_MODEL || "gemini-1.5-flash"
   const apiKey = env.GEMINI_API_KEY
@@ -66,25 +148,20 @@ export async function* geminiChatStream(messages: {role: string, content: string
   if (!response.body) return
   const reader = response.body.getReader()
   const decoder = new TextDecoder("utf-8")
+  let buffer = ""
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const chunk = decoder.decode(value, { stream: true })
-    // Gemini stream chunks are JSON arrays of blocks or parts of it
-    // A robust stream parser requires aggregating the JSON buffers, but for a simple chat implementation:
-    try {
-      // Find candidate parts using regex exec to avoid downlevelIteration errors
-      const regex = /"text":\s*"([^"\\]*(\\.[^"\\]*)*)"/g
-      let match;
-      while ((match = regex.exec(chunk)) !== null) {
-        if (match[1]) {
-          // crude unescaping
-          yield match[1].replace(/\\n/g, "\n").replace(/\\"/g, '"')
-        }
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+      const parsed = consumeGeminiJson(buffer)
+      buffer = parsed.rest
+      for (const text of parsed.texts) {
+        if (text) yield text
       }
-    } catch {
-      // Ignore parse boundaries errors
+      if (done) break
     }
+  } finally {
+    reader.releaseLock()
   }
 }

@@ -121,7 +121,25 @@ export async function generateStructured<T>(opts: GenerateOpts<T>): Promise<Resu
   return dlFail("AI_UNAVAILABLE", "All AI providers failed to generate valid content.")
 }
 
-export async function* chatStream(opts: { messages: {role: string, content: string}[], userId?: string }): AsyncIterable<string> {
+export type ChatStreamOptions = {
+  messages: { role: string; content: string }[]
+  userId?: string
+  signal?: AbortSignal
+}
+
+function createAbortError(): Error {
+  const error = new Error("The operation was aborted")
+  error.name = "AbortError"
+  return error
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError"
+}
+
+export async function* chatStream(opts: ChatStreamOptions): AsyncIterable<string> {
+  if (opts.signal?.aborted) throw createAbortError()
+
   if (opts.userId) {
     const rl = checkRateLimit(opts.userId)
     if (!rl.ok) {
@@ -132,26 +150,54 @@ export async function* chatStream(opts: { messages: {role: string, content: stri
 
   for (const provider of PROVIDERS) {
     if (provider === "mock" && env.AI_MOCK !== "true") continue
+    if (opts.signal?.aborted) throw createAbortError()
 
     const controller = new AbortController()
+    const abortFromCaller = () => controller.abort(opts.signal?.reason)
+    opts.signal?.addEventListener("abort", abortFromCaller, { once: true })
+    let emittedChunk = false
 
     try {
       if (provider === "mock") {
-        yield* mockChatStream()
-        return
+        for await (const chunk of mockChatStream(controller.signal)) {
+          if (opts.signal?.aborted) throw createAbortError()
+          if (chunk) {
+            emittedChunk = true
+            yield chunk
+          }
+        }
       } else if (provider === "groq") {
-        yield* groqChatStream(opts.messages, controller.signal)
-        return
+        for await (const chunk of groqChatStream(opts.messages, controller.signal)) {
+          if (opts.signal?.aborted) throw createAbortError()
+          if (chunk) {
+            emittedChunk = true
+            yield chunk
+          }
+        }
       } else if (provider === "gemini") {
-        yield* geminiChatStream(opts.messages, controller.signal)
-        return
+        for await (const chunk of geminiChatStream(opts.messages, controller.signal)) {
+          if (opts.signal?.aborted) throw createAbortError()
+          if (chunk) {
+            emittedChunk = true
+            yield chunk
+          }
+        }
       }
-    } catch {
-      // failover to next provider
+
+      // A provider that returned without meaningful output can still fall back.
+      if (emittedChunk) return
+    } catch (error: unknown) {
+      // Once a chunk has escaped to the caller, switching providers would create
+      // an incompatible, concatenated response. Surface the stream error instead.
+      if (opts.signal?.aborted || isAbortError(error)) throw error
+      if (emittedChunk) throw error
+      // Provider failed before producing output; try the next provider.
+    } finally {
+      opts.signal?.removeEventListener("abort", abortFromCaller)
     }
   }
 
-  yield "AI providers unavailable."
+  if (!opts.signal?.aborted) yield "AI providers unavailable."
 }
 
 async function fetchFromProvider<T>(provider: string, system: string, user: string, signal: AbortSignal, task: string, mockFixture?: T): Promise<string> {
