@@ -9,6 +9,15 @@ function inferAuthUrl(): string {
   const vercelUrl = process.env.VERCEL_URL;
   const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   const renderHostname = process.env.RENDER_EXTERNAL_HOSTNAME;
+  const isVercel = Boolean(
+    process.env.VERCEL === "1" ||
+    process.env.VERCEL === "true" ||
+    vercelEnv ||
+    vercelUrl ||
+    vercelProductionUrl ||
+    vercelBranchUrl ||
+    process.env.NOW_REGION
+  );
 
   // On Vercel Preview, stay on the preview domain — never default to production domain
   if (vercelEnv === "preview") {
@@ -20,11 +29,18 @@ function inferAuthUrl(): string {
   if (vercelUrl) return `https://${vercelUrl}`;
   if (renderHostname) return `https://${renderHostname}`;
 
+  if (isVercel) {
+    if (process.env.APP_URL && !process.env.APP_URL.includes("localhost")) {
+      return process.env.APP_URL;
+    }
+    return "https://intelly-production.vercel.app";
+  }
+
   return "http://localhost:3000";
 }
 
 const inferredAuthUrl = inferAuthUrl();
-if (isServer && !process.env.NEXTAUTH_URL) {
+if (isServer && !process.env.NEXTAUTH_URL && inferredAuthUrl !== "http://localhost:3000") {
   process.env.NEXTAUTH_URL = inferredAuthUrl;
 }
 
@@ -90,5 +106,5 @@ export const env = parsed.success
       SMTP_USER: process.env.SMTP_USER,
       SMTP_PASSWORD: process.env.SMTP_PASSWORD,
       MAIL_FROM: process.env.MAIL_FROM,
-      APP_URL: process.env.APP_URL || "http://localhost:3000",
+      APP_URL: process.env.APP_URL || inferredAuthUrl,
     };

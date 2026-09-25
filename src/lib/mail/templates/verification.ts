@@ -1,33 +1,19 @@
 import { sendMail } from "@/lib/mail/mailer"
 import { emailBase, escapeHtml } from "@/lib/mail/email-base"
-import { getAppBaseUrl, getSafeDatabaseHost, hashToken } from "@/lib/auth-tokens"
+import { getAppBaseUrl, getSafeDatabaseHost, hashToken, logAuthDiagnostics } from "@/lib/auth-tokens"
 
 export async function sendVerificationEmail(
   name: string,
   email: string,
   rawToken: string,
-  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined> } | string | null
+  requestOrBaseUrl?: Request | { headers?: Headers | Record<string, string | undefined>; url?: string } | string | null
 ): Promise<boolean> {
   const appUrl = getAppBaseUrl(requestOrBaseUrl)
   // Construct the verification URL on the server — frontend never builds token URLs
   const verifyUrl = `${appUrl}/verify-email?token=${encodeURIComponent(rawToken)}`
 
-  // Safe server-side diagnostic logging (never prints raw token, passwords, or connection strings)
-  try {
-    const safeHost = new URL(appUrl).host
-    console.log(
-      "[AUTH_DIAGNOSTICS] Verification email dispatched:",
-      JSON.stringify({
-        env: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
-        baseHost: safeHost,
-        dbHost: getSafeDatabaseHost(),
-        tokenHashPrefix: hashToken(rawToken).slice(0, 8),
-        recipientDomain: email.split("@")[1] || "unknown",
-      })
-    )
-  } catch {
-    // Non-blocking
-  }
+  // Safe server-side diagnostic logging (Section 4 format)
+  logAuthDiagnostics(requestOrBaseUrl, appUrl)
 
   const displayName = name || "there"
   const safeDisplayName = escapeHtml(displayName)
