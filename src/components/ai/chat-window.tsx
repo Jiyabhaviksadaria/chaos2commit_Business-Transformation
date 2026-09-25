@@ -25,7 +25,7 @@ type ChatWindowProps = {
   generationStatus?: GenerationStatus
   streamingText?: string
   error: string | null
-  inputRef?: RefObject<HTMLInputElement>
+  inputRef?: RefObject<HTMLTextAreaElement | HTMLInputElement>
   onInputChange: (value: string) => void
   onSend: () => void
   onStop: () => void
@@ -58,7 +58,7 @@ export function ChatWindow({
   const composerDisabled = !activeChat || generating
 
   return (
-    <section className="flex min-h-[520px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E5DFD4] bg-[#FAF8F2] shadow-sm" aria-label="Current AI conversation">
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E5DFD4] bg-[#FAF8F2] shadow-sm" aria-label="Current AI conversation">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#E5DFD4] bg-white/50 px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <button
@@ -88,11 +88,12 @@ export function ChatWindow({
         )}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
         {showEmptyState ? (
           <ChatEmptyState hasActiveChat={Boolean(activeChat)} onNewChat={onNewChat} onPrompt={onPrompt} disabled={generating} />
         ) : (
           <ChatMessageList
+            activeChatId={activeChat?.id}
             messages={messages}
             loading={loading}
             sending={generating}
@@ -105,17 +106,19 @@ export function ChatWindow({
       </div>
 
       {activeChat ? (
-        <ChatComposer
-          value={input}
-          onChange={onInputChange}
-          onSend={onSend}
-          onStop={onStop}
-          disabled={composerDisabled}
-          isSending={generating}
-          inputRef={inputRef}
-        />
+        <div className="shrink-0">
+          <ChatComposer
+            value={input}
+            onChange={onInputChange}
+            onSend={onSend}
+            onStop={onStop}
+            disabled={composerDisabled}
+            isSending={generating}
+            inputRef={inputRef}
+          />
+        </div>
       ) : (
-        <div className="border-t border-[#E5DFD4] bg-[#FAF8F2] px-4 py-4 text-center text-[10px] text-neutral-400 sm:px-6">Start a new chat to begin messaging.</div>
+        <div className="shrink-0 border-t border-[#E5DFD4] bg-[#FAF8F2] px-4 py-4 text-center text-[10px] text-neutral-400 sm:px-6">Start a new chat to begin messaging.</div>
       )}
     </section>
   )

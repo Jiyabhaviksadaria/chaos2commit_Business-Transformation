@@ -16,7 +16,6 @@ export async function generateGeminiContent(system: string, user: string, abortS
         { role: "user", parts: [{ text: user }] }
       ],
       systemInstruction: {
-        role: "user",
         parts: [{ text: system }]
       },
       generationConfig: {
@@ -117,15 +116,54 @@ function consumeGeminiJson(buffer: string): { texts: string[]; rest: string } {
   return { texts, rest: "" }
 }
 
-export async function* geminiChatStream(messages: {role: string, content: string}[], abortSignal: AbortSignal): AsyncIterable<string> {
+export type GeminiChatMessage = { role: string; content: string }
+
+/**
+ * Gemini takes the instruction outside `contents` and calls assistant turns
+ * `model` turns. A persisted SYSTEM role is never converted into a user turn.
+ * Consecutive same-role turns are joined so provider-side role validation does
+ * not lose context when an older chat contains an incomplete turn.
+ */
+export function formatGeminiMessages(messages: GeminiChatMessage[]): Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> {
+  const formatted: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = []
+
+  for (const message of messages) {
+    if (message.role === "system") continue
+    const role = message.role === "assistant" ? "model" : "user"
+    const previous = formatted[formatted.length - 1]
+    if (previous?.role === role) {
+      previous.parts[0].text += `\n\n${message.content}`
+    } else {
+      formatted.push({ role, parts: [{ text: message.content }] })
+    }
+  }
+
+  return formatted
+}
+
+// Keep the original (messages, signal[, system]) form for existing callers and
+// also accept (system, messages, signal) for callers that prefer the provider
+// instruction first.
+export function geminiChatStream(messages: GeminiChatMessage[], abortSignal: AbortSignal, system?: string): AsyncIterable<string>
+export function geminiChatStream(system: string | undefined, messages: GeminiChatMessage[], abortSignal: AbortSignal): AsyncIterable<string>
+export async function* geminiChatStream(
+  messagesOrSystem: GeminiChatMessage[] | string | undefined,
+  abortSignalOrMessages: AbortSignal | GeminiChatMessage[],
+  systemOrAbortSignal?: string | AbortSignal,
+): AsyncIterable<string> {
+  const systemFirst = Array.isArray(abortSignalOrMessages)
+  const messages = (systemFirst ? abortSignalOrMessages : messagesOrSystem) as GeminiChatMessage[]
+  const abortSignal = (systemFirst ? systemOrAbortSignal : abortSignalOrMessages) as AbortSignal
+  const system = systemFirst
+    ? typeof messagesOrSystem === "string" ? messagesOrSystem : undefined
+    : typeof systemOrAbortSignal === "string" ? systemOrAbortSignal : undefined
+
   const modelId = env.GEMINI_MODEL || "gemini-1.5-flash"
   const apiKey = env.GEMINI_API_KEY
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set")
 
-  const formattedMessages = messages.map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }]
-  }))
+  const persistedSystem = messages.find((message) => message.role === "system")?.content
+  const effectiveSystem = system ?? persistedSystem
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?key=${apiKey}`, {
     method: "POST",
@@ -134,7 +172,8 @@ export async function* geminiChatStream(messages: {role: string, content: string
     },
     signal: abortSignal,
     body: JSON.stringify({
-      contents: formattedMessages,
+      contents: formatGeminiMessages(messages),
+      ...(effectiveSystem?.trim() ? { systemInstruction: { parts: [{ text: effectiveSystem }] } } : {}),
       generationConfig: {
         temperature: 0.7
       }

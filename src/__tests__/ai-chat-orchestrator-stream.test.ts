@@ -67,6 +67,15 @@ describe("chatStream lifecycle", () => {
     })
   })
 
+  it("passes the system instruction separately to the active provider", async () => {
+    const messages = [{ role: "user", content: "Explain this" }]
+    const system = "AI Business Transformation Copilot instructions"
+
+    await collect(chatStream({ system, messages }))
+
+    expect(mocks.groq).toHaveBeenCalledWith(messages, expect.any(AbortSignal), system)
+  })
+
   it("falls back before meaningful output and preserves the provider order", async () => {
     mocks.groq.mockImplementation(async function* () {
       throw new Error("provider unavailable before output")

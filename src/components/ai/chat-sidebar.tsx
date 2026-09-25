@@ -87,18 +87,18 @@ export function ChatSidebar({
   const generatingIds = new Set(generatingChatIds)
 
   return (
-    <aside className={cn("flex min-h-0 w-full flex-col rounded-[26px] border border-[#E5DFD4] bg-[#FAF8F2] p-3 shadow-sm", className)} aria-label="AI chat history">
+    <aside className={cn("flex h-full min-h-0 w-full flex-col rounded-[26px] border border-[#E5DFD4] bg-[#FAF8F2] p-3 shadow-sm overflow-hidden", className)} aria-label="AI chat history">
       <button
         type="button"
         onClick={onNewChat}
         disabled={newChatDisabled}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#18181C] px-3 py-3 text-xs font-bold text-white shadow transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F472B6] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex shrink-0 w-full items-center justify-center gap-2 rounded-2xl bg-[#18181C] px-3 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F472B6] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="h-4 w-4 text-[#F8B4D9]" />
         New Chat
       </button>
 
-      <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1.5 custom-chat-scrollbar">
         {loading && chats.length === 0 ? (
           <div className="space-y-2" aria-label="Loading chats">
             {[0, 1, 2, 3].map((item) => (
@@ -135,7 +135,7 @@ export function ChatSidebar({
                     const isActive = chat.id === activeChatId
                     const isGenerating = generatingIds.has(chat.id)
                     return (
-                      <div key={chat.id} className={cn("group flex items-center rounded-2xl transition", isActive ? "bg-white shadow-sm ring-1 ring-[#F8B4D9]" : "hover:bg-white/70")}>
+                      <div key={chat.id} className={cn("group flex items-center rounded-2xl transition-colors", isActive ? "bg-white shadow-sm ring-1 ring-[#F8B4D9]" : "hover:bg-white/70")}>
                         <button
                           type="button"
                           onClick={() => onSelectChat(chat.id)}
@@ -153,27 +153,29 @@ export function ChatSidebar({
                             {!isGenerating && formatChatTime(chat.updatedAt)}
                           </span>
                         </button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              aria-label={`Actions for ${chat.title}`}
-                              className="mr-1 rounded-full p-2 text-neutral-400 opacity-70 transition hover:bg-[#FCEAF3] hover:text-neutral-800 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F472B6]"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onRenameChat(chat.id)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                              Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => onDeleteChat(chat.id)} className="text-red-600 focus:text-red-700">
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`Actions for ${chat.title}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-[#FCEAF3] hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F472B6]"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => onRenameChat(chat.id)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                                Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => onDeleteChat(chat.id)} className="text-red-600 focus:text-red-700">
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     )
                   })}
