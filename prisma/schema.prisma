@@ -7,59 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum PlatformRole {
-  PLATFORM_ADMIN
-  USER
-}
-
 model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
-  name          String?
-  passwordHash  String?
-  image         String?
-  locale        String    @default("en")
-  role          PlatformRole @default(USER)
+  id                      String                   @id @default(cuid())
+  email                   String?                  @unique
+  name                    String?
+  passwordHash            String?
+  image                   String?
+  locale                  String                   @default("en")
+  role                    PlatformRole             @default(USER)
   /// Optional user-selected role in the user's company. Kept separate from
   /// the platform authorization role above for backward compatibility.
-  companyRole   String?
-  isDemo        Boolean   @default(false)
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  accounts           Account[]
-  sessions           Session[]
-  memberships        Membership[]
-  chatSessions       ChatSession[]
-  deliverableVersions DeliverableVersion[]
-  comments           Comment[]
-  approvalsRequested Approval[] @relation("RequestedBy")
-  approvalsReviewed  Approval[] @relation("Reviewer")
-  notifications      Notification[]
-  activityLogs       ActivityLog[]
-  aiUsages           AiUsage[]
+  companyRole             String?
+  emailVerified           DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  isDemo                  Boolean                  @default(false)
+  accounts                Account[]
+  activityLogs            ActivityLog[]
+  aiUsages                AiUsage[]
+  approvalsRequested      Approval[]               @relation("RequestedBy")
+  approvalsReviewed       Approval[]               @relation("Reviewer")
+  chatSessions            ChatSession[]
+  comments                Comment[]
+  deliverableVersions     DeliverableVersion[]
   emailVerificationTokens EmailVerificationToken[]
+  memberships             Membership[]
+  notifications           Notification[]
   passwordResetTokens     PasswordResetToken[]
-  
+  sessions                Session[]
+
   @@index([email])
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -92,8 +85,7 @@ model EmailVerificationToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -107,10 +99,412 @@ model PasswordResetToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Organization {
+  id            String              @id @default(cuid())
+  name          String
+  slug          String              @unique
+  creditBalance Int                 @default(30)
+  plan          OrgPlan             @default(FREE)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  logs          ActivityLog[]
+  aiUsages      AiUsage[]
+  transactions  CreditTransaction[]
+  memberships   Membership[]
+  workspaces    Workspace[]
+}
+
+model CreditTransaction {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  amount         Int
+  reason         String
+  refType        String?
+  refId          String?
+  balanceAfter   Int
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([refId])
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Workspace {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  projects       Project[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model Project {
+  id                    String            @id @default(cuid())
+  workspaceId           String
+  name                  String
+  industry              String?
+  businessGoal          String
+  businessContext       String?
+  status                ProjectStatus     @default(DRAFT)
+  lifecycle             ProjectLifecycle  @default(IDEA)
+  blueprintData         Json?
+  language              String            @default("en")
+  siteSlug              String?           @unique
+  sitePublished         Boolean           @default(false)
+  intakeUrl             String?
+  detectedLanguage      String?
+  readinessScore        Int               @default(0)
+  digitalMaturity       Int               @default(0)
+  aiReadiness           Int               @default(0)
+  discoveryCompleteness Int               @default(0)
+  vercelProjectId       String?
+  vercelProductionUrl   String?
+  vercelPreviewUrl      String?
+  renderServiceId       String?
+  renderUrl             String?
+  gitRepository         String?
+  gitBranch             String?
+  backendMode           String            @default("NONE")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  primaryLanguage       String            @default("en")
+  supportedLanguages    String[]          @default(["en"])
+  logs                  ActivityLog[]
+  blueprintChanges      BlueprintChange[]
+  chatSessions          ChatSession[]
+  deliverables          Deliverable[]
+  deployments           Deployment[]
+  documents             Document[]
+  records               GeneratedRecord[]
+  intakeSources         IntakeSource[]
+  workspace             Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectContext        ProjectContext?
+  recommendations       Recommendation[]
+
+  @@index([workspaceId])
+}
+
+model Deployment {
+  id                   String   @id @default(cuid())
+  projectId            String
+  provider             String
+  environment          String
+  providerDeploymentId String?
+  url                  String?
+  status               String
+  commitId             String?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Document {
+  id            String         @id @default(cuid())
+  projectId     String
+  filename      String
+  mimeType      String
+  sizeBytes     Int
+  checksum      String?
+  extractedText String?
+  summary       String?
+  entities      Json?
+  metadata      Json?
+  status        DocumentStatus @default(PENDING)
+  error         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, checksum])
+}
+
+model ChatSession {
+  id        String          @id @default(cuid())
+  projectId String
+  userId    String
+  kind      ChatSessionKind
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  messages  ChatMessage[]
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      ChatRole
+  content   String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model IntakeSource {
+  id            String           @id @default(cuid())
+  projectId     String
+  kind          IntakeSourceKind
+  label         String
+  url           String?
+  mimeType      String?
+  sizeBytes     Int?
+  checksum      String?
+  extractedText String?
+  metadata      Json?
+  status        DocumentStatus   @default(PENDING)
+  error         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @default(now()) @updatedAt
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, kind])
+  @@index([checksum])
+}
+
+/// A single persisted context assembled from every successful intake source.
+/// All transformation stages read this same snapshot instead of re-ingesting
+/// a URL or document independently.
+model ProjectContext {
+  id              String   @id @default(cuid())
+  projectId       String   @unique
+  sources         Json     @default("[]")
+  extractedText   String
+  businessContent String
+  metadata        Json     @default("{}")
+  sourceTypes     Json     @default("[]")
+  answers         Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model GeneratedRecord {
+  id          String   @id @default(cuid())
+  projectId   String
+  moduleKey   String
+  data        Json
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, moduleKey])
+}
+
+model Deliverable {
+  id               String               @id @default(cuid())
+  projectId        String
+  type             DeliverableType
+  title            String
+  currentVersionId String?
+  status           DeliverableStatus    @default(DRAFT)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  approvals        Approval[]
+  comments         Comment[]
+  project          Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions         DeliverableVersion[]
+
+  @@index([projectId])
+}
+
+model DeliverableVersion {
+  id            String        @id @default(cuid())
+  deliverableId String
+  versionNumber Int
+  content       Json
+  source        VersionSource
+  language      String
+  aiUsageId     String?
+  createdById   String?
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     User?         @relation(fields: [createdById], references: [id])
+  deliverable   Deliverable   @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@unique([deliverableId, versionNumber])
+  @@index([deliverableId])
+  @@index([createdById])
+  @@index([deliverableId, language, versionNumber])
+}
+
+model Comment {
+  id            String      @id @default(cuid())
+  deliverableId String
+  authorId      String
+  body          String
+  resolved      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  author        User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  deliverable   Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@index([deliverableId])
+  @@index([authorId])
+}
+
+model Approval {
+  id            String         @id @default(cuid())
+  deliverableId String
+  requestedById String
+  reviewerId    String?
+  status        ApprovalStatus @default(PENDING)
+  note          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deliverable   Deliverable    @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  requestedBy   User           @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewer      User?          @relation("Reviewer", fields: [reviewerId], references: [id])
+
+  @@index([deliverableId])
+  @@index([requestedById])
+  @@index([reviewerId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ActivityLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  projectId      String?
+  actorId        String?
+  action         String
+  entity         String
+  entityId       String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  actor          User?        @relation(fields: [actorId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([actorId])
+}
+
+model AiUsage {
+  id               String        @id @default(cuid())
+  userId           String?
+  organizationId   String?
+  provider         String
+  model            String
+  task             String
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int
+  status           AiTaskStatus
+  error            String?
+  createdAt        DateTime      @default(now())
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User?         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Recommendation {
+  id            String               @id @default(cuid())
+  projectId     String
+  title         String
+  description   String
+  category      String
+  impact        String
+  actionType    String
+  actionPayload Json?
+  status        RecommendationStatus @default(PENDING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model AiModelConfig {
+  id            String   @id @default(cuid())
+  provider      String
+  modelName     String
+  enabled       Boolean  @default(true)
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(4096)
+  creditCost    Int      @default(5)
+  priorityOrder Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([provider, modelName])
+}
+
+model BlueprintChange {
+  id          String                @id @default(cuid())
+  projectId   String
+  prompt      String
+  summary     String
+  delta       Json
+  impact      Json
+  riskLevel   String                @default("LOW")
+  status      BlueprintChangeStatus @default(PENDING)
+  createdById String?
+  createdAt   DateTime              @default(now())
+  appliedAt   DateTime?
+  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum PlatformRole {
+  PLATFORM_ADMIN
+  USER
 }
 
 enum OrgPlan {
@@ -119,74 +513,11 @@ enum OrgPlan {
   ENTERPRISE
 }
 
-model Organization {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  creditBalance Int      @default(30)
-  plan          OrgPlan  @default(FREE)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  memberships   Membership[]
-  workspaces    Workspace[]
-  logs          ActivityLog[]
-  aiUsages      AiUsage[]
-  transactions  CreditTransaction[]
-}
-
-model CreditTransaction {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String?
-  amount         Int
-  reason         String
-  refType        String?
-  refId          String?
-  balanceAfter   Int
-  createdAt      DateTime @default(now())
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@index([refId])
-}
-
 enum OrgRole {
   OWNER
   ADMIN
   EDITOR
   VIEWER
-}
-
-model Membership {
-  id             String   @id @default(cuid())
-  userId         String
-  organizationId String
-  role           OrgRole
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, organizationId])
-  @@index([organizationId])
-  @@index([userId])
-}
-
-model Workspace {
-  id             String   @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  projects     Project[]
-
-  @@index([organizationId])
 }
 
 enum ProjectStatus {
@@ -213,95 +544,10 @@ enum ProjectLifecycle {
   FAILED
 }
 
-model Project {
-  id           String   @id @default(cuid())
-  workspaceId  String
-  name         String
-  industry     String?
-  businessGoal    String   @db.Text
-  businessContext String?  @db.Text
-  status          ProjectStatus @default(DRAFT)
-  lifecycle       ProjectLifecycle @default(IDEA)
-  blueprintData   Json?
-  language        String   @default("en")
-  siteSlug        String?  @unique
-  sitePublished   Boolean  @default(false)
-  intakeUrl       String?
-  detectedLanguage String?
-  readinessScore  Int      @default(0)
-  digitalMaturity Int      @default(0)
-  aiReadiness     Int      @default(0)
-  discoveryCompleteness Int @default(0)
-  vercelProjectId       String?
-  vercelProductionUrl   String?
-  vercelPreviewUrl      String?
-  renderServiceId       String?
-  renderUrl             String?
-  gitRepository         String?
-  gitBranch             String?
-  backendMode           String   @default("NONE")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  documents       Document[]
-  intakeSources   IntakeSource[]
-  projectContext  ProjectContext?
-  chatSessions    ChatSession[]
-  deliverables    Deliverable[]
-  logs            ActivityLog[]
-  records         GeneratedRecord[]
-  recommendations Recommendation[]
-  blueprintChanges BlueprintChange[]
-  deployments     Deployment[]
-
-  @@index([workspaceId])
-}
-
-model Deployment {
-  id                   String   @id @default(cuid())
-  projectId            String
-  provider             String
-  environment          String
-  providerDeploymentId String?
-  url                  String?
-  status               String
-  commitId             String?
-  errorMessage         String?  @db.Text
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-}
-
 enum DocumentStatus {
   PENDING
   READY
   FAILED
-}
-
-model Document {
-  id            String   @id @default(cuid())
-  projectId     String
-  filename      String
-  mimeType      String
-  sizeBytes     Int
-  checksum      String?
-  extractedText String?  @db.Text
-  summary       String?  @db.Text
-  entities      Json?
-  metadata      Json?
-  status        DocumentStatus @default(PENDING)
-  error         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-  @@index([projectId, checksum])
 }
 
 enum ChatSessionKind {
@@ -310,38 +556,10 @@ enum ChatSessionKind {
   COMPANION
 }
 
-model ChatSession {
-  id        String   @id @default(cuid())
-  projectId String
-  userId    String
-  kind      ChatSessionKind
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages ChatMessage[]
-
-  @@index([projectId])
-  @@index([userId])
-}
-
 enum ChatRole {
   USER
   ASSISTANT
   SYSTEM
-}
-
-model ChatMessage {
-  id            String   @id @default(cuid())
-  sessionId     String
-  role          ChatRole
-  content       String   @db.Text
-  createdAt     DateTime @default(now())
-  
-  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId])
 }
 
 enum DeliverableType {
@@ -372,63 +590,6 @@ enum IntakeSourceKind {
   EXISTING_SYSTEM
 }
 
-model IntakeSource {
-  id            String   @id @default(cuid())
-  projectId     String
-  kind          IntakeSourceKind
-  label         String
-  url           String?
-  mimeType      String?
-  sizeBytes     Int?
-  checksum      String?
-  extractedText String?  @db.Text
-  metadata      Json?
-  status        DocumentStatus @default(PENDING) // reuse DocumentStatus enum
-  error         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-  @@index([projectId, kind])
-  @@index([checksum])
-}
-
-/// A single persisted context assembled from every successful intake source.
-/// All transformation stages read this same snapshot instead of re-ingesting
-/// a URL or document independently.
-model ProjectContext {
-  id              String   @id @default(cuid())
-  projectId       String   @unique
-  sources         Json     @default("[]")
-  extractedText   String   @db.Text
-  businessContent String   @db.Text
-  metadata        Json     @default("{}")
-  sourceTypes     Json     @default("[]")
-  answers         Json     @default("[]")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-}
-
-model GeneratedRecord {
-  id          String   @id @default(cuid())
-  projectId   String
-  moduleKey   String
-  data        Json
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId, moduleKey])
-}
-
 enum DeliverableStatus {
   DRAFT
   IN_REVIEW
@@ -437,64 +598,9 @@ enum DeliverableStatus {
   IMPLEMENTATION_READY
 }
 
-model Deliverable {
-  id               String   @id @default(cuid())
-  projectId        String
-  type             DeliverableType
-  title            String
-  currentVersionId String?
-  status           DeliverableStatus @default(DRAFT)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  project          Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions         DeliverableVersion[]
-  comments         Comment[]
-  approvals        Approval[]
-
-  @@index([projectId])
-}
-
 enum VersionSource {
   AI
   USER_EDIT
-}
-
-model DeliverableVersion {
-  id             String   @id @default(cuid())
-  deliverableId  String
-  versionNumber  Int
-  content        Json
-  source         VersionSource
-  language       String
-  aiUsageId      String?
-  createdById    String?
-  note           String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  deliverable Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
-  createdBy   User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
-
-  @@unique([deliverableId, versionNumber])
-  @@index([deliverableId])
-  @@index([createdById])
-}
-
-model Comment {
-  id            String   @id @default(cuid())
-  deliverableId String
-  authorId      String
-  body          String   @db.Text
-  resolved      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  deliverable Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
-  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([deliverableId])
-  @@index([authorId])
 }
 
 enum ApprovalStatus {
@@ -503,86 +609,10 @@ enum ApprovalStatus {
   REJECTED
 }
 
-model Approval {
-  id            String   @id @default(cuid())
-  deliverableId String
-  requestedById String
-  reviewerId    String?
-  status        ApprovalStatus @default(PENDING)
-  note          String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  deliverable Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
-  requestedBy User        @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
-  reviewer    User?       @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-
-  @@index([deliverableId])
-  @@index([requestedById])
-  @@index([reviewerId])
-}
-
-model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  type      String
-  title     String
-  body      String    @db.Text
-  link      String?
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model ActivityLog {
-  id             String   @id @default(cuid())
-  organizationId String
-  projectId      String?
-  actorId        String?
-  action         String
-  entity         String
-  entityId       String
-  metadata       Json?
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId])
-  @@index([projectId])
-  @@index([actorId])
-}
-
 enum AiTaskStatus {
   SUCCESS
   FAILED
   FALLBACK
-}
-
-model AiUsage {
-  id               String   @id @default(cuid())
-  userId           String?
-  organizationId   String?
-  provider         String
-  model            String
-  task             String
-  promptTokens     Int?
-  completionTokens Int?
-  latencyMs        Int
-  status           AiTaskStatus
-  error            String?  @db.Text
-  createdAt        DateTime @default(now())
-
-  user             User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([organizationId])
 }
 
 enum RecommendationStatus {
@@ -591,62 +621,10 @@ enum RecommendationStatus {
   DISMISSED
 }
 
-model Recommendation {
-  id            String               @id @default(cuid())
-  projectId     String
-  title         String
-  description   String               @db.Text
-  category      String               // e.g. PROCESS, ARCHITECTURE, SECURITY, AUTOMATION
-  impact        String               // HIGH, MEDIUM, LOW
-  actionType    String               // APPLY_CHANGE, AUTOMATE_WORKFLOW, REGENERATE_SPEC
-  actionPayload Json?
-  status        RecommendationStatus @default(PENDING)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-}
-
-model AiModelConfig {
-  id            String   @id @default(cuid())
-  provider      String   // groq, gemini, mock
-  modelName     String   // e.g. llama3-70b-8192, gemini-1.5-flash
-  enabled       Boolean  @default(true)
-  temperature   Float    @default(0.7)
-  maxTokens     Int      @default(4096)
-  creditCost    Int      @default(5)
-  priorityOrder Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([provider, modelName])
-}
-
 enum BlueprintChangeStatus {
   PENDING
   APPROVED
   REJECTED
   APPLIED
   FAILED
-}
-
-model BlueprintChange {
-  id          String                @id @default(cuid())
-  projectId   String
-  prompt      String                @db.Text
-  summary     String                @db.Text
-  delta       Json
-  impact      Json
-  riskLevel   String                @default("LOW")
-  status      BlueprintChangeStatus @default(PENDING)
-  createdById String?
-  createdAt   DateTime              @default(now())
-  appliedAt   DateTime?
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-  @@index([status])
 }
