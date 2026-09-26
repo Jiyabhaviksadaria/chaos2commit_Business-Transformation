@@ -112,25 +112,25 @@ export function ProjectWorkspace({ forcedTab }: { forcedTab?: string } = {}) {
       />
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full min-w-0 space-y-6">
         <ProjectNavTabs activeTab={activeTab} onTabChange={handleTabChange} />
-      <TabsContent value="overview"><OverviewTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="discovery"><DiscoveryTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
-      <TabsContent value="business-analysis"><BusinessAnalysisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
-      <TabsContent value="requirements"><RequirementsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="blueprint"><BlueprintView projectId={projectId} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="solutions"><SolutionsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="architecture"><ArchitectureTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="processes"><ProcessesTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="ux"><UxTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="database"><DatabaseTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="apis"><ApisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="planning"><PlanningTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="roadmap"><RoadmapTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="build"><BuildTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="collaboration"><CollaborationTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="versions"><VersionsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-      <TabsContent value="exports"><ExportsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
-    </Tabs>
-    <AiCompanionDrawer open={aiDrawerOpen} onOpenChange={setAiDrawerOpen} projectId={projectId} projectName={project.name} activeTab={activeTab} />
-  </div>
+        <TabsContent value="overview"><OverviewTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="discovery"><DiscoveryTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
+        <TabsContent value="business-analysis"><BusinessAnalysisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} onScoreUpdate={fetchProject} /></TabsContent>
+        <TabsContent value="requirements"><RequirementsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="blueprint"><BlueprintView projectId={projectId} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="solutions"><SolutionsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="architecture"><ArchitectureTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="processes"><ProcessesTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="ux"><UxTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="database"><DatabaseTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="apis"><ApisTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="planning"><PlanningTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="roadmap"><RoadmapTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="build"><BuildTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="collaboration"><CollaborationTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="versions"><VersionsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+        <TabsContent value="exports"><ExportsTabView projectId={projectId} project={project} onOpenAi={() => setAiDrawerOpen(true)} /></TabsContent>
+      </Tabs>
+      <AiCompanionDrawer open={aiDrawerOpen} onOpenChange={setAiDrawerOpen} projectId={projectId} projectName={project.name} activeTab={activeTab} />
+    </div>
   )
 }

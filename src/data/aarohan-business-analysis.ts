@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   DemoCompetitor,
   DemoCustomerSegment,
   DemoFinancialYear,
@@ -19,8 +19,7 @@ export function normalizeOutputLanguage(value: unknown): AarohanOutputLanguage {
 
 /**
  * Every user-visible chrome string rendered by the Business Analysis dashboard.
- * The English set is the exact wording the dashboard already used, so the
- * pre-existing NovaCart demo renders identically.
+ * The English set is the exact wording the dashboard uses.
  */
 export type AnalysisLabels = {
   demoMode: string
@@ -595,15 +594,15 @@ const COMPANY_EN = {
   annualGrowth: "28.6%",
   primaryMarket: "India",
   businessModel: "B2C + B2B SaaS",
-  targetCustomers: ["Enterprise retail groups", "Mid-market brands", "Small and medium retailers", "Online sellers"],
-  primaryProducts: ["Aarohan Commerce Platform", "Aarohan Analytics", "Aarohan AI Recommendations", "Aarohan Seller Intelligence"],
-  description: "Aarohan Commerce Technologies Pvt. Ltd. is an Indian retail commerce and SaaS company founded in 2020 and headquartered in Ahmedabad, Gujarat. It helps retailers, brands, and marketplace sellers run digital commerce, customer engagement, analytics, and AI-powered personalization from a unified platform. Aarohan combines storefront infrastructure, customer analytics, recommendation intelligence, and seller insights so businesses can increase conversion, improve retention, and make faster data-driven decisions.",
+  targetCustomers: ["D2C brands", "Small and medium retailers", "Online sellers", "Emerging consumer brands", "Enterprise commerce businesses"],
+  primaryProducts: ["Aarohan Commerce Cloud", "Aarohan Analytics", "Aarohan AI Recommendations", "Aarohan Seller Hub"],
+  description: "Aarohan Commerce Technologies Pvt. Ltd. is an Ahmedabad-based retail commerce and SaaS company founded in 2020. The company provides digital commerce solutions for D2C brands, small and medium retailers, online sellers, emerging consumer brands, and enterprise commerce businesses. Its product portfolio includes Aarohan Commerce Cloud, Aarohan Analytics, Aarohan AI Recommendations, and Aarohan Seller Hub.",
 }
 
 const COMPANY_HI: typeof COMPANY_EN = {
   ...COMPANY_EN,
-  targetCustomers: ["एंटरप्राइज़ रिटेल समूह", "मध्य-बाज़ार ब्रांड", "छोटे और मध्यम खुदरा व्यापारी", "ऑनलाइन विक्रेता"],
-  description: "आरोहण कॉमर्स टेक्नोलॉजीज प्रा. लि. एक भारतीय रिटेल कॉमर्स और SaaS कंपनी है, जिसकी स्थापना 2020 में अहमदाबाद, गुजरात में हुई। यह खुदरा व्यापारियों, ब्रांडों और मार्केटप्लेस विक्रेताओं को डिजिटल कॉमर्स, ग्राहक सहभागिता, एनालिटिक्स और AI-संचालित पर्सनलाइज़ेशन एकीकृत प्लेटफ़ॉर्म से चलाने में मदद करती है। आरोहण स्टोरफ्रंट इंफ्रास्ट्रक्चर, ग्राहक एनालिटिक्स, रिकमेंडेशन इंटेलिजेंस और सेलर इनसाइट्स को जोड़ता है, ताकि व्यवसाय कन्वर्ज़न बढ़ा सकें, रिटेंशन सुधार सकें और तेज़ डेटा-आधारित निर्णय ले सकें।",
+  targetCustomers: ["D2C ब्रांड्स", "छोटे और मध्यम खुदरा व्यापारी", "ऑनलाइन विक्रेता", "उभरते उपभोक्ता ब्रांड", "एंटरप्राइज़ कॉमर्स व्यवसाय"],
+  description: "आरोहण कॉमर्स टेक्नोलॉजीज प्रा. लि. अहमदाबाद स्थित एक रिटेल कॉमर्स और SaaS कंपनी है जिसकी स्थापना 2020 में हुई थी। कंपनी D2C ब्रांडों, छोटे और मध्यम खुदरा विक्रेताओं, ऑनलाइन विक्रेताओं, उभरते उपभोक्ता ब्रांडों और एंटरप्राइज़ कॉमर्स व्यवसायों के लिए डिजिटल कॉमर्स समाधान प्रदान करती है। इसके उत्पाद पोर्टफोलियो में आरोहण कॉमर्स क्लाउड, आरोहण एनालिटिक्स, आरोहण AI रिकमेंडेशन और आरोहण सेलर हब शामिल हैं।",
 }
 
 const HEALTH_DIMENSIONS: Record<AarohanOutputLanguage, DemoHealthDimension[]> = {

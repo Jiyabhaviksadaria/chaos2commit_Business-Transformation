@@ -31,18 +31,76 @@ export async function requireOrgMember(orgId: string, action?: Action) {
 export async function requireProjectAccess(projectId: string, action?: Action) {
   const user = await requireUser()
   let project
+  const isDemo = projectId === "demo-project-intelly" || projectId.startsWith("demo-")
+
   try {
     project = await db.project.findUnique({
       where: { id: projectId },
       include: { workspace: { include: { organization: { include: { memberships: { where: { userId: user.id } } } } } } },
     })
+
+    if (!project && isDemo) {
+      const { ensureDemoAccount } = await import("@/lib/demo-account")
+      await ensureDemoAccount().catch(() => null)
+      project = await db.project.findUnique({
+        where: { id: projectId },
+        include: { workspace: { include: { organization: { include: { memberships: { where: { userId: user.id } } } } } } },
+      })
+    }
   } catch (error) {
     console.error("Project authorization lookup failed:", error)
-    throw new Error("The project authorization service is unavailable.")
+    if (!isDemo) {
+      throw new Error("The project authorization service is unavailable.")
+    }
   }
+
+  if (!project && isDemo) {
+    const { demoBusinessData } = await import("@/lib/demo-business-data")
+    return {
+      user,
+      project: {
+        id: "demo-project-intelly",
+        workspaceId: "demo-workspace-intelly",
+        name: demoBusinessData.company.name,
+        industry: demoBusinessData.company.industry,
+        businessGoal: "Explore an evidence-backed business intelligence transformation.",
+        businessContext: demoBusinessData.company.description,
+        status: "ACTIVE",
+        lifecycle: "DISCOVERY",
+        language: "en",
+        detectedLanguage: "en",
+        intakeRole: "Business Analyst",
+        intakeUrl: demoBusinessData.company.website,
+        siteSlug: "aarohan-demo",
+        blueprintData: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        workspace: {
+          id: "demo-workspace-intelly",
+          name: "Demo Workspace",
+          organizationId: "demo-org-intelly",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          organization: {
+            id: "demo-org-intelly",
+            name: "Demo Organization",
+            slug: "demo-org",
+            memberships: [],
+          },
+        },
+      } as any,
+      orgRole: "OWNER" as const,
+      membership: undefined,
+    }
+  }
+
   if (!project) throw new AccessError("Project not found or access denied")
-  const membership = project.workspace.organization.memberships[0]
-  if (user.role !== PlatformRole.PLATFORM_ADMIN && !membership) throw new AccessError("You are not a member of the organization owning this project")
-  if (action && membership && !can(membership.role, action)) throw new AccessError(`You do not have permission to perform ${action} on this project`)
+  const membership = project.workspace?.organization?.memberships?.[0]
+  if (!isDemo && user.role !== PlatformRole.PLATFORM_ADMIN && !membership) {
+    throw new AccessError("You are not a member of the organization owning this project")
+  }
+  if (action && membership && !can(membership.role, action)) {
+    throw new AccessError(`You do not have permission to perform ${action} on this project`)
+  }
   return { user, project, orgRole: membership?.role || PlatformRole.USER, membership }
 }

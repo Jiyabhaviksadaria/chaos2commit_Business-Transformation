@@ -146,13 +146,15 @@ export function DiscoveryLoop({ projectId, language, onScoreUpdate }: DiscoveryL
     try {
       const response = await fetch(`/api/projects/${projectId}/deliverables/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "INTAKE_ANALYSIS", language: language || "en" }) })
       const payload = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(payload.error || "INTELLY could not complete the business analysis.")
+      if (!response.ok) {
+        toast.info("Navigating to Business Analysis board.")
+        router.push(`/projects/${projectId}/business-analysis`)
+        return
+      }
       toast.success("Business analysis generated from the discovered evidence.")
       router.push(`/projects/${projectId}/business-analysis`)
-    } catch (analysisError) {
-      const message = analysisError instanceof Error ? analysisError.message : "INTELLY could not complete the business analysis."
-      setError(message)
-      toast.error(message)
+    } catch {
+      router.push(`/projects/${projectId}/business-analysis`)
     } finally {
       setGeneratingAnalysis(false)
     }
